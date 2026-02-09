@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -39,16 +39,30 @@ CP857 OEM (Turkish)
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit CP857OEM;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Locale;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Locale;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
-        
+
 {==============================================================================}
 {const}
  {CP857OEM specific constants}
@@ -64,19 +78,25 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
 {==============================================================================}
 {Initialization Functions}
 procedure CP857OEMInit;
- 
+
 {==============================================================================}
 {CP857OEM Functions}
- 
+
 {==============================================================================}
 {CP857OEM Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
 implementation
 
-uses CP1254ANSI;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  CodePages.CP1254ANSI;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  CP1254ANSI;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {==============================================================================}
@@ -124,7 +144,7 @@ var
   $00AD,$00B1,$F8BD,$00BE,$00B6,$00A7,$00F7,$00B8,
   $00B0,$00A8,$00B7,$00B9,$00B3,$00B2,$25A0,$00A0)
  );
- 
+
  CP857TO1254:TTransTable = (
   TransID:1254;
   Values:(
@@ -145,7 +165,7 @@ var
   $D3,$DF,$D4,$D2,$F5,$D5,$B5,$5F,$D7,$DA,$DB,$D9,$EC,$FF,$AF,$B4,
   $AD,$B1,$5F,$BE,$B6,$A7,$F7,$B8,$B0,$A8,$B7,$B9,$B3,$B2,$A6,$A0)
  );
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -175,9 +195,9 @@ end;
 
 initialization
  CP857OEMInit;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

@@ -1,7 +1,7 @@
 {
 Ultibo IPv6 (Internet Protocol version 6) unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -17,23 +17,23 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
- 
- 
+
+
 References
 ==========
 
- 
+
 Internet Protocol version 6
 ===========================
 
- Note: In spite of the name, IPv6 is considered a transport rather than a 
+ Note: In spite of the name, IPv6 is considered a transport rather than a
        protocol.
-       
+
  Note: The implementation of Addresses at present only allows one Address
        per Adapter plus Secondary Addresses on the same subnet.
 
@@ -55,18 +55,52 @@ Internet Protocol version 6
        Requires addition of:
          TTransportBinding etc  - FBindings, TIPTransportBinding (with pointer to Adapter)
          AddBinding/RemoveBinding - Do the actual Config currently in AddAdapter (Similar to ODI etc)
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit IPv6;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,SysUtils,Classes,Network,Transport,Protocol,Ultibo,UltiboUtils,UltiboClasses;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.GlobalSock,
+  Core.Platform,
+  Core.Threads,
+  System.SysUtils,
+  System.Classes,
+  Core.Network,
+  Core.Transport,
+  Core.Protocol,
+  Core.Ultibo,
+  Core.UltiboUtils,
+  Core.UltiboClasses;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  GlobalSock,
+  Platform,
+  Threads,
+  SysUtils,
+  Classes,
+  Network,
+  Transport,
+  Protocol,
+  Ultibo,
+  UltiboUtils,
+  UltiboClasses;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //IPv6 uses NDP (Neighbour Discovery Protocol) (via ICMPv6) instead of ARP
                       //See: http://keepingitclassless.net/2011/10/neighbor-solicitation-ipv6s-replacement-for-arp/
@@ -74,46 +108,46 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,SysUtils,C
 //To Do //Multicast on IPv6 is handled by MLD (Multicast Listener Discovery) (via ICMPv6) instead of IGMP
                       //See: https://en.wikipedia.org/wiki/Internet_Group_Management_Protocol
                       //     https://en.wikipedia.org/wiki/Multicast_Listener_Discovery
-       
+
 //To Do //Look for:
-       
+
 //--
-         
+
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-  
+
 {==============================================================================}
 const
  {IPv6 specific constants}
  IP6_TRANSPORT_NAME = 'IPV6';
- 
+
  {IP6 Constants}
  MIN_IP6_PACKET = 40;   {Not Counting Adapter Header} //To Do
- MAX_IP6_PACKET = 1500; {Not Counting Adapter Header} //To Do 
- 
+ MAX_IP6_PACKET = 1500; {Not Counting Adapter Header} //To Do
+
  MAX_FRAG_LIFE = 32000; {Only wait 32 seconds for the rest of the packet}
- 
+
  IP6_HEADER_SIZE = 40;     {SizeOf(TIP6Header);} {Does Not Allow for Extensions}
- 
+
  {IP6 Extension Headers (See: https://en.wikipedia.org/wiki/List_of_IP_protocol_numbers)}
- IP6_HEADER_HOP		 = 0;	{Hop-by-hop option header}
- IP6_HEADER_TCP		 = 6;	{Next header is a TCP segment (The payload)}
- IP6_HEADER_UDP		 = 17;	{Next header is a UDP message (The payload)}
- IP6_HEADER_IPV6	 = 41;	{Next header is a IPv6 packet (IPv6 Encapsulation) (The payload)}
- IP6_HEADER_ROUTING	 = 43;	{Next header is a Routing header}
- IP6_HEADER_FRAGMENT = 44;	{Next header is a Fragmentation/reassembly header}
- IP6_HEADER_GRE		 = 47;	{Next header is a GRE header}
- IP6_HEADER_ESP		 = 50;	{Next header is a Encapsulating security payload}
- IP6_HEADER_AUTH	 = 51;	{Next header is a Authentication header}
- IP6_HEADER_ICMP	 = 58;	{Next header is a ICMP for IPv6 message}
- IP6_HEADER_NONE	 = 59;	{There is no next header (Do not process payload)}
- IP6_HEADER_DEST	 = 60;	{Next header is a Destination options header}
- IP6_HEADER_SCTP	 = 132;	{Next header is a SCTP message (The payload)}
+ IP6_HEADER_HOP         = 0;    {Hop-by-hop option header}
+ IP6_HEADER_TCP         = 6;    {Next header is a TCP segment (The payload)}
+ IP6_HEADER_UDP         = 17;    {Next header is a UDP message (The payload)}
+ IP6_HEADER_IPV6     = 41;    {Next header is a IPv6 packet (IPv6 Encapsulation) (The payload)}
+ IP6_HEADER_ROUTING     = 43;    {Next header is a Routing header}
+ IP6_HEADER_FRAGMENT = 44;    {Next header is a Fragmentation/reassembly header}
+ IP6_HEADER_GRE         = 47;    {Next header is a GRE header}
+ IP6_HEADER_ESP         = 50;    {Next header is a Encapsulating security payload}
+ IP6_HEADER_AUTH     = 51;    {Next header is a Authentication header}
+ IP6_HEADER_ICMP     = 58;    {Next header is a ICMP for IPv6 message}
+ IP6_HEADER_NONE     = 59;    {There is no next header (Do not process payload)}
+ IP6_HEADER_DEST     = 60;    {Next header is a Destination options header}
+ IP6_HEADER_SCTP     = 132;    {Next header is a SCTP message (The payload)}
  IP6_HEADER_MOBILITY = 135; {Next header is a Mobility header}
 
  IP6_MTU = MAX_IP6_PACKET;   //To Do
-  
+
 {==============================================================================}
 type
  {IPv6 specific types}
@@ -132,9 +166,9 @@ type
   NextHeader:Byte;            {Specifies the type of the next header (If zero discard the packet)}
   ExtensionLength:Byte;
  end;
- 
+
  //To Do Extension headers
- 
+
  PIP6Pseudo = ^TIP6Pseudo;
  TIP6Pseudo = packed record {?? Bytes} {Used by UDP/TCP Checksum}
   SourceIP:TIn6Addr;         {Source IP}
@@ -143,7 +177,7 @@ type
   Protocol:Byte;             {IP6 Protocol Type IPPROTO_UDP, IPPROTO_TCP etc}
   Length:Word;               {Length of UDP/TCP Header and Data}
  end;
-  
+
  PIP6Fragment = ^TIP6Fragment;
  TIP6Fragment = record {?? Bytes} {Used by Fragment Buffer}
   Offset:LongWord;   {Offset of this Fragment in the Packet}
@@ -170,7 +204,7 @@ type
   First:PIP6Fragment; {Pointer to First Fragment}
   Last:PIP6Fragment;  {Pointer to Last Fragment}
  end;
-  
+
 {==============================================================================}
 type
  {IPv6 specific classes}
@@ -211,7 +245,7 @@ type
    Gateway:TIn6Addr;
    Network:TIn6Addr;
    Directed:TIn6Addr;
-   
+
    Server:TIn6Addr;      {DHCP Server}
    LeaseTime:LongWord;   {DHCP Lease Time}
    RetryTime:Int64;      {DHCP Retry Time}
@@ -230,7 +264,7 @@ type
    constructor Create;
   private
    {Internal Variables}
-   
+
   public
    {Status Variables}
    Address:TIn6Addr;
@@ -238,14 +272,14 @@ type
    Gateway:TIn6Addr;
    Network:TIn6Addr;
    Directed:TIn6Addr;
-   
+
    Server:TIn6Addr;      {DHCP Server}
    LeaseTime:LongWord;   {DHCP Lease Time}
    RetryTime:Int64;      {DHCP Retry Time}
    ExpiryTime:Int64;     {DHCP Expiry Time}
    RenewalTime:Int64;    {DHCP Renewal Time}
    RebindingTime:Int64;  {DHCP Rebinding Time}
-   
+
    ConfigDefault:Word;   {BOOTP/DHCP/RARP/STATIC/PSEUDO/LOOPBACK}
    ConfigAddress:TIn6Addr;
    ConfigNetmask:TIn6Addr;
@@ -293,7 +327,7 @@ type
    {Internal Variables}
    FNextIP6Id:Word; //To do //LongWord ?
    FNextIP6Lock:TMutexHandle; //To Do //Change this to LocalLock and share with other properties
-   
+
    FFragments:TIP6Buffer;
 
    FHosts:TNetworkList;
@@ -309,7 +343,7 @@ type
    FBroadcastAddress:TIn6Addr;
    FNameservers:TIP6Nameservers; //To Do //Change Nameservers to an object type (eg Transport.TNameserverEntry and TIPNameserverEntry) (Part of TNetworkList)
    FNameserverLock:TMutexHandle;                       //Then do Add/Remove/GetNameserverByNext etc)
-   
+
    FDefaultHopLimit:LongWord;
    //To Do //Forwarding/ - See IP
    FAutoRelease:Boolean;
@@ -321,9 +355,9 @@ type
    function CheckFragment(ABuffer:Pointer):Boolean;
 
    function GetNextIP6Id(AIncrement:Boolean):Word;
- 
+
    function GetIP6Nameserver(ACount:LongWord):TIn6Addr;
- 
+
    function GetAdapterConfigType(const AName:String):Word;
    function GetAdapterConfigAddress(const AName:String):TIn6Addr;
    function GetAdapterConfigNetmask(const AName:String):TIn6Addr;
@@ -340,7 +374,7 @@ type
    property DefaultHopLimit:LongWord read FDefaultHopLimit write FDefaultHopLimit;
 
    property AutoRelease:Boolean read FAutoRelease write FAutoRelease;
-   
+
    {Public Methods}
    function AddAdapter(AAdapter:TNetworkAdapter;AConfigType:Word;AAddress,ANetmask,AGateway,AServer:Pointer):Boolean; override;
    function RemoveAdapter(AAdapter:TNetworkAdapter):Boolean; override;
@@ -367,7 +401,7 @@ type
 
    function BindTransport(AAdapter:TNetworkAdapter):Boolean; override;
    function UnbindTransport(AAdapter:TNetworkAdapter):Boolean; override;
-   
+
    {IP6 Methods}
    function AddNameserver(const AAddress:TIn6Addr):Boolean;
    function RemoveNameserver(const AAddress:TIn6Addr):Boolean;
@@ -387,19 +421,19 @@ type
    function AddRoute(const ANetwork,ANetmask,AGateway,AAddress:TIn6Addr;AType:Word;ALock:Boolean;AState:LongWord):TIP6RouteEntry;
    function RemoveRoute(const ANetwork,AAddress:TIn6Addr):Boolean;
    procedure FlushRoutes(All:Boolean);
-   
+
    function GetAddressByAddress(const AAddress:TIn6Addr;ALock:Boolean;AState:LongWord):TIP6AddressEntry;
    function GetAddressByNext(APrevious:TIP6AddressEntry;ALock,AUnlock:Boolean;AState:LongWord):TIP6AddressEntry;
    function CheckAddress(AAddress:TIP6AddressEntry;ALock:Boolean;AState:LongWord):Boolean;
    function AddAddress(const AAddress:TIn6Addr;AType:Word;AAdapter:TNetworkAdapter;ALock:Boolean;AState:LongWord):TIP6AddressEntry;
    function RemoveAddress(const AAddress:TIn6Addr):Boolean;
    procedure FlushAddresses(All:Boolean);
-   
+
    function GetNetworkByName(const AName:String;ALock:Boolean):TIP6NetworkEntry;
    function GetNetworkByAddress(const ANetwork:TIn6Addr;ALock:Boolean):TIP6NetworkEntry;
    function AddNetwork(const AName:String;const ANetwork:TIn6Addr;ALock:Boolean):TIP6NetworkEntry;
    function RemoveNetwork(const AName:String):Boolean;
-   
+
    function GetServByName(const AName,AProtocol:String;ALock:Boolean):TIP6ServEntry;
    function GetServByPort(APort:Word;const AProtocol:String;ALock:Boolean):TIP6ServEntry;
    function AddServ(const AName,AProtocol:String;APort:Word;ALock:Boolean):TIP6ServEntry;
@@ -426,7 +460,7 @@ type
    {Internal Variables}
    FLocalAddress:TIn6Addr;
    FRemoteAddress:TIn6Addr;
-   
+
    {Internal Methods}
    procedure SetLocalAddress(const ALocalAddress:TIn6Addr);
    procedure SetRemoteAddress(const ARemoteAddress:TIn6Addr);
@@ -442,15 +476,15 @@ type
   private
    {Internal Variables}
    FHopLimit:Byte;               {Hop Limit}
-   
+
    {IP6 Layer Variables}
    procedure SetHopLimit(AHopLimit:Byte);
   public
    {IP6 Layer Properties}
    property HopLimit:Byte read FHopLimit write SetHopLimit;
-   
+
    {Public Properties}
-   
+
  end;
 
  TIP6HostEntry = class(THostEntry)
@@ -458,7 +492,7 @@ type
   private
    {Internal Variables}
    FAddresses:array[0..MAX_HOST_ALIASES - 1] of TIn6Addr;
-   
+
    {Internal Methods}
    function GetAddress:TIn6Addr;
    procedure SetAddress(const AAddress:TIn6Addr);
@@ -483,7 +517,7 @@ type
    FNetmask:TIn6Addr;
    FGateway:TIn6Addr;
    FAddress:TIn6Addr;
-   
+
    {Internal Methods}
    procedure SetNetwork(const ANetwork:TIn6Addr);
    procedure SetNetmask(const ANetmask:TIn6Addr);
@@ -502,7 +536,7 @@ type
   private
    {Internal Variables}
    FAddress:TIn6Addr;
-   
+
    {Internal Methods}
    procedure SetAddress(const AAddress:TIn6Addr);
   public
@@ -515,7 +549,7 @@ type
   private
    {Internal Variables}
    FNetwork:TIn6Addr;
-   
+
    {Internal Methods}
    procedure SetNetwork(const ANetwork:TIn6Addr);
   public
@@ -527,26 +561,26 @@ type
    constructor Create;
   private
    {Internal Variables}
-   
+
   public
    {Status Variables}
-   
+
  end;
 
  TIP6ProtoEntry = class(TProtoEntry)
    constructor Create;
   private
    {Internal Variables}
-   
+
   public
    {Status Variables}
-   
+
  end;
-  
+
 {==============================================================================}
 {var}
  {IPv6 specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure IP6Init;
@@ -563,7 +597,7 @@ function GetIP6DataOffset(ABuffer:Pointer):Word;
 function GetIP6DataLength(ABuffer:Pointer):Word;
 
 function ChecksumIP6(ABuffer:Pointer;AOffset,ALength:Word):Word; //To do //Remove //No checksums in IPv6
-  
+
 {==============================================================================}
 {IPv6 Helper Functions}
 
@@ -616,10 +650,10 @@ begin
  ReaderLock;
  try
   Result:=nil;
-  
+
   {Check Packet}
   if APacket = nil then Exit;
-  
+
   {Get Fragment}
   Fragment:=APacket.First;
   while Fragment <> nil do
@@ -631,13 +665,13 @@ begin
       Result:=Fragment;
       Exit;
      end;
-    
+
     {Get Next}
     Fragment:=Fragment.Next;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -651,20 +685,20 @@ begin
  ReaderLock;
  try
   Result:=nil;
-  
+
   {Check Packet}
   if APacket = nil then Exit;
 
   {Create Fragment}
   Result:=GetMem(SizeOf(TIP6Fragment)); {IP6_FRAGMENT_SIZE}
   if Result = nil then Exit;
-  
+
   {Update Fragment}
   Result.Offset:=AOffset;
   Result.Size:=ASize;
   Result.Prev:=nil;
   Result.Next:=nil;
-  
+
   {Add Fragement}
   if APacket.Last = nil then
    begin
@@ -679,9 +713,9 @@ begin
     Result.Prev:=APacket.Last;
     APacket.Last:=Result;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -697,13 +731,13 @@ begin
  if not(WriterOwner) then ReaderLock else WriterLock;
  try
   Result:=False;
-  
+
   {Check Packet}
   if APacket = nil then Exit;
-  
+
   {Check for Fragments}
   if APacket.First = nil then Exit;
-  
+
   {Remove Fragment}
   if APacket.First.Next <> nil then
    begin
@@ -719,15 +753,15 @@ begin
     APacket.First:=nil;
     APacket.Last:=nil;
    end;
-   
+
   {Free Fragment}
   FreeMem(Fragment,SizeOf(TIP6Fragment)); {IP6_FRAGMENT_SIZE}
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   if not(WriterOwner) then ReaderUnlock else WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -742,16 +776,16 @@ begin
  try
   {Check Packet}
   if APacket = nil then Exit;
-  
+
   {Get Fragment}
   while APacket.First <> nil do
    begin
     {Remove Fragment}
     RemoveFragment(APacket);
    end;
- finally 
+ finally
   if not(WriterOwner) then ReaderUnlock else WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -765,15 +799,15 @@ begin
  ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: GetPacket - Id = ' + IntToStr(LongWordBEtoN(AId)));
   {$ENDIF}
-  
-  //To Do  
- finally 
+
+  //To Do
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -785,23 +819,23 @@ begin
  {$IFDEF IP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: AddPacket - Id = ' + IntToStr(LongWordBEtoN(AId)));
  {$ENDIF}
-  
- //To Do  
+
+ //To Do
  Result:=nil;
- 
- {Acquire Lock} 
+
+ {Acquire Lock}
  WriterLock; {Acquire as Writer}
  try
 
-  //To Do  
-  
+  //To Do
+
   {Convert Lock}
-  WriterConvert; 
-  
-  //To Do  
- finally 
+  WriterConvert;
+
+  //To Do
+ finally
   ReaderUnlock; {Converted to Reader}
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -811,7 +845,7 @@ function TIP6Buffer.RemovePacket(APacket:PIP6Packet):Boolean;
 begin
  {}
  Result:=False;
-  
+
  {$IFDEF IP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: RemovePacket');
  {$ENDIF}
@@ -821,11 +855,11 @@ begin
 
  {Acquire the Lock}
  MutexLock(APacket.Lock);
-  
+
  {Remove any Fragments}
  FlushFragments(APacket);
- 
- {Acquire Lock} 
+
+ {Acquire Lock}
  WriterLock;
  try
   {Remove Packet}
@@ -861,24 +895,24 @@ begin
       FLast:=nil;
      end;
    end;
-  
+
   {Release the Lock}
   MutexUnlock(APacket.Lock);
-  
+
   {Free Packet Memory}
   FreeMem(APacket.Data,MAX_IP6_PACKET);
-  
+
   {Free Packet Lock}
   MutexDestroy(APacket.Lock);
-  
+
   {Free Packet}
   FreeMem(APacket,SizeOf(TIP6Packet)); {IP6_PACKET_SIZE}
 
   {Return Result}
   Result:=True;
- finally 
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -888,10 +922,10 @@ function TIP6Buffer.UnlockPacket(APacket:PIP6Packet):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Packet}
  if APacket = nil then Exit;
- 
+
  {Unlock Packet}
  Result:=(MutexUnlock(APacket.Lock) = ERROR_SUCCESS);
 end;
@@ -908,8 +942,8 @@ begin
  {}
  {Get Tick Count}
  CurrentTime:=GetTickCount64;
-  
- {Acquire Lock}     
+
+ {Acquire Lock}
  if All then WriterLock else ReaderLock;
  try
   {Get Packet}
@@ -919,23 +953,23 @@ begin
     {Get Next}
     Current:=Packet;
     Packet:=Current.Next;
-    
+
     {Check Packet}
     if ((Current.Timeout + MAX_FRAG_LIFE) < CurrentTime) or (All) then
      begin
       {Convert Lock}
-      if not(All) then ReaderConvert; 
-     
+      if not(All) then ReaderConvert;
+
       {Remove Packet}
       RemovePacket(Current);
-      
+
       {Convert Lock}
-      if not(All) then WriterConvert; 
+      if not(All) then WriterConvert;
      end;
    end;
- finally 
+ finally
   if All then WriterUnlock else ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -949,21 +983,21 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: PutHeader - Length = ' + IntToStr(ALength));
   {$ENDIF}
-  
+
   {Check Packet}
   if APacket = nil then Exit;
-  
+
   {Check Buffer}
   if ABuffer = nil then Exit;
-  
-  //To Do  
- finally 
+
+  //To Do
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -979,21 +1013,21 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: PutFragment - Size = ' + IntToStr(ASize));
   {$ENDIF}
-  
+
   {Check Packet}
   if APacket = nil then Exit;
-  
+
   {Check Buffer}
   if ABuffer = nil then Exit;
-  
-  //To Do  
- finally 
+
+  //To Do
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1004,13 +1038,13 @@ begin
  {}
  inherited Create;
  //To Do
- 
+
  //LongWord(Address.S_addr):=INADDR_ANY;
  //LongWord(Netmask.S_addr):=INADDR_ANY;
  //LongWord(Gateway.S_addr):=INADDR_ANY;
  //LongWord(Network.S_addr):=INADDR_ANY;
  //LongWord(Directed.S_addr):=INADDR_BROADCAST;
- 
+
  ConfigDefault:=CONFIG_TYPE_AUTO;
  //LongWord(ConfigAddress.S_addr):=INADDR_ANY;
  //LongWord(ConfigNetmask.S_addr):=INADDR_ANY;
@@ -1026,13 +1060,13 @@ begin
  {}
  inherited Create;
  //To Do
- 
+
  //LongWord(Address.S_addr):=INADDR_ANY;
  //LongWord(Netmask.S_addr):=INADDR_ANY;
  //LongWord(Gateway.S_addr):=INADDR_ANY;
  //LongWord(Network.S_addr):=INADDR_ANY;
  //LongWord(Directed.S_addr):=INADDR_BROADCAST;
- 
+
  ConfigDefault:=CONFIG_TYPE_AUTO;
  //LongWord(ConfigAddress.S_addr):=INADDR_ANY;
  //LongWord(ConfigNetmask.S_addr):=INADDR_ANY;
@@ -1052,21 +1086,21 @@ begin
 
  FNextIP6Id:=1;
  FNextIP6Lock:=MutexCreate;
- 
+
  FFragments:=TIP6Buffer.Create(Self);
- 
+
  FHosts:=TNetworkList.Create;
  FServs:=TNetworkList.Create;
  FProtos:=TNetworkList.Create;
  FRoutes:=TNetworkList.Create;
  FNetworks:=TNetworkList.Create;
  FAddresses:=TNetworkList.Create;
- 
+
  FillChar(FNameservers,SizeOf(TIP6Nameservers),0);
- FNameserverLock:=MutexCreate;   
- 
+ FNameserverLock:=MutexCreate;
+
  FDefaultHopLimit:=HOPLIMIT_DEFAULT;
- 
+
  //To Do
 end;
 
@@ -1078,7 +1112,7 @@ begin
  WriterLock;
  try
   MutexDestroy(FNameserverLock);
-  
+
   FAddresses.Free;
   FNetworks.Free;
   FRoutes.Free;
@@ -1087,12 +1121,12 @@ begin
   FHosts.Free;
 
   FFragments.Free;
-  
+
   MutexDestroy(FNextIP6Lock);
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1113,29 +1147,29 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF IP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: PacketHandler');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Check Dest}
  {if ADest = nil then Exit;} {Not Used}
- 
+
  {Check Source}
- {if ASource = nil then Exit;} {Not Used} 
-  
+ {if ASource = nil then Exit;} {Not Used}
+
  {Check Packet}
  if APacket = nil then Exit;
- 
+
  {Get Adapter}
- Adapter:=TIP6TransportAdapter(GetAdapterByHandle(AHandle,True,NETWORK_LOCK_READ)); 
+ Adapter:=TIP6TransportAdapter(GetAdapterByHandle(AHandle,True,NETWORK_LOCK_READ));
  if Adapter = nil then Exit;
- try 
+ try
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  PacketType = ' + PacketTypeToString(Adapter.PacketType));
   {$ENDIF}
-  
+
   {Check Packet Type}
   case Adapter.PacketType of
    PACKET_TYPE_IP6:begin
@@ -1143,9 +1177,9 @@ begin
      if CheckIP6(APacket) then
       begin
        //To Do
-       
+
        //To Do //Extensions
-       
+
       end
      else
       begin
@@ -1154,9 +1188,9 @@ begin
       end;
     end;
   end;
- finally 
+ finally
   Adapter.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1171,21 +1205,21 @@ function TIP6Transport.FragmentHandler(ASource,ADest,APacket:Pointer;ASize:Integ
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF IP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: FragmentHandler');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Check Dest}
  {if ADest = nil then Exit;} {Not Used}
- 
+
  {Check Source}
- {if ASource = nil then Exit;} {Not Used} 
-  
+ {if ASource = nil then Exit;} {Not Used}
+
  {Check Packet}
  if APacket = nil then Exit;
- 
+
  //To Do
 end;
 
@@ -1197,11 +1231,11 @@ function TIP6Transport.CheckFragment(ABuffer:Pointer):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF IP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: CheckFragment');
  {$ENDIF}
- 
+
  //To do
 end;
 
@@ -1217,7 +1251,7 @@ begin
 
  {Get Next Id}
  Result:=FNextIP6Id;
-  
+
  {Increment Id}
  if AIncrement then Inc(FNextIP6Id,ID_INCREMENT);
 
@@ -1231,7 +1265,7 @@ function TIP6Transport.GetIP6Nameserver(ACount:LongWord):TIn6Addr;
 begin
  {}
  Result:=IN6ADDR_ANY;
- 
+
  //To Do
 end;
 
@@ -1244,7 +1278,7 @@ var
 begin
  {}
  Result:=CONFIG_TYPE_AUTO;
- 
+
  Value:=Uppercase(Manager.Settings.GetString(AName + '_IP6_CONFIG'));
  if Length(Value) <> 0 then
   begin
@@ -1262,9 +1296,9 @@ begin
      else
       begin
        Result:=CONFIG_TYPE_AUTO;
-      end;      
-    end; 
-  end; 
+      end;
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -1274,7 +1308,7 @@ function TIP6Transport.GetAdapterConfigAddress(const AName:String):TIn6Addr;
 begin
  {}
  Result:=IN6ADDR_ANY;
- 
+
  //To Do
 end;
 
@@ -1285,7 +1319,7 @@ function TIP6Transport.GetAdapterConfigNetmask(const AName:String):TIn6Addr;
 begin
  {}
  Result:=IN6ADDR_ANY;
- 
+
  //To Do
 end;
 
@@ -1296,7 +1330,7 @@ function TIP6Transport.GetAdapterConfigGateway(const AName:String):TIn6Addr;
 begin
  {}
  Result:=IN6ADDR_ANY;
- 
+
  //To Do
 end;
 
@@ -1307,7 +1341,7 @@ function TIP6Transport.GetAdapterConfigServer(const AName:String):TIn6Addr;
 begin
  {}
  Result:=IN6ADDR_ANY;
- 
+
  //To Do
 end;
 
@@ -1330,27 +1364,27 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF IP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: FilterPacket');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Check Dest}
- if ADest = nil then Exit; 
- 
+ if ADest = nil then Exit;
+
  {Check Source}
- if ASource = nil then Exit; 
-  
+ if ASource = nil then Exit;
+
  {Check Packet}
  if APacket = nil then Exit;
- 
+
  {Get Header}
  IP6:=PIP6Header(APacket);
-  
+
  {Get Protocol}
  Protocol:=GetIP6Protocol(APacket);
- 
+
  {Get Filter}
  Filter:=TIP6TransportFilter(GetFilterByNext(nil,True,False,NETWORK_LOCK_READ));
  while Filter <> nil do
@@ -1368,11 +1402,11 @@ begin
          {Unlock Filter}
          Filter.ReaderUnlock;
          Exit;
-        end; 
+        end;
       end;
     end;
-   
-   {Get Next}    
+
+   {Get Next}
    Filter:=TIP6TransportFilter(GetFilterByNext(Filter,True,True,NETWORK_LOCK_READ));
   end;
 end;
@@ -1392,21 +1426,21 @@ function TIP6Transport.ForwardPacket(AAdapter:TTransportAdapter;ASource,ADest,AP
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF IP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: ForwardPacket');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Check Dest}
- if ADest = nil then Exit; 
- 
+ if ADest = nil then Exit;
+
  {Check Source}
- if ASource = nil then Exit; 
+ if ASource = nil then Exit;
 
  {Check Packet}
  if APacket = nil then Exit;
- 
+
  //To Do
 end;
 
@@ -1429,18 +1463,18 @@ begin
  ReaderLock;
  try
   Result:=False;
- 
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: AddAdapter');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Config = ' + ConfigTypeToString(AConfigType));
   {$ENDIF}
-  
+
   {Check Adapter}
   if AAdapter = nil then Exit;
- 
+
   {Check State}
   if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
-  
+
   {Get Adapter}
   Adapter:=TIP6TransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_READ));
   if Adapter = nil then
@@ -1466,16 +1500,16 @@ begin
       if ANetmask <> nil then Adapter.ConfigNetmask:=TIn6Addr(ANetmask^);
       if AGateway <> nil then Adapter.ConfigGateway:=TIn6Addr(AGateway^);
       if AServer <> nil then Adapter.ConfigServer:=TIn6Addr(AServer^);
-      
+
       {Lock Adapter}
       Adapter.WriterLock;
-      
+
       {Acquire Lock}
       FAdapters.WriterLock;
       try
        {Add Adapter}
        FAdapters.Add(Adapter);
-      
+
        {Configure Adapter}
        case Adapter.ConfigType of
         CONFIG_TYPE_STATIC:begin
@@ -1495,26 +1529,26 @@ begin
 
        {Unlock Adapter}
        Adapter.WriterUnlock;
-      
+
        {Return Result}
        Result:=True;
       finally
        {Release Lock}
        FAdapters.WriterUnlock;
-      end;  
+      end;
      end;
    end
   else
    begin
     {Unlock Adapter}
     Adapter.ReaderUnlock;
-    
+
     {Return Result}
     Result:=True;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1530,33 +1564,33 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: RemoveAdapter');
   {$ENDIF}
-  
+
   {Check Adapter}
   if AAdapter = nil then Exit;
-  
+
   {Get Adapter}
   Adapter:=TIP6TransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_WRITE)); {Writer due to configure}
   if Adapter = nil then Exit;
-  
+
   {Notify Config of Remove}
   case Adapter.ConfigType of
    CONFIG_TYPE_STATIC:begin
      {Update Adapter}
      Adapter.Configured:=False;
-  
+
      //To Do
-     
+
     end;
    CONFIG_TYPE_LOOPBACK:begin
      {Update Adapter}
      Adapter.Configured:=False;
-     
+
      //To Do
-     
+
     end;
    else
     begin
@@ -1580,7 +1614,7 @@ begin
                Adapter.Configured:=False;
 
                //To Do
-           
+
                Break;
               end;
             end
@@ -1588,47 +1622,47 @@ begin
             begin
              {Update Adapter}
              Adapter.Configured:=False;
-           
+
              //To Do
-             
-           
+
+
              Break;
             end;
           end;
         end;
-        
-       {Get Next} 
+
+       {Get Next}
        Config:=TIP6TransportConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
       end;
     end;
   end;
-   
+
   //To Do
- 
+
   {Remove IP6 Type}
   AAdapter.RemoveTransport(Adapter.Handle,Adapter.PacketType);
-  
+
   {Acquire Lock}
   FAdapters.WriterLock;
   try
    {Remove Adapter}
    FAdapters.Remove(Adapter);
-  
+
    {Unlock Adapter}
    Adapter.WriterUnlock;
-  
+
    {Destroy Adapter}
    Adapter.Free;
-  
+
    {Return Result}
    Result:=True;
   finally
    {Release Lock}
    FAdapters.WriterUnlock;
-  end;  
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1650,32 +1684,32 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: AddProtocol');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Protocol = ' + ProtocolToString(AProtocol));
   {$ENDIF}
-  
+
   {Get Protocol}
   {Protocol:=TIP6TransportProtocol(GetProtocolByType(AProtocol,False,NETWORK_LOCK_NONE));} {Do not lock} {Allow multiple protocols with same type}
   {if Protocol <> nil then Exit;}
-  
+
   {Create Protocol}
   Protocol:=TIP6TransportProtocol.Create;
   Protocol.Protocol:=AProtocol;
   Protocol.PacketHandler:=APacketHandler;
   Protocol.ControlHandler:=AControlHandler;
-  
+
   {Acquire Lock}
   FProtocols.WriterLock;
   try
    {Add Protocol}
    FProtocols.Add(Protocol);
-  
+
    {Return Result}
    Result:=THandle(Protocol);
   finally
    {Release Lock}
    FProtocols.WriterUnlock;
-  end;  
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1691,25 +1725,25 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: RemoveProtocol');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Handle = ' + IntToHex(AHandle,8));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Protocol = ' + ProtocolToString(AProtocol));
   {$ENDIF}
- 
+
   {Get Protocol}
   Protocol:=TIP6TransportProtocol(GetProtocolByHandle(AHandle,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
   if Protocol = nil then Exit;
- 
+
   {Check Protocol}
   if Protocol.Protocol <> AProtocol then Exit;
    begin
     {Unlock Protocol}
     Protocol.WriterUnlock;
     Exit;
-   end; 
- 
+   end;
+
   {Acquire Lock}
   FProtocols.WriterLock;
   try
@@ -1718,19 +1752,19 @@ begin
 
    {Unlock Protocol}
    Protocol.WriterUnlock;
-  
+
    {Destroy Protocol}
    Protocol.Free;
- 
+
    {Return Result}
    Result:=True;
   finally
    {Release Lock}
    FProtocols.WriterUnlock;
-  end;  
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1751,31 +1785,31 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: AddFilter');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Protocol = ' + ProtocolToString(AProtocol));
   {$ENDIF}
-  
+
   {Get Filter}
   Filter:=TIP6TransportFilter(GetFilterByProtocol(AProtocol,False,NETWORK_LOCK_NONE)); {Do not lock}
   if Filter <> nil then Exit;
-  
+
   {Create Filter}
   Filter:=TIP6TransportFilter.Create;
   Filter.Protocol:=AProtocol;
   Filter.FilterHandler:=AFilterHandler;
-  
+
   {Acquire Lock}
   FFilters.WriterLock;
   try
    {Add Filter}
    FFilters.Add(Filter);
-  
+
    {Return Result}
    Result:=THandle(Filter);
   finally
    {Release Lock}
    FFilters.WriterUnlock;
-  end;  
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1791,25 +1825,25 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: RemoveFilter');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Handle = ' + IntToHex(AHandle,8));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Protocol = ' + ProtocolToString(AProtocol));
   {$ENDIF}
- 
+
   {Get Filter}
   Filter:=TIP6TransportFilter(GetFilterByHandle(AHandle,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
   if Filter = nil then Exit;
- 
+
   {Check Filter}
   if Filter.Protocol <> AProtocol then
    begin
     {Unlock Filter}
     Filter.WriterUnlock;
     Exit;
-   end; 
-  
+   end;
+
   {Acquire Lock}
   FFilters.WriterLock;
   try
@@ -1818,19 +1852,19 @@ begin
 
    {Unlock Filter}
    Filter.WriterUnlock;
-  
+
    {Destroy Filter}
    Filter.Free;
-  
+
    {Return Result}
    Result:=True;
   finally
    {Release Lock}
    FFilters.WriterUnlock;
-  end;  
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1847,37 +1881,37 @@ begin
  ReaderLock;
  try
   Result:=INVALID_HANDLE_VALUE;
-  
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: AddConfig');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Config = ' + ConfigTypeToString(AConfigType));
   {$ENDIF}
-  
+
   {Get Config}
   Config:=TIP6TransportConfig(GetConfigByType(AConfigType,False,NETWORK_LOCK_NONE)); {Do not lock}
   if Config <> nil then Exit;
-  
+
   {Create Config}
   Config:=TIP6TransportConfig.Create;
   Config.ConfigType:=AConfigType;
   Config.ConfigAuto:=AConfigAuto;
   Config.ConfigHandler:=AConfigHandler;
-  
+
   {Acquire Lock}
   FConfigs.WriterLock;
   try
    {Add Config}
    FConfigs.Add(Config);
-  
+
    {Return Result}
    Result:=THandle(Config);
   finally
    {Release Lock}
    FConfigs.WriterUnlock;
-  end;  
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1893,25 +1927,25 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: RemoveConfig');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Handle = ' + IntToHex(AHandle,8));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Config = ' + ConfigTypeToString(AConfigType));
   {$ENDIF}
- 
+
   {Get Config}
   Config:=TIP6TransportConfig(GetConfigByHandle(AHandle,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
   if Config = nil then Exit;
-  
+
   {Check Config}
   if Config.ConfigType <> AConfigType then
    begin
     {Unlock Config}
     Config.WriterUnlock;
     Exit;
-   end; 
-  
+   end;
+
   {Acquire Lock}
   FConfigs.WriterLock;
   try
@@ -1920,7 +1954,7 @@ begin
 
    {Unlock Config}
    Config.WriterUnlock;
-  
+
    {Destroy Config}
    Config.Free;
 
@@ -1929,10 +1963,10 @@ begin
   finally
    {Release Lock}
    FConfigs.WriterUnlock;
-  end;  
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1950,23 +1984,23 @@ function TIP6Transport.SendPacket(ASocket:TTransportSocket;ASource,ADest:Pointer
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF IP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: SendPacket');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Size = ' + IntToStr(ASize));
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Dest = ' + In6AddrToString(PIn6Addr(ADest)^));
  {$ENDIF}
- 
+
  {Check Dest}
  if ADest = nil then Exit;
-  
+
  {Check Source}
  if ASource = nil then Exit;
-  
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
- //To Do 
+
+ //To Do
 end;
 
 {==============================================================================}
@@ -1979,12 +2013,12 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF IP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: SendControl');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Get Protocol}
  Protocol:=TIP6TransportProtocol(GetProtocolByNext(nil,True,False,NETWORK_LOCK_READ));
  while Protocol <> nil do
@@ -2002,11 +2036,11 @@ begin
          {Unlock Protocol}
          Protocol.ReaderUnlock;
          Exit;
-        end; 
+        end;
       end;
     end;
-    
-   {Get Next} 
+
+   {Get Next}
    Protocol:=TIP6TransportProtocol(GetProtocolByNext(Protocol,True,True,NETWORK_LOCK_READ));
   end;
 end;
@@ -2025,21 +2059,21 @@ function TIP6Transport.GetSockOpt(ASocket:TTransportSocket;ALevel,AOptName:Integ
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF IP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: GetSockOpt');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Level}
  case ALevel of
   IPPROTO_IPV6:begin
     NetworkSetLastError(WSAENOPROTOOPT);
- 
+
     //To Do
-    
+
    end;
   else
    begin
@@ -2062,21 +2096,21 @@ function TIP6Transport.SetSockOpt(ASocket:TTransportSocket;ALevel,AOptName:Integ
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF IP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: SetSockOpt');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Level}
  case ALevel of
   IPPROTO_IPV6:begin
     NetworkSetLastError(WSAENOPROTOOPT);
-    
+
     //To Do
-    
+
    end;
   else
    begin
@@ -2100,21 +2134,21 @@ begin
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: StartTransport');
   {$ENDIF}
- 
+
   {Check Manager}
   if Manager = nil then Exit;
- 
+
   {Add Nameservers}
   for Count:=1 to MAX_NAME_SERVERS do
    begin
     //To Do
-   end; 
- 
+   end;
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2123,20 +2157,20 @@ function TIP6Transport.StopTransport:Boolean;
 {Stop this transport ready for removal}
 var
  Current:TIP6TransportAdapter;
- Adapter:TIP6TransportAdapter; 
+ Adapter:TIP6TransportAdapter;
 begin
  {}
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: StopTransport');
   {$ENDIF}
-  
+
   {Check Manager}
   if Manager = nil then Exit;
- 
+
   {Get Adapter}
   Adapter:=TIP6TransportAdapter(GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ));
   while Adapter <> nil do
@@ -2144,28 +2178,28 @@ begin
     {Get Next}
     Current:=Adapter;
     Adapter:=TIP6TransportAdapter(GetAdapterByNext(Current,True,True,NETWORK_LOCK_READ));
-    
-    {Remove Adapter} 
+
+    {Remove Adapter}
     RemoveAdapter(Current.Adapter);
    end;
- 
+
   {Flush all Addresses}
   FlushAddresses(True);
- 
+
   {Flush all Routes}
   FlushRoutes(True);
- 
+
   {Flush all Hosts}
   FlushHosts(True);
- 
+
   {Flush all Fragments}
   FFragments.FlushPackets(True);
- 
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2181,20 +2215,20 @@ begin
  {}
  {Flush old Hosts}
  FlushHosts(False);
-  
+
  {Flush old Routes}
  FlushRoutes(False);
-  
+
  {Flush old Addresses}
  FlushAddresses(False);
-  
+
  {Flush old Fragments}
  FFragments.FlushPackets(False);
 
  {Check Adapters for Retry/Renew/Rebind/Expire}
  {Get Tick Count}
  CurrentTime:=GetTickCount64;
-  
+
  {Get Adapter}
  Adapter:=TIP6TransportAdapter(GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ));
  while Adapter <> nil do
@@ -2202,9 +2236,9 @@ begin
    {Get Current}
    Current:=Adapter;
    Adapter:=nil;
-    
+
    {Note: No need to convert to write lock as this function is serialized by the caller}
-   
+
    {Check for Unconfigured}
    if not(Current.Configured) and not(Current.Configuring) and (Current.Adapter.Status = ADAPTER_STATUS_UP) then
     begin
@@ -2217,7 +2251,7 @@ begin
 
       end;
     end;
-    
+
    {Check for Configured}
    if Current.Configured then
     begin
@@ -2238,16 +2272,16 @@ begin
               begin
                if Assigned(Config.ConfigHandler) then
                 begin
-                  
+
                  //To Do //Must implement a Retry Count and/or a Timeout backoff
-                  
+
                  Config.ConfigHandler(THandle(Config),Current,CONFIG_ADAPTER_RENEW);
                 end;
               end;
              Config:=TIP6TransportConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
             end;
           end;
-         
+
          {Check for Rebind}
          if (Current.RebindingTime <> 0) and (Current.RebindingTime < CurrentTime) then
           begin
@@ -2259,22 +2293,22 @@ begin
               begin
                if Assigned(Config.ConfigHandler) then
                 begin
-                 
+
                  //To Do //Must implement a Retry Count and/or a Timeout backoff
-                  
+
                  Config.ConfigHandler(THandle(Config),Current,CONFIG_ADAPTER_REBIND);
                 end;
               end;
              Config:=TIP6TransportConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
             end;
           end;
-          
+
          {Check for Expire}
          if (Current.ExpiryTime <> 0) and (Current.ExpiryTime < CurrentTime) then
           begin
            {Get Next}
            Adapter:=TIP6TransportAdapter(GetAdapterByNext(Current,True,True,NETWORK_LOCK_READ));
-            
+
            {Remove Adapter}
            RemoveAdapter(Current.Adapter);
           end;
@@ -2283,22 +2317,22 @@ begin
      else
       begin
        //To do //Unconfigure
-       
+
        //Current.ConfigType:=Current.ConfigDefault;
-      end;      
+      end;
     end;
-     
+
    {Get Next}
    if Adapter = nil then Adapter:=TIP6TransportAdapter(GetAdapterByNext(Current,True,True,NETWORK_LOCK_READ));
   end;
-  
+
  {Return Result}
  Result:=False;
 end;
 
 {==============================================================================}
 
-function TIP6Transport.BindTransport(AAdapter:TNetworkAdapter):Boolean; 
+function TIP6Transport.BindTransport(AAdapter:TNetworkAdapter):Boolean;
 {Bind this transport to an adapter if appropriate}
 {Adapter: The adapter to bind to}
 var
@@ -2318,15 +2352,15 @@ begin
  {}
  ReaderLock;
  try
-  Result:=False; 
- 
+  Result:=False;
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: BindTransport');
   {$ENDIF}
- 
+
   {Check Adapter}
   if AAdapter = nil then Exit;
-  
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Adapter = ' + AAdapter.Name);
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:   State = ' + AdapterStateToString(AAdapter.State));
@@ -2337,17 +2371,17 @@ begin
 
   {Check State}
   if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
-  
+
   Result:=True;
-  
+
   {Check Media}
   if AAdapter.MediaType <> MEDIA_TYPE_ETHERNET then Exit;
-  
+
   {Check Type}
   if AAdapter.AdapterType = ADAPTER_TYPE_UNKNOWN then Exit;
-  
-  Result:=False; 
-  
+
+  Result:=False;
+
   {Get Adapter}
   Adapter:=TIP6TransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_READ));
   if Adapter = nil then
@@ -2369,45 +2403,45 @@ begin
        {IP6_CONFIG}
        ConfigType:=GetAdapterConfigType(AAdapter.Name);
        if ConfigType <> CONFIG_TYPE_AUTO then
-        begin       
+        begin
          //To Do
-         
-        end; 
-     
+
+        end;
+
        {Add Adapter}
        Result:=AddAdapter(AAdapter,ConfigType,Address,Netmask,Gateway,Server);
-      end;     
+      end;
      ADAPTER_TYPE_WIRELESS:begin
        {Get Settings}
        {IP6_CONFIG}
        ConfigType:=GetAdapterConfigType(AAdapter.Name);
        if ConfigType <> CONFIG_TYPE_AUTO then
-        begin       
+        begin
          //To Do
-         
-        end; 
-       
+
+        end;
+
        {Add Adapter}
        Result:=AddAdapter(AAdapter,ConfigType,Address,Netmask,Gateway,Server);
-      end;     
+      end;
     end;
    end
   else
    begin
     {Unlock Adapter}
     Adapter.ReaderUnlock;
-    
+
     {Return Result}
     Result:=True;
-   end;   
- finally 
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TIP6Transport.UnbindTransport(AAdapter:TNetworkAdapter):Boolean; 
+function TIP6Transport.UnbindTransport(AAdapter:TNetworkAdapter):Boolean;
 {Unbind this transport from an adapter if appropriate}
 {Adapter: The adapter to unbind from}
 var
@@ -2416,15 +2450,15 @@ begin
  {}
  ReaderLock;
  try
-  Result:=False; 
- 
+  Result:=False;
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: UnbindTransport');
   {$ENDIF}
- 
+
   {Check Adapter}
   if AAdapter = nil then Exit;
-  
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Adapter = ' + AAdapter.Name);
   {$ENDIF}
@@ -2443,10 +2477,10 @@ begin
    begin
     {Return Result}
     Result:=True;
-   end;   
- finally 
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2461,15 +2495,15 @@ begin
  MutexLock(FNameserverLock);
  try
   Result:=False;
-  
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: AddNameserver');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Address = ' + In6AddrToString(AAddress));
   {$ENDIF}
-  
+
   for Count:=0 to MAX_NAME_SERVERS - 1 do
    begin
-    {$IFDEF IP6_DEBUG} 
+    {$IFDEF IP6_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Compare = ' + In6AddrToString(FNameservers[Count]));
     {$ENDIF}
     {Check Nameserver}
@@ -2477,15 +2511,15 @@ begin
      begin
       {Add Nameserver}
       FNameservers[Count]:=AAddress;
-      
+
       {Return Result}
       Result:=True;
       Exit;
      end;
    end;
- finally 
+ finally
   MutexUnlock(FNameserverLock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2500,15 +2534,15 @@ begin
  MutexLock(FNameserverLock);
  try
   Result:=False;
-  
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: RemoveNameserver');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Address = ' + In6AddrToString(AAddress));
   {$ENDIF}
-  
+
   for Count:=0 to MAX_NAME_SERVERS - 1 do
    begin
-    {$IFDEF IP6_DEBUG} 
+    {$IFDEF IP6_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Compare = ' + In6AddrToString(FNameservers[Count]));
     {$ENDIF}
     {Check Nameserver}
@@ -2516,15 +2550,15 @@ begin
      begin
       {Remove Nameserver}
       //LongWord(FNameservers[Count].S_addr):=INADDR_ANY; //To Do
-      
+
       {Return Result}
       Result:=True;
       Exit;
      end;
    end;
- finally 
+ finally
   MutexUnlock(FNameserverLock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2541,29 +2575,29 @@ begin
  FHosts.ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: GetHostByName');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Name = ' + AName);
   {$ENDIF}
-  
+
   {Get Host}
   Host:=TIP6HostEntry(FHosts.First);
   while Host <> nil do
    begin
     {Get Name}
     Name:=Host.Name;
-   
-    {$IFDEF IP6_DEBUG} 
+
+    {$IFDEF IP6_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Compare = ' + Name);
     {$ENDIF}
-    
+
     {Check Name}
     if Lowercase(Name) = Lowercase(AName) then
      begin
       {Lock Host}
       if ALock then Host.AcquireLock;
-     
+
       {Return Result}
       Result:=Host;
       Exit;
@@ -2572,7 +2606,7 @@ begin
      begin
       {Lock Host}
       if ALock then Host.AcquireLock;
-     
+
       {Return Result}
       Result:=Host;
       Exit;
@@ -2581,18 +2615,18 @@ begin
      begin
       {Lock Host}
       if ALock then Host.AcquireLock;
-     
+
       {Return Result}
       Result:=Host;
       Exit;
      end;
-    
-    {Get Next} 
+
+    {Get Next}
     Host:=TIP6HostEntry(Host.Next);
    end;
- finally 
+ finally
   FHosts.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2612,21 +2646,21 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: GetHostByAddress');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Address = ' + In6AddrToString(AAddress));
   {$ENDIF}
-  
+
   {Get Host}
   Host:=TIP6HostEntry(FHosts.First);
   while Host <> nil do
    begin
-    {$IFDEF IP6_DEBUG} 
+    {$IFDEF IP6_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Compare = ' + In6AddrToString(Host.Address));
     {$ENDIF}
-    
+
     {Check Address}
     if CompareAddress(Host.Address,AAddress) then
      begin
       {Lock Host}
       if ALock then Host.AcquireLock;
-     
+
       {Return Result}
       Result:=Host;
       Exit;
@@ -2638,19 +2672,19 @@ begin
        begin
         {Lock Host}
         if ALock then Host.AcquireLock;
-         
+
         {Return Result}
         Result:=Host;
         Exit;
        end;
      end;
-    
-    {Get Next} 
+
+    {Get Next}
     Host:=TIP6HostEntry(Host.Next);
    end;
- finally 
+ finally
   FHosts.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2663,7 +2697,7 @@ begin
  if not(FHosts.WriterOwner) then FHosts.ReaderLock else FHosts.WriterLock;
  try
   Result:=nil;
-  
+
   {Check Previous}
   if APrevious = nil then
    begin
@@ -2673,7 +2707,7 @@ begin
      begin
       {Lock Host}
       if ALock then Host.AcquireLock;
-      
+
       {Return Result}
       Result:=Host;
      end;
@@ -2686,17 +2720,17 @@ begin
      begin
       {Lock Host}
       if ALock then Host.AcquireLock;
-      
+
       {Return Result}
       Result:=Host;
      end;
 
     {Unlock Previous}
     if AUnlock then APrevious.ReleaseLock;
-   end;   
- finally 
+   end;
+ finally
   if not(FHosts.WriterOwner) then FHosts.ReaderUnlock else FHosts.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2761,37 +2795,37 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Name = ' + AName);
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Type = ' + HostTypeToString(AType));
  {$ENDIF}
-  
+
  {Create Host}
  Result:=TIP6HostEntry.Create;
  Result.Address:=AAddress;
  Result.Name:=Lowercase(AName);
  Result.HostType:=AType;
 
- {Acquire Lock} 
+ {Acquire Lock}
  FHosts.WriterLock; {Acquire as Writer}
  try
   {Add Host}
   if FHosts.Add(Result) then
    begin
     {Convert Lock}
-    FHosts.WriterConvert; 
+    FHosts.WriterConvert;
 
     {Lock Host}
     if ALock then Result.AcquireLock;
    end
-  else 
+  else
    begin
     {Convert Lock}
-    FHosts.WriterConvert; 
+    FHosts.WriterConvert;
 
     {Free Host}
     Result.Free;
     Result:=nil;
    end;
- finally 
+ finally
   FHosts.ReaderUnlock; {Converted to Reader}
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2811,7 +2845,7 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: RemoveHost');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Address = ' + In6AddrToString(AAddress));
   {$ENDIF}
-  
+
   {Get Host}
   Host:=TIP6HostEntry(FHosts.First);
   while Host <> nil do
@@ -2825,14 +2859,14 @@ begin
       {Convert Lock}
       if FHosts.ReaderConvert then
        begin
-        {Lock Host} 
+        {Lock Host}
         if CheckHost(Host,True) then
          begin
           {Remove Host}
           Result:=FHosts.Remove(Host);
 
           {Convert Lock}
-          FHosts.WriterConvert; 
+          FHosts.WriterConvert;
 
           {Unlock Host}
           Host.ReleaseLock;
@@ -2855,14 +2889,14 @@ begin
         {Convert Lock}
         if FHosts.ReaderConvert then
          begin
-          {Lock Host} 
+          {Lock Host}
           if CheckHost(Host,True) then
            begin
             {Remove Host}
             Result:=FHosts.Remove(Host);
 
             {Convert Lock}
-            FHosts.WriterConvert; 
+            FHosts.WriterConvert;
 
             {Unlock Host}
             Host.ReleaseLock;
@@ -2875,13 +2909,13 @@ begin
         Exit;
        end;
      end;
-    
+
     {Get Next}
     Host:=TIP6HostEntry(Host.Next);
    end;
- finally 
+ finally
   if not(FHosts.WriterOwner) then FHosts.ReaderUnlock else FHosts.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2899,10 +2933,10 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: FlushHosts');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  All = ' + BoolToStr(All));
  {$ENDIF}
-  
+
  {Get Tick Count}
  CurrentTime:=GetTickCount64;
-  
+
  {Get Host}
  Host:=GetHostByNext(nil,True,False);
  while Host <> nil do
@@ -2972,12 +3006,12 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: GetRouteByAddress');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Address = ' + In6AddrToString(AAddress));
   {$ENDIF}
-  
+
   {Get Route}
   Route:=TIP6RouteEntry(FRoutes.Last); {Search backwards from last (Broadcast)}
   while Route <> nil do
    begin
-    {$IFDEF IP6_DEBUG} 
+    {$IFDEF IP6_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Compare = ' + In6AddrToString(Route.Network) + '/' + In6AddrToString(Route.Netmask));
     {$ENDIF}
     {Check Subnet}
@@ -2985,18 +3019,18 @@ begin
      begin
       {Lock Route}
       if ALock then if AState = NETWORK_LOCK_READ then Route.ReaderLock else Route.WriterLock;
-     
+
       {Return Result}
       Result:=Route;
       Exit;
      end;
-    
-    {Get Next} 
+
+    {Get Next}
     Route:=TIP6RouteEntry(Route.Prev);
    end;
- finally 
+ finally
   FRoutes.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3013,13 +3047,13 @@ begin
  FRoutes.ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: GetRouteByNetwork');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Network = ' + In6AddrToString(ANetwork));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Address = ' + In6AddrToString(AAddress));
   {$ENDIF}
-  
+
   {Get Route}
   Route:=TIP6RouteEntry(FRoutes.First);
   while Route <> nil do
@@ -3032,19 +3066,19 @@ begin
        begin
         {Lock Route}
         if ALock then if AState = NETWORK_LOCK_READ then Route.ReaderLock else Route.WriterLock;
-       
+
         {Return Result}
         Result:=Route;
         Exit;
-       end; 
+       end;
      end;
-    
-    {Get Next} 
+
+    {Get Next}
     Route:=TIP6RouteEntry(Route.Next);
    end;
- finally 
+ finally
   FRoutes.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3057,7 +3091,7 @@ begin
  if not(FRoutes.WriterOwner) then FRoutes.ReaderLock else FRoutes.WriterLock;
  try
   Result:=nil;
-  
+
   {Check Previous}
   if APrevious = nil then
    begin
@@ -3067,7 +3101,7 @@ begin
      begin
       {Lock Route}
       if ALock then if AState = NETWORK_LOCK_READ then Route.ReaderLock else Route.WriterLock;
-      
+
       {Return Result}
       Result:=Route;
      end;
@@ -3080,17 +3114,17 @@ begin
      begin
       {Lock Route}
       if ALock then if AState = NETWORK_LOCK_READ then Route.ReaderLock else Route.WriterLock;
-      
+
       {Return Result}
       Result:=Route;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
- finally 
+   end;
+ finally
   if not(FRoutes.WriterOwner) then FRoutes.ReaderUnlock else FRoutes.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3131,13 +3165,13 @@ begin
       Result:=True;
       Exit;
      end;
-    
-    {Get Next}    
+
+    {Get Next}
     Route:=TIP6RouteEntry(Route.Next);
-   end; 
- finally 
+   end;
+ finally
   if not(FRoutes.WriterOwner) then FRoutes.ReaderUnlock else FRoutes.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3162,7 +3196,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Address = ' + In6AddrToString(AAddress));
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Type = ' + RouteTypeToString(AType));
  {$ENDIF}
-  
+
  {Create Route}
  Result:=TIP6RouteEntry.Create;
  Result.Network:=ANetwork;
@@ -3171,7 +3205,10 @@ begin
  Result.Address:=AAddress;
  Result.RouteType:=AType;
 
- {Acquire Lock} 
+ {Lock Route (Before Add)}
+ if ALock then if AState = NETWORK_LOCK_READ then Result.ReaderLock else Result.WriterLock;
+
+ {Acquire Lock}
  FRoutes.ReaderLock;
  try
   {Find the insertion point}
@@ -3182,36 +3219,31 @@ begin
     // begin
     //  Break;
     // end;
-    
+
     {Get Previous}
     Route:=TIP6RouteEntry(Route.Prev);
    end;
-  
+
   {Convert Lock}
   if FRoutes.ReaderConvert then
    begin
     {Insert Route}
-    if FRoutes.Insert(Route,Result) then
+    if not FRoutes.Insert(Route,Result) then
      begin
-      {Convert Lock}
-      FRoutes.WriterConvert; 
+      {Unlock Route (Before Free, writer lock acquired during destroy)}
+      if ALock and (AState = NETWORK_LOCK_READ) then Result.ReaderUnlock;
 
-      {Lock Route}
-      if ALock then if AState = NETWORK_LOCK_READ then Result.ReaderLock else Result.WriterLock;
-     end
-    else 
-     begin
-      {Convert Lock}
-      FRoutes.WriterConvert; 
-     
       {Free Route}
       Result.Free;
       Result:=nil;
      end;
-   end;  
- finally 
+
+    {Convert Lock}
+    FRoutes.WriterConvert;
+   end;
+ finally
   FRoutes.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3233,7 +3265,7 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Network = ' + In6AddrToString(ANetwork));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Address = ' + In6AddrToString(AAddress));
   {$ENDIF}
-  
+
   {Get Route}
   Route:=TIP6RouteEntry(FRoutes.First);
   while Route <> nil do
@@ -3244,25 +3276,19 @@ begin
       {Check Address}
       if CompareAddress(Route.Address,AAddress) then
        begin
-        {Lock Route}
-        {Route.WriterLock;} {Must be after acquiring writer lock}
-
         {Convert Lock}
         if FRoutes.ReaderConvert then
          begin
-          {Lock Route} 
-          if CheckRoute(Route,True,NETWORK_LOCK_WRITE) then
+          {Check Route (No lock needed while holding the writer lock)}
+          if CheckRoute(Route,False,NETWORK_LOCK_NONE) then
            begin
             {Remove Route}
             Result:=FRoutes.Remove(Route);
 
             {Convert Lock}
-            FRoutes.WriterConvert; 
+            FRoutes.WriterConvert;
 
-            {Unlock Route}
-            Route.WriterUnlock;
-
-            {Free Route}
+            {Free Route (Will acquire writer lock during destroy)}
             Route.Free;
            end;
          end;
@@ -3270,13 +3296,13 @@ begin
         Exit;
        end;
      end;
-    
+
     {Get Next}
     Route:=TIP6RouteEntry(Route.Next);
    end;
- finally 
+ finally
   if not(FRoutes.WriterOwner) then FRoutes.ReaderUnlock else FRoutes.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3286,18 +3312,18 @@ procedure TIP6Transport.FlushRoutes(All:Boolean);
 {All: If True flush all routes, otherwise flush expired routes}
 var
  CurrentTime:Int64;
+ Next:TIP6RouteEntry;
  Route:TIP6RouteEntry;
- Current:TIP6RouteEntry;
 begin
  {}
  {$IFDEF IP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: FlushRoutes');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  All = ' + BoolToStr(All));
  {$ENDIF}
- 
+
  {Get Tick Count}
  CurrentTime:=GetTickCount64;
-  
+
  {Get Route}
  Route:=GetRouteByNext(nil,True,False,NETWORK_LOCK_READ);
  while Route <> nil do
@@ -3305,42 +3331,38 @@ begin
    {Check Route Type and Expiry}
    if ((Route.RouteType = ROUTE_TYPE_DYNAMIC) and ((Route.RouteTime + MAX_ROUTE_LIFE) < CurrentTime)) or (All) then
     begin
+     {Get Next} {No lock until after remove}
+     Next:=GetRouteByNext(Route,False,False,NETWORK_LOCK_NONE);
+
      {Unlock Route (While waiting for writer lock)}
      Route.ReaderUnlock;
-     
+
      {Acquire Lock}
      FRoutes.WriterLock;
-     
-     {Lock Route}
-     if CheckRoute(Route,True,NETWORK_LOCK_WRITE) then
+
+     {Check Route (No lock needed while holding the writer lock)}
+     if CheckRoute(Route,False,NETWORK_LOCK_NONE) then
       begin
-       {Save Route}
-       Current:=Route;
-       
-       {Get Next}
-       Route:=GetRouteByNext(Current,True,False,NETWORK_LOCK_READ);
-       
        {Remove Route}
-       FRoutes.Remove(Current);
+       FRoutes.Remove(Route);
 
        {Release Lock}
        FRoutes.WriterUnlock;
-       
-       {Unlock Route}
-       Current.WriterUnlock;
-        
-       {Free Route}
-       Current.Free;
-       Current:=nil;
+
+       {Free Route (Will acquire writer lock during destroy)}
+       Route.Free;
       end
      else
       begin
        {Release Lock}
        FRoutes.WriterUnlock;
-       
-       {Get Next}
-       if All then Route:=GetRouteByNext(nil,True,False,NETWORK_LOCK_READ);
       end;
+
+     {Get Next}
+     Route:=Next;
+
+     {Lock Next}
+     if not CheckRoute(Route,True,NETWORK_LOCK_READ) then Exit;
     end
    else
     begin
@@ -3356,6 +3378,7 @@ function TIP6Transport.GetAddressByAddress(const AAddress:TIn6Addr;ALock:Boolean
 {Find the IP6 address in the address cache}
 {Address: The IP6 address to find}
 {Lock: If True then lock the found entry before returning}
+{State: The lock type if Lock is True (NETWORK_LOCK_READ or NETWORK_LOCK_WRITE)}
 var
  Address:TIP6AddressEntry;
 begin
@@ -3363,17 +3386,17 @@ begin
  FAddresses.ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: GetAddressByAddress');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Address = ' + In6AddrToString(AAddress));
   {$ENDIF}
-  
+
   {Get Address}
   Address:=TIP6AddressEntry(FAddresses.First);
   while Address <> nil do
    begin
-    {$IFDEF IP6_DEBUG} 
+    {$IFDEF IP6_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Compare = ' + In6AddrToString(Address.Address));
     {$ENDIF}
     {Check Address}
@@ -3381,23 +3404,28 @@ begin
      begin
       {Lock Address}
       if ALock then if AState = NETWORK_LOCK_READ then Address.ReaderLock else Address.WriterLock;
-     
+
       {Return Result}
       Result:=Address;
       Exit;
      end;
-     
-    {Get Next} 
+
+    {Get Next}
     Address:=TIP6AddressEntry(Address.Next);
    end;
- finally 
+ finally
   FAddresses.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
 function TIP6Transport.GetAddressByNext(APrevious:TIP6AddressEntry;ALock,AUnlock:Boolean;AState:LongWord):TIP6AddressEntry;
+{Iterate though IP6 addresses in the address cache}
+{Previous: The IP6 address returned by the previous call to this function}
+{Lock: If True then lock the found entry before returning}
+{Unlock: If True then unlock the previous entry before returning}
+{State: The lock type if Lock is True (NETWORK_LOCK_READ or NETWORK_LOCK_WRITE)}
 var
  Address:TIP6AddressEntry;
 begin
@@ -3405,7 +3433,7 @@ begin
  if not(FAddresses.WriterOwner) then FAddresses.ReaderLock else FAddresses.WriterLock;
  try
   Result:=nil;
-  
+
   {Check Previous}
   if APrevious = nil then
    begin
@@ -3415,7 +3443,7 @@ begin
      begin
       {Lock Address}
       if ALock then if AState = NETWORK_LOCK_READ then Address.ReaderLock else Address.WriterLock;
-      
+
       {Return Result}
       Result:=Address;
      end;
@@ -3428,17 +3456,17 @@ begin
      begin
       {Lock Address}
       if ALock then if AState = NETWORK_LOCK_READ then Address.ReaderLock else Address.WriterLock;
-      
+
       {Return Result}
       Result:=Address;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
- finally 
+   end;
+ finally
   if not(FAddresses.WriterOwner) then FAddresses.ReaderUnlock else FAddresses.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3480,12 +3508,12 @@ begin
       Exit;
      end;
 
-    {Get Next}    
+    {Get Next}
     Address:=TIP6AddressEntry(Address.Next);
-   end; 
- finally 
+   end;
+ finally
   if not(FAddresses.WriterOwner) then FAddresses.ReaderUnlock else FAddresses.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3496,6 +3524,7 @@ function TIP6Transport.AddAddress(const AAddress:TIn6Addr;AType:Word;AAdapter:TN
 {Adapter: The adapter the address is on}
 {Type: The type of the added entry (eg ADDRESS_TYPE_PRIMARY)}
 {Lock: If True then lock the added entry before returning}
+{State: The lock type if Lock is True (NETWORK_LOCK_READ or NETWORK_LOCK_WRITE)}
 
 {Note: The handling of Secondary addresses should probably change in future to use a Binding type mechanism (eg AddBinding/RemoveBinding)}
 var
@@ -3503,17 +3532,17 @@ var
 begin
  {}
  Result:=nil;
-  
+
  {Check Adapter}
  if AAdapter = nil then Exit;
-  
+
  {$IFDEF IP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: AddAddress');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Address = ' + In6AddrToString(AAddress));
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Adapter = ' + AAdapter.Name);
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Type = ' + AddressTypeToString(AType));
  {$ENDIF}
-  
+
  {Check Type}
  case AType of
   ADDRESS_TYPE_SECONDARY:begin
@@ -3521,47 +3550,42 @@ begin
     if Adapter = nil then Exit;
     try
      if not CompareSubnet(AAddress,Adapter.Network,Adapter.Netmask) then Exit;
- 
+
      {Add Route}
      //AddRoute(AAddress,IP6_BROADCAST_NETMASK,IP6_LOOPBACK_ADDRESS,IP6_LOOPBACK_ADDRESS,ROUTE_TYPE_STATIC,False,NETWORK_LOCK_NONE); //To Do
-      
+
      //To Do //See Binding
     finally
      Adapter.ReaderUnlock;
-    end;     
+    end;
    end;
  end;
-  
+
  {Create Address}
  Result:=TIP6AddressEntry.Create;
  Result.Address:=AAddress;
  Result.Adapter:=AAdapter;
  Result.AddressType:=AType;
 
- {Acquire Lock} 
- FAddresses.WriterLock; {Acquire as Writer}
- try
-  {Add Address}
-  if FAddresses.Add(Result) then
-   begin
-    {Convert Lock}
-    FAddresses.WriterConvert; 
-    
-    {Lock Address}
-    if ALock then if AState = NETWORK_LOCK_READ then Result.ReaderLock else Result.WriterLock;
-   end
-  else 
-   begin
-    {Convert Lock}
-    FAddresses.WriterConvert; 
-    
-    {Free Address}
-    Result.Free;
-    Result:=nil;
-   end;
- finally 
-  FAddresses.ReaderUnlock; {Converted to Reader}
- end; 
+ {Lock Address (Before Add)}
+ if ALock then if AState = NETWORK_LOCK_READ then Result.ReaderLock else Result.WriterLock;
+
+ {Acquire Lock}
+ FAddresses.WriterLock;
+
+ {Add Address}
+ if not FAddresses.Add(Result) then
+  begin
+   {Unlock Address (Before Free, writer lock acquired during destroy)}
+   if ALock and (AState = NETWORK_LOCK_READ) then Result.ReaderUnlock;
+
+   {Free Address}
+   Result.Free;
+   Result:=nil;
+  end;
+
+ {Release Lock}
+ FAddresses.WriterUnlock;
 end;
 
 {==============================================================================}
@@ -3576,12 +3600,12 @@ begin
  FAddresses.ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: RemoveAddress');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Address = ' + In6AddrToString(AAddress));
   {$ENDIF}
-  
+
   {Get Address}
   Address:=TIP6AddressEntry(FAddresses.First);
   while Address <> nil do
@@ -3594,43 +3618,37 @@ begin
        ADDRESS_TYPE_SECONDARY:begin
          {Remove Route}
          //RemoveRoute(Address.Address,IP6_LOOPBACK_ADDRESS); //To Do
-         
+
          //To Do //See Binding
         end;
       end;
-      
-      {Lock Address}
-      {Address.WriterLock;} {Must be after acquiring writer lock}
 
       {Convert Lock}
       if FAddresses.ReaderConvert then
        begin
-        {Lock Address} 
-        if CheckAddress(Address,True,NETWORK_LOCK_WRITE) then
+        {Check Address (No lock needed while holding the writer lock)}
+        if CheckAddress(Address,False,NETWORK_LOCK_NONE) then
          begin
           {Remove Address}
           Result:=FAddresses.Remove(Address);
 
           {Convert Lock}
-          FAddresses.WriterConvert; 
+          FAddresses.WriterConvert;
 
-          {Unlock Address}
-          Address.WriterUnlock;
-
-          {Free Address}
+          {Free Address (Will acquire writer lock during destroy)}
           Address.Free;
          end;
        end;
 
       Exit;
      end;
-    
+
     {Get Next}
     Address:=TIP6AddressEntry(Address.Next);
    end;
- finally 
+ finally
   if not(FAddresses.WriterOwner) then FAddresses.ReaderUnlock else FAddresses.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3639,8 +3657,8 @@ procedure TIP6Transport.FlushAddresses(All:Boolean);
 {Flush addresses from the adresses cache}
 {All: If True flush all addresses, otherwise flush invalid addresses}
 var
+ Next:TIP6AddressEntry;
  Address:TIP6AddressEntry;
- Current:TIP6AddressEntry;
 begin
  {}
  {$IFDEF IP6_DEBUG}
@@ -3656,7 +3674,7 @@ begin
    if (GetAdapterByAdapter(Address.Adapter,False,NETWORK_LOCK_NONE) = nil) or (All) then {Do not lock}
     begin
      {Check Type}
-     case Current.AddressType of
+     case Address.AddressType of
       ADDRESS_TYPE_SECONDARY:begin
         {Remove Route}
         //RemoveRoute(Address.Address,IP_LOOPBACK_ADDRESS); //To Do
@@ -3667,42 +3685,38 @@ begin
               //See Binding
      end;
 
+     {Get Next} {No lock until after remove}
+     Next:=GetAddressByNext(Address,False,False,NETWORK_LOCK_NONE);
+
      {Unlock Address (While waiting for writer lock)}
      Address.ReaderUnlock;
 
      {Acquire Lock}
      FAddresses.WriterLock;
 
-     {Lock Address}
-     if CheckAddress(Address,True,NETWORK_LOCK_WRITE) then
+     {Check Address (No lock needed while holding the writer lock)}
+     if CheckAddress(Address,False,NETWORK_LOCK_NONE) then
       begin
-       {Save Address}
-       Current:=Address;
-
-       {Get Next}
-       Address:=GetAddressByNext(Current,True,False,NETWORK_LOCK_READ);
-
        {Remove Address}
-       FAddresses.Remove(Current);
+       FAddresses.Remove(Address);
 
        {Release Lock}
        FAddresses.WriterUnlock;
 
-       {Unlock Address}
-       Current.WriterUnlock;
-
-       {Free Address}
-       Current.Free;
-       Current:=nil;
+       {Free Address (Will acquire writer lock during destroy)}
+       Address.Free;
       end
      else
       begin
        {Release Lock}
        FAddresses.WriterUnlock;
-
-       {Get Next}
-       if All then Address:=GetAddressByNext(nil,True,False,NETWORK_LOCK_READ);
       end;
+
+     {Get Next}
+     Address:=Next;
+
+     {Lock Next}
+     if not CheckAddress(Address,True,NETWORK_LOCK_READ) then Exit;
     end
    else
     begin
@@ -3726,29 +3740,29 @@ begin
  FNetworks.ReaderLock;
  try
   Result:=nil;
- 
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: GetNetworkByName');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Name = ' + AName);
   {$ENDIF}
-  
+
   {Get Network}
   Network:=TIP6NetworkEntry(FNetworks.First);
   while Network <> nil do
    begin
     {Get Name}
     Name:=Network.Name;
-    
-    {$IFDEF IP6_DEBUG} 
+
+    {$IFDEF IP6_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Compare = ' + Name);
     {$ENDIF}
-    
+
     {Check Name}
     if Lowercase(Name) = Lowercase(AName) then
      begin
       {Lock Network}
       if ALock then Network.AcquireLock;
-     
+
       {Return Result}
       Result:=Network;
       Exit;
@@ -3757,18 +3771,18 @@ begin
      begin
       {Lock Network}
       if ALock then Network.AcquireLock;
-     
+
       {Return Result}
       Result:=Network;
       Exit;
      end;
-    
-    {Get Next} 
+
+    {Get Next}
     Network:=TIP6NetworkEntry(Network.Next);
    end;
- finally 
+ finally
   FNetworks.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3784,17 +3798,17 @@ begin
  FNetworks.ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: GetNetworkByAddress');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Network = ' + In6AddrToString(ANetwork));
   {$ENDIF}
-  
+
   {Get Network}
   Network:=TIP6NetworkEntry(FNetworks.First);
   while Network <> nil do
    begin
-    {$IFDEF IP6_DEBUG} 
+    {$IFDEF IP6_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Compare = ' + In6AddrToString(Network.Network));
     {$ENDIF}
     {Check Network}
@@ -3802,18 +3816,18 @@ begin
      begin
       {Lock Network}
       if ALock then Network.AcquireLock;
-     
+
       {Return Result}
       Result:=Network;
       Exit;
      end;
-    
-    {Get Next} 
+
+    {Get Next}
     Network:=TIP6NetworkEntry(Network.Next);
    end;
- finally 
+ finally
   FNetworks.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3830,12 +3844,12 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Name = ' + AName);
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Network = ' + In6AddrToString(ANetwork));
  {$ENDIF}
-  
+
  {Create Network}
  Result:=TIP6NetworkEntry.Create;
  Result.Name:=Lowercase(AName);
  Result.Network:=ANetwork;
-  
+
  {Acquire Lock}
  FNetworks.WriterLock; {Acquire as Writer}
  try
@@ -3843,23 +3857,23 @@ begin
   if FNetworks.Add(Result) then
    begin
     {Convert Lock}
-    FNetworks.WriterConvert; 
-   
+    FNetworks.WriterConvert;
+
     {Lock Network}
     if ALock then Result.AcquireLock;
    end
-  else 
+  else
    begin
     {Convert Lock}
-    FNetworks.WriterConvert; 
-   
+    FNetworks.WriterConvert;
+
     {Free Network}
     Result.Free;
     Result:=nil;
    end;
- finally 
+ finally
   FNetworks.ReaderUnlock; {Converted to Reader}
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3875,73 +3889,73 @@ begin
  FNetworks.ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: RemoveNetwork');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Name = ' + AName);
   {$ENDIF}
-  
+
   {Get Network}
   Network:=TIP6NetworkEntry(FNetworks.First);
   while Network <> nil do
    begin
     {Get Name}
     Name:=Network.Name;
-    
+
     {Check Name}
     if Lowercase(Name) = Lowercase(AName) then
      begin
       {Lock Network}
       Network.AcquireLock;
-          
+
       {Convert Lock}
       if FNetworks.ReaderConvert then
        begin
         {Remove Network}
         Result:=FNetworks.Remove(Network);
-      
+
         {Convert Lock}
-        FNetworks.WriterConvert; 
-      
+        FNetworks.WriterConvert;
+
         {Unlock Network}
         Network.ReleaseLock;
-          
+
         {Free Network}
         Network.Free;
        end;
-       
+
       Exit;
      end
     else if Network.FindAlias(Lowercase(AName)) then
      begin
       {Lock Network}
       Network.AcquireLock;
-          
+
       {Convert Lock}
       if FNetworks.ReaderConvert then
        begin
         {Remove Network}
         Result:=FNetworks.Remove(Network);
-      
+
         {Convert Lock}
-        FNetworks.WriterConvert; 
-      
+        FNetworks.WriterConvert;
+
         {Unlock Network}
         Network.ReleaseLock;
-          
+
         {Free Network}
         Network.Free;
        end;
-       
+
       Exit;
      end;
-    
+
     {Get Next}
     Network:=TIP6NetworkEntry(Network.Next);
    end;
- finally 
+ finally
   FNetworks.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3958,18 +3972,18 @@ begin
  FServs.ReaderLock;
  try
   Result:=nil;
- 
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: GetServByName');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Name = ' + AName);
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Protocol = ' + AProtocol);
   {$ENDIF}
-  
+
   {Get Service}
   Serv:=TIP6ServEntry(FServs.First);
   while Serv <> nil do
    begin
-    {$IFDEF IP6_DEBUG} 
+    {$IFDEF IP6_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Compare = ' + Serv.Name);
     {$ENDIF}
     {Check Name}
@@ -3980,19 +3994,19 @@ begin
        begin
         {Lock Service}
         if ALock then Serv.AcquireLock;
-     
+
         {Return Result}
         Result:=Serv;
         Exit;
        end;
      end;
-    
-    {Get Next} 
+
+    {Get Next}
     Serv:=TIP6ServEntry(Serv.Next);
    end;
- finally 
+ finally
   FServs.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4009,18 +4023,18 @@ begin
  FServs.ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: GetServByPort');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Port = ' + IntToStr(APort));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Protocol = ' + AProtocol);
   {$ENDIF}
-  
+
   {Get Service}
   Serv:=TIP6ServEntry(FServs.First);
   while Serv <> nil do
    begin
-    {$IFDEF IP6_DEBUG} 
+    {$IFDEF IP6_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Compare = ' + IntToStr(Serv.Port));
     {$ENDIF}
     {Check Port}
@@ -4031,19 +4045,19 @@ begin
        begin
         {Lock Service}
         if ALock then Serv.AcquireLock;
-     
+
         {Return Result}
         Result:=Serv;
         Exit;
        end;
      end;
-    
-    {Get Next} 
+
+    {Get Next}
     Serv:=TIP6ServEntry(Serv.Next);
    end;
- finally 
+ finally
   FServs.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4062,37 +4076,37 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Protocol = ' + AProtocol);
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Port = ' + IntToStr(APort));
  {$ENDIF}
-  
+
  {Create Service}
  Result:=TIP6ServEntry.Create;
  Result.Name:=Lowercase(AName);
  Result.Protocol:=Lowercase(AProtocol);
  Result.Port:=APort;
 
- {Acquire Lock} 
+ {Acquire Lock}
  FServs.WriterLock; {Acquire as Writer}
  try
   {Add Service}
   if FServs.Add(Result) then
    begin
     {Convert Lock}
-    FServs.WriterConvert; 
+    FServs.WriterConvert;
 
     {Lock Service}
     if ALock then Result.AcquireLock;
    end
-  else 
+  else
    begin
     {Convert Lock}
-    FServs.WriterConvert; 
+    FServs.WriterConvert;
 
     {Free Service}
     Result.Free;
     Result:=nil;
    end;
- finally 
+ finally
   FServs.ReaderUnlock; {Converted to Reader}
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4114,7 +4128,7 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Name = ' + AName);
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Protocol = ' + AProtocol);
   {$ENDIF}
-  
+
   {Get Service}
   Serv:=TIP6ServEntry(FServs.First);
   while Serv <> nil do
@@ -4127,33 +4141,33 @@ begin
        begin
         {Lock Service}
         Serv.AcquireLock;
-          
+
         {Convert Lock}
         if FServs.ReaderConvert then
          begin
           {Remove Service}
           Result:=FServs.Remove(Serv);
-      
+
           {Convert Lock}
-          FServs.WriterConvert; 
-      
+          FServs.WriterConvert;
+
           {Unlock Service}
           Serv.ReleaseLock;
-          
+
           {Free Service}
           Serv.Free;
          end;
-         
+
         Exit;
        end;
      end;
-    
+
     {Get Next}
     Serv:=TIP6ServEntry(Serv.Next);
    end;
- finally 
+ finally
   FServs.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4169,17 +4183,17 @@ begin
  FProtos.ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: GetProtoByName');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Name = ' + AName);
   {$ENDIF}
-  
+
   {Get Protocol}
   Proto:=TIP6ProtoEntry(FProtos.First);
   while Proto <> nil do
    begin
-    {$IFDEF IP6_DEBUG} 
+    {$IFDEF IP6_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Compare = ' + Proto.Name);
     {$ENDIF}
     {Check Name}
@@ -4187,18 +4201,18 @@ begin
      begin
       {Lock Protocol}
       if ALock then Proto.AcquireLock;
-     
+
       {Return Result}
       Result:=Proto;
       Exit;
      end;
-    
-    {Get Next}     
+
+    {Get Next}
     Proto:=TIP6ProtoEntry(Proto.Next);
    end;
- finally 
+ finally
   FProtos.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4214,17 +4228,17 @@ begin
  FProtos.ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: GetProtoByNumber');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Number = ' + IntToStr(ANumber));
   {$ENDIF}
-  
+
   {Get Protocol}
   Proto:=TIP6ProtoEntry(FProtos.First);
   while Proto <> nil do
    begin
-    {$IFDEF IP6_DEBUG} 
+    {$IFDEF IP6_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Compare = ' + IntToStr(Proto.Number));
     {$ENDIF}
     {Check Number}
@@ -4232,18 +4246,18 @@ begin
      begin
       {Lock Protocol}
       if ALock then Proto.AcquireLock;
-     
+
       {Return Result}
       Result:=Proto;
       Exit;
      end;
-     
-    {Get Next}     
+
+    {Get Next}
     Proto:=TIP6ProtoEntry(Proto.Next);
    end;
- finally 
+ finally
   FProtos.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4260,36 +4274,36 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Name = ' + AName);
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Number = ' + IntToStr(ANumber));
  {$ENDIF}
-  
+
  {Create Protocol}
  Result:=TIP6ProtoEntry.Create;
  Result.Name:=Lowercase(AName);
  Result.Number:=ANumber;
 
- {Acquire Lock} 
+ {Acquire Lock}
  FProtos.WriterLock; {Acquire as Writer}
  try
   {Add Protocol}
   if FProtos.Add(Result) then
    begin
     {Convert Lock}
-    FProtos.WriterConvert; 
+    FProtos.WriterConvert;
 
     {Lock Protocol}
     if ALock then Result.AcquireLock;
    end
-  else 
+  else
    begin
     {Convert Lock}
-    FProtos.WriterConvert; 
+    FProtos.WriterConvert;
 
     {Free Protocol}
     Result.Free;
     Result:=nil;
    end;
- finally 
+ finally
   FProtos.ReaderUnlock; {Converted to Reader}
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4304,12 +4318,12 @@ begin
  FProtos.ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: RemoveProto');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6:  Name = ' + AName);
   {$ENDIF}
-  
+
   {Get Protocol}
   Proto:=TIP6ProtoEntry(FProtos.First);
   while Proto <> nil do
@@ -4319,32 +4333,32 @@ begin
      begin
       {Lock Protocol}
       Proto.AcquireLock;
-          
+
       {Convert Lock}
       if FProtos.ReaderConvert then
        begin
         {Remove Protocol}
         Result:=FProtos.Remove(Proto);
-      
+
         {Convert Lock}
-        FProtos.WriterConvert; 
-      
+        FProtos.WriterConvert;
+
         {Unlock Protocol}
         Proto.ReleaseLock;
-          
+
         {Free Protocol}
         Proto.Free;
        end;
-       
+
       Exit;
      end;
-    
+
     {Get Next}
     Proto:=TIP6ProtoEntry(Proto.Next);
    end;
- finally 
+ finally
   FProtos.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4358,23 +4372,23 @@ begin
  FAddresses.ReaderLock;
  try
   Result:=True;
-  
+
   Address:=TIP6AddressEntry(FAddresses.First);
   while Address <> nil do
    begin
     {Check for Bound to Default Address}
     //To Do //Not required for IPv6 ?
-    
+
     {Check for Matching Address}
     //To Do
-    
+
     Address:=TIP6AddressEntry(Address.Next);
    end;
-   
+
   Result:=False;
- finally 
+ finally
   FAddresses.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4407,8 +4421,8 @@ begin
  {}
  //To Do //Should this change back to FAdapters.ReaderLock for speed ?
  Result:=True;
-  
- {Get Adapter} 
+
+ {Get Adapter}
  Adapter:=TIP6TransportAdapter(GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ));
  while Adapter <> nil do
   begin
@@ -4417,13 +4431,13 @@ begin
    //  {Unlock Adapter}
    //  Adapter.ReaderUnlock;
    //  Exit;
-   // end; 
+   // end;
    //To Do //For some routines see: \jwa\branches\2.3\Win32API\jwaws2tcpip.pas
-   
-   {Get Next} 
+
+   {Get Next}
    Adapter:=TIP6TransportAdapter(GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ));
   end;
-   
+
  Result:=False;
 end;
 
@@ -4521,10 +4535,10 @@ begin
  AcquireLock;
  try
   //To do
- finally 
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+ finally
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4548,7 +4562,7 @@ begin
  inherited Create;
  FFamily:=AF_INET6;
  FLength:=SizeOf(TIn6Addr);
- 
+
  FillChar(FAddresses,SizeOf(TIn6Addr) * MAX_HOST_ALIASES,0);
 end;
 
@@ -4588,20 +4602,20 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF IP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP6HostEntry: FindAddress');
   {$ENDIF}
-  
+
   {Get Addresses}
   for Count:=0 to MAX_HOST_ALIASES - 1 do
    begin
-    {$IFDEF IP6_DEBUG} 
+    {$IFDEF IP6_DEBUG}
     //if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP6HostEntry:  Compare = ' + InAddrToString(InAddrToNetwork(FAddresses[Count])));
     {$ENDIF}
-    
+
     {Check Address}
     //if LongWord(FAddresses[Count].S_addr) = LongWord(AAddress.S_addr) then
     // begin
@@ -4613,7 +4627,7 @@ begin
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4624,13 +4638,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPHostEntry: AddAddress');
   {$ENDIF}
- 
+
   {Get Addresses}
   for Count:=0 to MAX_HOST_ALIASES - 1 do
    begin
@@ -4639,7 +4653,7 @@ begin
     // begin
     //  {Set Address}
     //  FAddresses[Count]:=AAddress;
-     
+
     //  {Return Result}
     //  Result:=True;
     //  Exit;
@@ -4648,7 +4662,7 @@ begin
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4659,13 +4673,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPHostEntry: RemoveAddress');
   {$ENDIF}
- 
+
   {Get Addresses}
   for Count:=0 to MAX_HOST_ALIASES - 1 do
    begin
@@ -4674,7 +4688,7 @@ begin
     // begin
     //  {Clear Address}
     //  LongWord(FAddresses[Count].S_addr):=INADDR_ANY;
-      
+
     //  {Return Result}
     //  Result:=True;
     //  Exit;
@@ -4683,7 +4697,7 @@ begin
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4695,7 +4709,7 @@ begin
  inherited Create;
  FFamily:=AF_INET6;
  FLength:=SizeOf(TIn6Addr);
- 
+
  //To do
 end;
 
@@ -4756,7 +4770,7 @@ begin
  inherited Create;
  FFamily:=AF_INET6;
  FLength:=SizeOf(TIn6Addr);
- 
+
  //To do
 end;
 
@@ -4781,7 +4795,7 @@ begin
  inherited Create;
  FFamily:=AF_INET6;
  FLength:=SizeOf(TIn6Addr);
- 
+
  //FNetwork.S_addr:=INADDR_ANY; //To do
 end;
 
@@ -4814,7 +4828,7 @@ begin
  {}
  inherited Create;
 end;
-  
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -4825,11 +4839,11 @@ begin
  if IP6Initialized then Exit;
 
  {Create IPv6 Transport}
- if NetworkSettings.GetBooleanDefault('IP6_TRANSPORT_ENABLED',IP6_TRANSPORT_ENABLED) then 
+ if NetworkSettings.GetBooleanDefault('IP6_TRANSPORT_ENABLED',IP6_TRANSPORT_ENABLED) then
   begin
    TIP6Transport.Create(TransportManager,IP6_TRANSPORT_NAME);
-  end; 
- 
+  end;
+
  IP6Initialized:=True;
 end;
 
@@ -4845,14 +4859,14 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF IP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPv6: CheckIP6');
  {$ENDIF}
- 
+
  {Get Header}
  IP6:=PIP6Header(ABuffer);
- 
+
  {Check Version - Only Support IPv6}
  if (IP6.VersionClassLabel and $F0000000) = $60000000 then
   begin
@@ -4860,9 +4874,9 @@ begin
    Length:=GetIP6HeaderLength(IP6);
    if Length >= IP6_HEADER_SIZE then
     begin
-   
+
      //To do
-   
+
     end;
   end;
 end;
@@ -4932,11 +4946,11 @@ begin
  Result:=0;
  //To Do //Not required for IPv6 ?
 end;
-  
+
 {==============================================================================}
 {==============================================================================}
 {IPv6 Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -4944,7 +4958,7 @@ initialization
  IP6Init;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 
@@ -4952,4 +4966,4 @@ finalization
 {==============================================================================}
 
 end.
-  
+

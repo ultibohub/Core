@@ -17,15 +17,15 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
   \wpa_supplicant-2.5\src\tls
-  
-  
+
+
 References
 ==========
 
@@ -45,11 +45,31 @@ TLS
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit SSL; 
+{$IFNDEF FPC_DOTTEDUNITS}
+unit SSL;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,SysUtils;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //SSL/TLS functionality
         //See: \source\packages\fcl-net\src\sslsockets.pp
@@ -66,7 +86,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,SysUtils;
 {==============================================================================}
 //type
  {SSL specific types}
- 
+
 {==============================================================================}
 var
  {SSL specific variables}
@@ -75,13 +95,13 @@ var
 {==============================================================================}
 {Initialization Functions}
 procedure SSLInit;
- 
+
 {==============================================================================}
 {SSL Functions}
- 
+
 {==============================================================================}
 {SSL Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -95,12 +115,12 @@ begin
  {}
  {Check Initialized}
  if SSLInitialized then Exit;
- 
+
  //To Do
- 
+
  SSLInitialized:=True;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {SSL Functions}
@@ -116,7 +136,7 @@ initialization
  SSLInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 
@@ -124,4 +144,4 @@ finalization
 {==============================================================================}
 
 end.
-              
+

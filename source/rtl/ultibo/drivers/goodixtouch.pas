@@ -61,11 +61,41 @@ Goodix I2C Touchscreen
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit GoodixTouch;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,GPIO,I2C,Touch,Mouse,Keyboard,SysUtils;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  Core.GPIO,
+  Core.I2C,
+  Core.Touch,
+  Core.Mouse,
+  Core.Keyboard,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  GPIO,
+  I2C,
+  Touch,
+  Mouse,
+  Keyboard,
+  SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
@@ -267,7 +297,7 @@ begin
 
  {GOODIX_LOAD_CONFIG_FILE}
  WorkBuffer:=EnvironmentGet('GOODIX_LOAD_CONFIG_FILE');
- if Length(WorkBuffer) <> 0 then GOODIX_LOAD_CONFIG_FILE:=WorkBuffer;
+ if Length(WorkBuffer) > 0 then GOODIX_LOAD_CONFIG_FILE:=WorkBuffer;
 
  {GOODIX_RESET_CONTROLLER}
  WorkBool:=StrToBoolDef(EnvironmentGet('GOODIX_RESET_CONTROLLER'),GOODIX_RESET_CONTROLLER);

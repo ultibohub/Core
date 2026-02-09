@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -39,16 +39,30 @@ CP862 OEM (Hebrew)
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit CP862OEM;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Locale;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Locale;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
-        
+
 {==============================================================================}
 {const}
  {CP862OEM specific constants}
@@ -64,19 +78,25 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
 {==============================================================================}
 {Initialization Functions}
 procedure CP862OEMInit;
- 
+
 {==============================================================================}
 {CP862OEM Functions}
- 
+
 {==============================================================================}
 {CP862OEM Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
 implementation
 
-uses CP1255ANSI;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  CodePages.CP1255ANSI;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  CP1255ANSI;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {==============================================================================}
@@ -124,7 +144,7 @@ var
   $2261,$00B1,$2265,$2264,$2320,$2321,$00F7,$2248,
   $00B0,$2219,$00B7,$221A,$207F,$00B2,$25A0,$00A0)
  );
- 
+
  CP862TO1255:TTransTable = (
   TransID:1255;
   Values:(
@@ -145,7 +165,7 @@ var
   $5F,$5F,$5F,$5F,$5F,$5F,$B5,$5F,$5F,$5F,$5F,$5F,$5F,$5F,$5F,$5F,
   $5F,$B1,$5F,$5F,$5F,$5F,$BA,$5F,$B0,$5F,$B7,$5F,$5F,$B2,$5F,$A0)
  );
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -175,9 +195,9 @@ end;
 
 initialization
  CP862OEMInit;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

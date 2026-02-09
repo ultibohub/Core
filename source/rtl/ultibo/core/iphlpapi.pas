@@ -1,7 +1,7 @@
 {
 Ultibo IP Helper interface unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -34,20 +34,42 @@ IP Helper
 
  This unit provides a subset of the Windows IP Helper API functions for querying and managing configuration
  of the TCP/IP transport and associated protocols.
- 
+
  Not all functions are currently implemented, more will be added as they are required.
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit Iphlpapi;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,SysUtils,Winsock2;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.GlobalSock,
+  Core.Platform,
+  Core.Threads,
+  System.SysUtils,
+  Core.Winsock2;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  GlobalSock,
+  Platform,
+  Threads,
+  SysUtils,
+  Winsock2;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
@@ -88,7 +110,7 @@ const
  MIB_IF_TYPE_LOOPBACK               = 24;
  MIB_IF_TYPE_SLIP                   = 28;
  MIB_IF_TYPE_IEEE80211              = 71;
- 
+
  IF_TYPE_OTHER                      = MIB_IF_TYPE_OTHER;
  IF_TYPE_ETHERNET_CSMACD            = MIB_IF_TYPE_ETHERNET;
  IF_TYPE_ISO88025_TOKENRING         = MIB_IF_TYPE_TOKENRING;
@@ -175,7 +197,7 @@ type
  IPAddr = Cardinal;     {An IP address}
  IPMask = Cardinal;     {An IP netmask}
  IP_STATUS = Cardinal;  {Status code returned from IP APIs}
- 
+
 type
  PMIB_IFNUMBER = ^MIB_IFNUMBER;
  MIB_IFNUMBER = record
@@ -516,11 +538,11 @@ type
  end;
  TFixedInfo = FIXED_INFO;
  PFixedInfo = PFIXED_INFO;
- 
+
 {==============================================================================}
 {var}
  {IP Helper specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 
@@ -602,7 +624,7 @@ implementation
 var
  {IP Helper specific variables}
  IPHelperStarted:Boolean;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -622,7 +644,7 @@ begin
      IPHelperStarted:=True;
     end;
   end;
-  
+
  Result:=IPHelperStarted;
 end;
 
@@ -671,20 +693,23 @@ end;
 {==============================================================================}
 {IP Helper Functions}
 function GetNumberOfInterfaces(var pdwNumIf: DWORD): DWORD;
+{Retrieve the number of interfaces on the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(DWORD);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_GETNUMBEROFINTERFACES,@pdwNumIf,Size,@pdwNumIf,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -695,23 +720,26 @@ end;
 {==============================================================================}
 
 function GetIfEntry(pIfRow: PMIB_IFROW): DWORD;
+{Retrieve information for the specified interface on the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_IFROW);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_GETIFENTRY,pIfRow,Size,pIfRow,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
-    
+
    Result:=ERROR_SUCCESS;
   end;
 end;
@@ -719,22 +747,25 @@ end;
 {==============================================================================}
 
 function GetIfTable(pIfTable: PMIB_IFTABLE; var pdwSize: DWORD; bOrder: BOOL): DWORD;
+{Retrieve the MIB-II interface table}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Required:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    if WsControlEx(IPPROTO_IP,WSA_GETIFTABLE,pIfTable,pdwSize,pIfTable,Required) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
      if Result = ERROR_INSUFFICIENT_BUFFER then pdwSize:=Required;
-      
+
      Exit;
     end;
-    
+
    Result:=ERROR_SUCCESS;
   end;
 end;
@@ -742,22 +773,25 @@ end;
 {==============================================================================}
 
 function GetIpAddrTable(pIpAddrTable: PMIB_IPADDRTABLE; var pdwSize: DWORD; bOrder: BOOL): DWORD;
+{Retrieve the interface to IPv4 address mapping table}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Required:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    if WsControlEx(IPPROTO_IP,WSA_GETIPADDRTABLE,pIpAddrTable,pdwSize,pIpAddrTable,Required) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
      if Result = ERROR_INSUFFICIENT_BUFFER then pdwSize:=Required;
-     
+
      Exit;
     end;
-    
+
    Result:=ERROR_SUCCESS;
   end;
 end;
@@ -765,19 +799,22 @@ end;
 {==============================================================================}
 
 function GetIpNetTable(pIpNetTable: PMIB_IPNETTABLE; var pdwSize: DWORD; bOrder: BOOL): DWORD;
+{Retrieve the IPv4 to physical address mapping table}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Required:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    if WsControlEx(IPPROTO_IP,WSA_GETIPNETTABLE,pIpNetTable,pdwSize,pIpNetTable,Required) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
      if Result = ERROR_INSUFFICIENT_BUFFER then pdwSize:=Required;
-     
+
      Exit;
     end;
 
@@ -788,19 +825,22 @@ end;
 {==============================================================================}
 
 function GetIpForwardTable(pIpForwardTable: PMIB_IPFORWARDTABLE; var pdwSize: DWORD; bOrder: BOOL): DWORD;
+{Retrieve the IPv4 routing table}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Required:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    if WsControlEx(IPPROTO_IP,WSA_GETIPFORWARDTABLE,pIpForwardTable,pdwSize,pIpForwardTable,Required) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
      if Result = ERROR_INSUFFICIENT_BUFFER then pdwSize:=Required;
-     
+
      Exit;
     end;
 
@@ -811,19 +851,22 @@ end;
 {==============================================================================}
 
 function GetTcpTable(pTcpTable: PMIB_TCPTABLE; var pdwSize: DWORD; bOrder: BOOL): DWORD;
+{Retrieve the IPv4 TCP connection table}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Required:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    if WsControlEx(IPPROTO_IP,WSA_GETTCPTABLE,pTcpTable,pdwSize,pTcpTable,Required) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
      if Result = ERROR_INSUFFICIENT_BUFFER then pdwSize:=Required;
-     
+
      Exit;
     end;
 
@@ -834,19 +877,22 @@ end;
 {==============================================================================}
 
 function GetUdpTable(pUdpTable: PMIB_UDPTABLE; var pdwSize: DWORD; bOrder: BOOL): DWORD;
+{Retrieve the IPv4 User Datagram Protocol (UDP) listener table}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Required:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    if WsControlEx(IPPROTO_IP,WSA_GETUDPTABLE,pUdpTable,pdwSize,pUdpTable,Required) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
      if Result = ERROR_INSUFFICIENT_BUFFER then pdwSize:=Required;
-     
+
      Exit;
     end;
 
@@ -857,20 +903,23 @@ end;
 {==============================================================================}
 
 function GetIpStatistics(var pStats: MIB_IPSTATS): DWORD;
+{Retrieve the IP statistics for the current computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_IPSTATS);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_GETIPSTATISTICS,@pStats,Size,@pStats,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -881,20 +930,23 @@ end;
 {==============================================================================}
 
 function GetIcmpStatistics(var pStats: MIB_ICMP): DWORD;
+{Retrieve the Internet Control Message Protocol (ICMP) for IPv4 statistics for the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_ICMP);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_GETICMPSTATISTICS,@pStats,Size,@pStats,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -905,20 +957,23 @@ end;
 {==============================================================================}
 
 function GetTcpStatistics(var pStats: MIB_TCPSTATS): DWORD;
+{Retrieve the TCP statistics for the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_TCPSTATS);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_GETTCPSTATISTICS,@pStats,Size,@pStats,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -929,20 +984,23 @@ end;
 {==============================================================================}
 
 function GetUdpStatistics(var pStats: MIB_UDPSTATS): DWORD;
+{Retrieve the User Datagram Protocol (UDP) statistics for the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_UDPSTATS);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_GETUDPSTATISTICS,@pStats,Size,@pStats,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -953,20 +1011,23 @@ end;
 {==============================================================================}
 
 function SetIfEntry(const pIfRow: MIB_IFROW): DWORD;
+{Set the administrative status of an interface}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_IFROW);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_SETIFENTRY,@pIfRow,Size,@pIfRow,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -977,23 +1038,26 @@ end;
 {==============================================================================}
 
 function CreateIpForwardEntry(const pRoute: MIB_IPFORWARDROW): DWORD;
+{Create a route in the local computer's IPv4 routing table}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_IPFORWARDROW);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_CREATEIPFORWARDENTRY,@pRoute,Size,@pRoute,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
-    
+
    Result:=ERROR_SUCCESS;
   end;
 end;
@@ -1001,20 +1065,23 @@ end;
 {==============================================================================}
 
 function SetIpForwardEntry(const pRoute: MIB_IPFORWARDROW): DWORD;
+{Modify an existing route in the local computer's IPv4 routing table}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_IPFORWARDROW);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_SETIPFORWARDENTRY,@pRoute,Size,@pRoute,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -1025,20 +1092,23 @@ end;
 {==============================================================================}
 
 function DeleteIpForwardEntry(const pRoute: MIB_IPFORWARDROW): DWORD;
+{Delete an existing route in the local computer's IPv4 routing table}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_IPFORWARDROW);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_DELETEIPFORWARDENTRY,@pRoute,Size,@pRoute,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -1049,23 +1119,26 @@ end;
 {==============================================================================}
 
 function SetIpStatistics(const pIpStats: MIB_IPSTATS): DWORD;
+{Toggle IP forwarding on or off and set the default time-to-live (TTL) value for the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_IPSTATS);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_SETIPSTATISTICS,@pIpStats,Size,@pIpStats,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
-    
+
    Result:=ERROR_SUCCESS;
   end;
 end;
@@ -1073,23 +1146,26 @@ end;
 {==============================================================================}
 
 function SetIpTTL(nTTL: UINT): DWORD;
+{Set the default time-to-live (TTL) value for the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(UINT);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_SETIPTTL,@nTTL,Size,@nTTL,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
-    
+
    Result:=ERROR_SUCCESS;
   end;
 end;
@@ -1097,20 +1173,23 @@ end;
 {==============================================================================}
 
 function CreateIpNetEntry(const pArpEntry: MIB_IPNETROW): DWORD;
+{Create an Address Resolution Protocol (ARP) entry in the ARP table on the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_IPNETROW);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_CREATEIPNETENTRY,@pArpEntry,Size,@pArpEntry,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -1121,20 +1200,23 @@ end;
 {==============================================================================}
 
 function SetIpNetEntry(const pArpEntry: MIB_IPNETROW): DWORD;
+{Modify an existing ARP entry in the ARP table on the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_IPNETROW);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_SETIPNETENTRY,@pArpEntry,Size,@pArpEntry,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -1145,20 +1227,23 @@ end;
 {==============================================================================}
 
 function DeleteIpNetEntry(const pArpEntry: MIB_IPNETROW): DWORD;
+{Delete an ARP entry from the ARP table on the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_IPNETROW);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_DELETEIPNETENTRY,@pArpEntry,Size,@pArpEntry,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -1169,20 +1254,23 @@ end;
 {==============================================================================}
 
 function FlushIpNetTable(dwIfIndex: DWORD): DWORD;
+{Delete all ARP entries for the specified interface from the ARP table on the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(DWORD);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_FLUSHIPNETTABLE,@dwIfIndex,Size,@dwIfIndex,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -1193,36 +1281,45 @@ end;
 {==============================================================================}
 
 function CreateProxyArpEntry(dwAddress, dwMask, dwIfIndex: DWORD): DWORD;
+{Create a Proxy Address Resolution Protocol (PARP) entry on the local computer for the specified IPv4 address}
+
+{See the Windows IP Helper documentation for additional information}
 begin
  {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ Result:=ERROR_CALL_NOT_IMPLEMENTED;
 end;
 
 {==============================================================================}
 
 function DeleteProxyArpEntry(dwAddress, dwMask, dwIfIndex: DWORD): DWORD;
+{Delete the PARP entry on the local computer specified by the dwAddress and dwIfIndex parameters}
+
+{See the Windows IP Helper documentation for additional information}
 begin
  {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ Result:=ERROR_CALL_NOT_IMPLEMENTED;
 end;
 
 {==============================================================================}
 
 function SetTcpEntry(const pTcpRow: MIB_TCPROW): DWORD;
+{Set the state of a TCP connection}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_TCPROW);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_SETTCPENTRY,@pTcpRow,Size,@pTcpRow,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -1233,22 +1330,25 @@ end;
 {==============================================================================}
 
 function GetInterfaceInfo(pIfTable: PIP_INTERFACE_INFO; var dwOutBufLen: DWORD): DWORD;
+{Obtain the list of the network interface adapters with IPv4 enabled on the local system}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Required:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    if WsControlEx(IPPROTO_IP,WSA_GETINTERFACEINFO,pIfTable,dwOutBufLen,pIfTable,Required) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
      if Result = ERROR_INSUFFICIENT_BUFFER then dwOutBufLen:=Required;
-     
+
      Exit;
     end;
-    
+
    Result:=ERROR_SUCCESS;
   end;
 end;
@@ -1256,30 +1356,36 @@ end;
 {==============================================================================}
 
 function GetUniDirectionalAdapterInfo(pIPIfInfo: PIP_UNIDIRECTIONAL_ADAPTER_ADDRESS; var dwOutBufLen: DWORD): DWORD;
+{Retrieve information about the unidirectional adapters installed on the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 begin
  {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ Result:=ERROR_CALL_NOT_IMPLEMENTED;
 end;
 
 {==============================================================================}
 
 function GetBestInterface(dwDestAddr: IPAddr; var pdwBestIfIndex: DWORD): DWORD;
-var 
+{Retrieve the index of the interface that has the best route to the specified IPv4 address}
+
+{See the Windows IP Helper documentation for additional information}
+var
  DestSize:DWORD;
  IndexSize:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    DestSize:=SizeOf(IPAddr);
    IndexSize:=SizeOf(DWORD);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_GETBESTINTERFACE,@dwDestAddr,DestSize,@pdwBestIfIndex,IndexSize) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -1290,24 +1396,27 @@ end;
 {==============================================================================}
 
 function GetBestRoute(dwDestAddr, dwSourceAddr: DWORD; pBestRoute: PMIB_IPFORWARDROW): DWORD;
-var 
+{Retrieve the best route to the specified destination IP address}
+
+{See the Windows IP Helper documentation for additional information}
+var
  DestSize:DWORD;
  SourceSize:DWORD;
  RouteSize:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    DestSize:=SizeOf(DWORD);
    SourceSize:=SizeOf(DWORD);
    RouteSize:=SizeOf(MIB_IPFORWARDROW);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_GETBESTROUTE,@dwDestAddr,DestSize,pBestRoute,RouteSize) <> NO_ERROR then //To Do //dwSourceAddr ? //Pass a structure
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -1318,38 +1427,47 @@ end;
 {==============================================================================}
 
 function NotifyAddrChange(var Handle: THandle; overlapped: POVERLAPPED): DWORD;
+{Cause a notification to be sent to the caller whenever a change occurs in the table that maps IPv4 addresses to interfaces}
+
+{See the Windows IP Helper documentation for additional information}
 begin
  {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ Result:=ERROR_CALL_NOT_IMPLEMENTED;
 end;
 
 {==============================================================================}
 
 function NotifyRouteChange(var Handle: THandle; overlapped: POVERLAPPED): DWORD;
+{Cause a notification to be sent to the caller whenever a change occurs in the IPv4 routing table}
+
+{See the Windows IP Helper documentation for additional information}
 begin
  {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ Result:=ERROR_CALL_NOT_IMPLEMENTED;
 end;
 
 {==============================================================================}
 
 function GetAdapterIndex(AdapterName: LPWSTR; var IfIndex: DWORD): DWORD;
+{Obtain the index of an adapter, given its name}
+
+{See the Windows IP Helper documentation for additional information}
 var
  NameSize:DWORD;
  IndexSize:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    NameSize:=StrLen(AdapterName);
    IndexSize:=SizeOf(DWORD);
-  
+
    if WsControlEx(IPPROTO_IP,WSA_GETADAPTERINDEX,AdapterName,NameSize,@IfIndex,IndexSize) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -1360,10 +1478,13 @@ end;
 {==============================================================================}
 
 function AddIPAddress(Address: IPAddr; IpMask: IPMask; IfIndex: DWORD; var NTEContext, NTEInstance: DWORD): DWORD;
+{Add the specified IPv4 address to the specified adapter}
+
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    //if WsControlEx(IPPROTO_IP,WSA_ADDIPADDRESS ) <> NO_ERROR then //To Do //Pass and return a MIB_IPADDRROW
@@ -1375,10 +1496,13 @@ end;
 {==============================================================================}
 
 function DeleteIPAddress(NTEContext: DWORD): DWORD;
+{Delete an IP address previously added using AddIPAddress}
+
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    //if WsControlEx(IPPROTO_IP,WSA_DELETEIPADDRESS ) <> NO_ERROR then //To Do //NTEContext will be a handle to the Binding
@@ -1390,22 +1514,25 @@ end;
 {==============================================================================}
 
 function GetNetworkParams(pFixedInfo: PFIXED_INFO; var pOutBufLen: DWORD): DWORD;
+{Retrieve network parameters for the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Required:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    if WsControlEx(IPPROTO_IP,WSA_GETNETWORKPARAMS,pFixedInfo,pOutBufLen,pFixedInfo,Required) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
      if Result = ERROR_INSUFFICIENT_BUFFER then pOutBufLen:=Required;
-     
+
      Exit;
     end;
-    
+
    Result:=ERROR_SUCCESS;
   end;
 end;
@@ -1413,22 +1540,25 @@ end;
 {==============================================================================}
 
 function GetAdaptersInfo(pAdapterInfo: PIP_ADAPTER_INFO; var pOutBufLen: DWORD): DWORD;
+{Retrieve adapter information for the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Required:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    if WsControlEx(IPPROTO_IP,WSA_GETADAPTERSINFO,pAdapterInfo,pOutBufLen,pAdapterInfo,Required) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
      if Result = ERROR_INSUFFICIENT_BUFFER then pOutBufLen:=Required;
-     
+
      Exit;
     end;
-    
+
    Result:=ERROR_SUCCESS;
   end;
 end;
@@ -1436,23 +1566,26 @@ end;
 {==============================================================================}
 
 function GetPerAdapterInfo(IfIndex: DWORD; pPerAdapterInfo: PIP_PER_ADAPTER_INFO; var pOutBufLen: DWORD): DWORD;
+{Retrieve information about the adapter corresponding to the specified interface}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
  Required:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(DWORD);
    Required:=pOutBufLen;
-   
+
    if WsControlEx(IPPROTO_IP,WSA_GETPERADAPTERINFO,@IfIndex,Size,pPerAdapterInfo,Required) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
      if Result = ERROR_INSUFFICIENT_BUFFER then pOutBufLen:=Required;
-     
+
      Exit;
     end;
 
@@ -1463,23 +1596,26 @@ end;
 {==============================================================================}
 
 function IpReleaseAddress(const AdapterInfo: IP_ADAPTER_INDEX_MAP): DWORD;
+{Release an IPv4 address previously obtained through the Dynamic Host Configuration Protocol (DHCP)}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(IP_ADAPTER_INDEX_MAP);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_IPRELEASEADDRESS,@AdapterInfo,Size,@AdapterInfo,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
-    
+
    Result:=ERROR_SUCCESS;
   end;
 end;
@@ -1487,23 +1623,26 @@ end;
 {==============================================================================}
 
 function IpRenewAddress(const AdapterInfo: IP_ADAPTER_INDEX_MAP): DWORD;
+{Renew a lease on an IPv4 address previously obtained through Dynamic Host Configuration Protocol (DHCP)}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(IP_ADAPTER_INDEX_MAP);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_IPRENEWADDRESS,@AdapterInfo,Size,@AdapterInfo,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
-    
+
    Result:=ERROR_SUCCESS;
   end;
 end;
@@ -1511,10 +1650,13 @@ end;
 {==============================================================================}
 
 function SendARP(const DestIP, SrcIP: IPAddr; pMacAddr: PDWORD; var PhyAddrLen: DWORD): DWORD;
+{Sends an Address Resolution Protocol (ARP) request to obtain the physical address that corresponds to the specified destination IPv4 address}
+
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    //if WsControlEx(IPPROTO_IP,WSA_SENDARP ) <> NO_ERROR then //To Do //Pass and return a structure
@@ -1526,10 +1668,13 @@ end;
 {==============================================================================}
 
 function GetRTTAndHopCount(DestIpAddress: IPAddr; var HopCount: DWORD; MaxHops: DWORD; var RTT: DWORD): BOOL;
+{Determine the round-trip time (RTT) and hop count to the specified destination}
+
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=False;
- 
+
  if IPHelperStart then
   begin
    //if WsControlEx(IPPROTO_IP,WSA_GETRTTANDHOPCOUNT ) <> NO_ERROR then //To Do //Pass and return a structure
@@ -1541,20 +1686,23 @@ end;
 {==============================================================================}
 
 function GetFriendlyIfIndex(IfIndex: DWORD): DWORD;
+{Take an interface index and return a backward-compatible interface index}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(DWORD);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_GETFRIENDLYIFINDEX,@IfIndex,Size,@IfIndex,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -1565,22 +1713,25 @@ end;
 {==============================================================================}
 
 function EnableRouter(var pHandle: THandle; pOverlapped: POVERLAPPED): DWORD;
+{Turn on IPv4 forwarding on the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  HandleSize:DWORD;
  OverlappedSize:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    HandleSize:=SizeOf(THandle);
    OverlappedSize:=SizeOf(OVERLAPPED);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_ENABLEROUTER,@pHandle,HandleSize,pOverlapped,OverlappedSize) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -1591,22 +1742,25 @@ end;
 {==============================================================================}
 
 function UnenableRouter(pOverlapped: POVERLAPPED; lpdwEnableCount: LPDWORD): DWORD;
+{Turn off IPv4 forwarding on the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  OverlappedSize:DWORD;
  EnableCountSize:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    OverlappedSize:=SizeOf(OVERLAPPED);
    EnableCountSize:=SizeOf(DWORD);
-  
+
    if WsControlEx(IPPROTO_IP,WSA_UNENABLEROUTER,pOverlapped,OverlappedSize,lpdwEnableCount,EnableCountSize) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -1621,7 +1775,7 @@ function MIBIFOperStatusToString(AValue:DWORD):String;
 begin
  {}
  Result:='MIB_IF_OPER_STATUS_UNKNOWN';
- 
+
  case AValue of
   MIB_IF_OPER_STATUS_NON_OPERATIONAL:Result:='MIB_IF_OPER_STATUS_NON_OPERATIONAL';
   MIB_IF_OPER_STATUS_UNREACHABLE:Result:='MIB_IF_OPER_STATUS_UNREACHABLE';
@@ -1638,7 +1792,7 @@ function MIBIFTypeToString(AValue:DWORD):String;
 begin
  {}
  Result:='MIB_IF_TYPE_UNKNOWN';
- 
+
  case AValue of
   MIB_IF_TYPE_OTHER:Result:='MIB_IF_TYPE_OTHER';
   MIB_IF_TYPE_ETHERNET:Result:='MIB_IF_TYPE_ETHERNET';
@@ -1656,7 +1810,7 @@ function MIBIFAdminStatusToString(AValue:DWORD):String;
 begin
  {}
  Result:='MIB_IF_ADMIN_STATUS_UNKNOWN';
- 
+
  case AValue of
   MIB_IF_ADMIN_STATUS_UP:Result:='MIB_IF_ADMIN_STATUS_UP';
   MIB_IF_ADMIN_STATUS_DOWN:Result:='MIB_IF_ADMIN_STATUS_DOWN';
@@ -1670,7 +1824,7 @@ function MIBTCPRTOToString(AValue:DWORD):String;
 begin
  {}
  Result:='MIB_TCP_RTO_UNKNOWN';
- 
+
  case AValue of
   MIB_TCP_RTO_OTHER:Result:='MIB_TCP_RTO_OTHER';
   MIB_TCP_RTO_CONSTANT:Result:='MIB_TCP_RTO_CONSTANT';
@@ -1685,7 +1839,7 @@ function MIBTCPStateToString(AValue:DWORD):String;
 begin
  {}
  Result:='MIB_TCP_STATE_UNKNOWN';
- 
+
  case AValue of
   MIB_TCP_STATE_CLOSED:Result:='MIB_TCP_STATE_CLOSED';
   MIB_TCP_STATE_LISTEN:Result:='MIB_TCP_STATE_LISTEN';
@@ -1708,7 +1862,7 @@ function MIBIPForwardingToString(AValue:DWORD):String;
 begin
  {}
  Result:='MIB_IP_UNKNOWN';
- 
+
  case AValue of
   MIB_IP_FORWARDING:Result:='MIB_IP_FORWARDING';
   MIB_IP_NOT_FORWARDING:Result:='MIB_IP_NOT_FORWARDING';
@@ -1721,7 +1875,7 @@ function MIBIPRouteTypeToString(AValue:DWORD):String;
 begin
  {}
  Result:='MIB_IPROUTE_TYPE_UNKNOWN';
- 
+
  case AValue of
   MIB_IPROUTE_TYPE_OTHER:Result:='MIB_IPROUTE_TYPE_OTHER';
   MIB_IPROUTE_TYPE_INVALID:Result:='MIB_IPROUTE_TYPE_INVALID';
@@ -1736,7 +1890,7 @@ function MIBIPProtoToString(AValue:DWORD):String;
 begin
  {}
  Result:='MIB_IPPROTO_UNKNOWN';
- 
+
  case AValue of
   MIB_IPPROTO_OTHER:Result:='MIB_IPPROTO_OTHER';
   MIB_IPPROTO_LOCAL:Result:='MIB_IPPROTO_LOCAL';
@@ -1764,7 +1918,7 @@ function MIBIPNetTypeToString(AValue:DWORD):String;
 begin
  {}
  Result:='MIB_IPNET_TYPE_UNKNOWN';
- 
+
  case AValue of
   MIB_IPNET_TYPE_OTHER:Result:='MIB_IPNET_TYPE_OTHER';
   MIB_IPNET_TYPE_INVALID:Result:='MIB_IPNET_TYPE_INVALID';
@@ -1780,7 +1934,7 @@ end;
  {Nothing}
 
 {==============================================================================}
- 
+
 finalization
  IPHelperStop;
 

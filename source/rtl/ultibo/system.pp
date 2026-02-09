@@ -94,10 +94,10 @@ var
 type
  {Process Functions}
  TSysGetProcessID = function:SizeUInt;
- 
+
  {Random Functions}
  TSysRandomize = procedure;
- 
+
  {File Functions}
  TSysDoClose = procedure(handle:thandle);
  TSysDoErase = procedure(p:pchar;pchangeable:boolean);
@@ -110,7 +110,7 @@ type
  TSysDoFileSize = function(handle:thandle):longint;
  TSysDoTruncate = procedure(handle:thandle;pos:longint);
  TSysDoOpen = procedure(var f;p:PFileTextRecChar;flags:longint;pchangeable:boolean);
- 
+
  {Directory Functions}
  TSysDoMkDir = procedure(const Dir:RawByteString);
  TSysDoRmDir = procedure(const Dir:RawByteString);
@@ -120,10 +120,10 @@ type
 var
  {Process Functions}
  SysGetProcessIDHandler:TSysGetProcessID;
- 
+
  {Random Functions}
  SysRandomizeHandler:TSysRandomize;
- 
+
  {File Functions}
  SysDoCloseHandler:TSysDoClose;
  SysDoEraseHandler:TSysDoErase;
@@ -136,13 +136,13 @@ var
  SysDoFileSizeHandler:TSysDoFileSize;
  SysDoTruncateHandler:TSysDoTruncate;
  SysDoOpenHandler:TSysDoOpen;
- 
+
  {Directory Functions}
  SysDoMkDirHandler:TSysDoMkDir;
  SysDoRmDirHandler:TSysDoRmDir;
  SysDoChDirHandler:TSysDoChDir;
  SysDoGetDirHandler:TSysDoGetDir;
- 
+
 {*****************************************************************************}
                                  implementation
 {*****************************************************************************}
@@ -207,9 +207,9 @@ begin
    GetProcessID:=SysGetProcessIDHandler();
   end
  else
-  begin 
+  begin
    GetProcessID:=0;
-  end; 
+  end;
 end;
 {$endif}
 
@@ -231,7 +231,7 @@ begin
  else
   begin
    ParamStr:='';
-  end; 
+  end;
 end;
 {$endif FPC_HAS_FEATURE_COMMANDARGS}
 
@@ -250,9 +250,9 @@ begin
    SysRandomizeHandler();
   end
  else
-  begin 
+  begin
    RandSeed:=63458;
-  end; 
+  end;
 end;
 
 {procedure randomize(value: integer);

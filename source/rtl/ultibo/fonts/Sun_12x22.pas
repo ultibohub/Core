@@ -20,7 +20,7 @@ Credits
 =======
 
  Information for this unit was obtained from:
- 
+
   Linux - KBD – Linux keyboard tools - http://kbd-project.org/
 
  This font was originally from the file sun12x22.psfu
@@ -31,11 +31,27 @@ Credits
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit Sun_12x22;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Font;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Font;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Font;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {const}

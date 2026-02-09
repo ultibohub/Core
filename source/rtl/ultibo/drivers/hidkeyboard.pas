@@ -52,11 +52,37 @@ HID Keyboard
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit HIDKeyboard;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,HID,Keyboard,Keymap,SysUtils;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  Core.HID,
+  Core.Keyboard,
+  Core.Keymap,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  HID,
+  Keyboard,
+  Keymap,
+  SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
@@ -1094,51 +1120,51 @@ begin
              case Field.Usage of
               SCAN_CODE_LEFT_CTRL:begin
                 HIDExtractBitField(Field,ReportData,ReportSize,Value);
-   
+
                 if Value then Modifiers:=Modifiers or KEYBOARD_LEFT_CTRL;
                end;
               SCAN_CODE_LEFT_SHIFT:begin
                 HIDExtractBitField(Field,ReportData,ReportSize,Value);
-   
+
                 if Value then Modifiers:=Modifiers or KEYBOARD_LEFT_SHIFT;
                end;
               SCAN_CODE_LEFT_ALT:begin
                 HIDExtractBitField(Field,ReportData,ReportSize,Value);
-   
+
                 if Value then Modifiers:=Modifiers or KEYBOARD_LEFT_ALT;
                end;
               SCAN_CODE_LEFT_GUI:begin
                 HIDExtractBitField(Field,ReportData,ReportSize,Value);
-   
+
                 if Value then Modifiers:=Modifiers or KEYBOARD_LEFT_GUI;
                end;
               SCAN_CODE_RIGHT_CTRL:begin
                 HIDExtractBitField(Field,ReportData,ReportSize,Value);
-   
+
                 if Value then Modifiers:=Modifiers or KEYBOARD_RIGHT_CTRL;
                end;
               SCAN_CODE_RIGHT_SHIFT:begin
                 HIDExtractBitField(Field,ReportData,ReportSize,Value);
-   
+
                 if Value then Modifiers:=Modifiers or KEYBOARD_RIGHT_SHIFT;
                end;
               SCAN_CODE_RIGHT_ALT:begin
                 HIDExtractBitField(Field,ReportData,ReportSize,Value);
-   
+
                 if Value then Modifiers:=Modifiers or KEYBOARD_RIGHT_ALT;
                end;
               SCAN_CODE_RIGHT_GUI:begin
                 HIDExtractBitField(Field,ReportData,ReportSize,Value);
-   
+
                 if Value then Modifiers:=Modifiers or KEYBOARD_RIGHT_GUI;
                end;
              end;
-   
+
              {Keys}
              if (SmallInt(Field.Usage) >= SCAN_CODE_NONE) and (Field.Usage + Field.Count - 1 <= SCAN_CODE_RESERVED_255) then {Max is SCAN_CODE_KEYPAD_HEX}
               begin
                HIDExtractUnsignedField(Field,ReportData,ReportSize,Key);
-   
+
                Keys[Count]:=Key;
                Inc(Count);
               end;

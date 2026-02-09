@@ -19,7 +19,7 @@ begin
     P.Version:='3.3.1';
     P.Dependencies.Add('pasjpeg'); //Add pasjpeg for JPEGLib units
     P.Dependencies.Add('fcl-image'); //Add fcl-image for BMPcomn unit
-    
+
     P.Author := 'Garry Wood';
     P.License := 'LGPL with modification';
     P.HomepageURL := 'ultibo.org';
@@ -40,7 +40,7 @@ begin
     T:=P.Targets.AddUnit('egl.pas');
     T:=P.Targets.AddUnit('openvg.pas');
     T:=P.Targets.AddUnit('vgshapes.pas');
-    
+
 {$if FPC_FULLVERSION>=30301}
     P.NamespaceMap:='namespaces.lst';
 {$endif}

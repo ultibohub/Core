@@ -2,7 +2,7 @@
 
 const
  CREATE_SUSPENDED = $00000004;
- 
+
 procedure TThread.SysCreate(CreateSuspended: Boolean;
                             const StackSize: SizeUInt);
 begin
@@ -12,7 +12,7 @@ begin
     See Mantis #16884 }
   FHandle := BeginThread(nil, StackSize, @ThreadProc, pointer(self), CREATE_SUSPENDED,
                          FThreadID);
-  if FHandle = TThreadID(0) then 
+  if FHandle = TThreadID(0) then
     //raise EThread.CreateFmt(SThreadCreateError, [SysErrorMessage(getlasterror)]); //Ultibo
     raise EThread.create('Failed to create new thread');
 
@@ -74,7 +74,7 @@ var
   P: Integer;
   I: TThreadPriority;
 begin
-  P := ThreadGetPriority(FHandle);
+  P := System.ThreadGetPriority(FHandle);
   Result := tpNormal;
   for I := Low(TThreadPriority) to High(TThreadPriority) do
     if Priorities[I] = P then Result := I;
@@ -82,7 +82,7 @@ end;
 
 procedure TThread.SetPriority(Value: TThreadPriority);
 begin
-  ThreadSetPriority(FHandle, Priorities[Value]);
+  System.ThreadSetPriority(FHandle, Priorities[Value]);
 end;
 
 
@@ -118,6 +118,6 @@ end;
 
 function TThread.WaitFor: Integer;
 begin
-  Result:=WaitForThreadTerminate(FHandle,0);   
+  Result:=WaitForThreadTerminate(FHandle,0);
   FHandle:=0;
 end;

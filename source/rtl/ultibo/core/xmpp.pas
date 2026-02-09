@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -37,11 +37,31 @@ XMPP
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit XMPP; 
+{$IFNDEF FPC_DOTTEDUNITS}
+unit XMPP;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,SysUtils;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //A generic XMPP interface (Client and Server)
 
@@ -56,7 +76,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,SysUtils;
 {==============================================================================}
 //type
  {XMPP specific types}
- 
+
 {==============================================================================}
 var
  {XMPP specific variables}
@@ -65,13 +85,13 @@ var
 {==============================================================================}
 {Initialization Functions}
 procedure XMPPInit;
- 
+
 {==============================================================================}
 {XMPP Functions}
- 
+
 {==============================================================================}
 {XMPP Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -85,12 +105,12 @@ begin
  {}
  {Check Initialized}
  if XMPPInitialized then Exit;
- 
+
  //To Do
- 
+
  XMPPInitialized:=True;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {XMPP Functions}
@@ -106,7 +126,7 @@ initialization
  XMPPInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

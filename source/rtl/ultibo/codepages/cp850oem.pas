@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -31,25 +31,39 @@ References
 CP850 OEM (Latin I)
 ===================
 
- Note: The equivalent ANSI code page for CP850 is CP1252 (Latin I) which is included 
+ Note: The equivalent ANSI code page for CP850 is CP1252 (Latin I) which is included
  in the Locale unit as the default ANSI code page.
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit CP850OEM;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Locale;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Locale;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
-        
+
 {==============================================================================}
 {const}
  {CP850OEM specific constants}
@@ -65,13 +79,13 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
 {==============================================================================}
 {Initialization Functions}
 procedure CP850OEMInit;
- 
+
 {==============================================================================}
 {CP850OEM Functions}
- 
+
 {==============================================================================}
 {CP850OEM Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -123,7 +137,7 @@ var
   $00AD,$00B1,$2017,$00BE,$00B6,$00A7,$00F7,$00B8,
   $00B0,$00A8,$00B7,$00B9,$00B3,$00B2,$25A0,$00A0)
  );
- 
+
  CP1252TO850:TTransTable = (
   TransID:850;
   Values:(
@@ -144,7 +158,7 @@ var
   $85,$A0,$83,$C6,$84,$86,$91,$87,$8A,$82,$88,$89,$8D,$A1,$8C,$8B,
   $D0,$A4,$95,$A2,$93,$E4,$94,$F6,$9B,$97,$A3,$96,$81,$EC,$E7,$98)
  );
- 
+
  CP850TO1252:TTransTable = (
   TransID:1252;
   Values:(
@@ -165,7 +179,7 @@ var
   $D3,$DF,$D4,$D2,$F5,$D5,$B5,$FE,$DE,$DA,$DB,$D9,$FD,$DD,$AF,$B4,
   $AD,$B1,$3D,$BE,$B6,$A7,$F7,$B8,$B0,$A8,$B7,$B9,$B3,$B2,$A6,$A0)
  );
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -196,9 +210,9 @@ end;
 
 initialization
  CP850OEMInit;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

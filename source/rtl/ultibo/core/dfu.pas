@@ -17,17 +17,17 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
- 
+
 Device Firmware Update (DFU)
 ============================
 
@@ -38,11 +38,31 @@ Device Firmware Update (DFU)
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit DFU;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  Core.USB;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  USB;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
@@ -51,9 +71,9 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB;
 {==============================================================================}
 //const
  {DFU specific constants}
-//To Do //A generic DFU unit 
-                           
-              
+//To Do //A generic DFU unit
+
+
 {==============================================================================}
 //type
  {DFU specific types}
@@ -65,7 +85,7 @@ var
  DFUInitialized:Boolean;
 
  //To Do
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure DFUInit;
@@ -87,9 +107,9 @@ begin
  {}
  {Check Initialized}
  if DFUInitialized then Exit;
- 
+
  //To Do
- 
+
  DFUInitialized:=True;
 end;
 
@@ -105,7 +125,7 @@ initialization
  DFUInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

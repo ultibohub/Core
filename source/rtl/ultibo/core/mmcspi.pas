@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -41,11 +41,35 @@ There needs to be an SPI driver registered which provides the SPI interface to s
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit MMCSPI;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,MMC,SPI,SysUtils;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  Core.MMC,
+  Core.SPI,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  MMC,
+  SPI,
+  SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do
 
@@ -60,19 +84,19 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,MMC,SPI,SysUt
 //const
  {MMC SPI specific constants}
  //To Do
- 
+
 {==============================================================================}
 //type
  {MMC SPI specific types}
  //To Do
- 
+
 {==============================================================================}
 var
  {MMC SPI specific variables}
  MMCSPIInitialized:Boolean;
- 
+
  //To Do
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure MMCSPIInit;
@@ -100,10 +124,10 @@ begin
  if MMCSPIInitialized then Exit;
 
  //To Do
- 
+
  MMCSPIInitialized:=True;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {MMC SPI Functions}
@@ -121,7 +145,7 @@ initialization
  MMCSPIInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

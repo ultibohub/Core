@@ -17,52 +17,76 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
   wiringPiSerial.c - Copyright (c) 2012 Gordon Henderson
- 
+
 References
 ==========
 
  WiringPi (Current) - http://wiringpi.com/
-  
+
 Wiring Serial
 =============
 
  This unit reproduces the functionality of Gordon Henderson's WiringSerial library which is part
- of WiringPi. See the Wiring unit for an implementation of the core WiringPi library and for 
+ of WiringPi. See the Wiring unit for an implementation of the core WiringPi library and for
  more information.
- 
- As with the core Wiring API this unit maintains function names and parameters as closely as 
+
+ As with the core Wiring API this unit maintains function names and parameters as closely as
  possible to the original library to allow easy porting of existing code and examples.
- 
+
  To use the Wiring Serial unit you must also include the driver unit for the specific board that
- you are using by adding it to the uses clause in your program. 
- 
+ you are using by adding it to the uses clause in your program.
+
   For Raspberry Pi A/B/A+/B+/Zero add BCM2708
   For Raspberry Pi 2B add BCM2709
   For Raspberry Pi 3B/3A+/3B+ add BCM2710
   For Raspberry Pi 4B/400 add BCM2711
- 
+
  Note: Currently the serialPrintf function is not implemented due to the variable parameter list.
- 
+
  Currently based on WiringPi release 2.32
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit WiringSerial;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Serial,SysUtils,Wiring;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  Core.Serial,
+  System.SysUtils,
+  Core.Wiring;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  Serial,
+  SysUtils,
+  Wiring;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
@@ -75,11 +99,11 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Serial,SysUti
 {==============================================================================}
 {type}
  {Wiring Serial specific types}
- 
+
 {==============================================================================}
 {var}
  {Wiring Serial specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 
@@ -104,7 +128,7 @@ implementation
 {==============================================================================}
 {var}
  {Wiring Serial specific variables}
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -119,7 +143,7 @@ var
 begin
  {}
  Result:=-1;
- 
+
  {Find Serial}
  SerialDevice:=SerialDeviceFindByName(device);
  if SerialDevice = nil then
@@ -127,10 +151,10 @@ begin
    SerialDevice:=SerialDeviceFindByDescription(device);
    if SerialDevice = nil then Exit;
   end;
-  
+
  {Open Serial}
  if SerialDeviceOpen(SerialDevice,baud,SERIAL_DATA_8BIT,SERIAL_STOP_1BIT,SERIAL_PARITY_NONE,SERIAL_FLOW_NONE,0,0) <> ERROR_SUCCESS then Exit;
- 
+
  Result:=LongInt(SerialDevice);
 end;
 
@@ -183,7 +207,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  if SerialDeviceRead(PSerialDevice(fd),@Data,SizeOf(Byte),SERIAL_READ_PEEK_BUFFER,Count) = ERROR_SUCCESS then
   begin
    Result:=Count;
@@ -202,18 +226,18 @@ var
 begin
  {}
  Retry:=10;
- 
- while Retry > 0 do 
+
+ while Retry > 0 do
   begin
    if SerialDeviceRead(PSerialDevice(fd),@Data,SizeOf(Byte),SERIAL_READ_NON_BLOCK,Count) = ERROR_SUCCESS then
     begin
      Result:=Data;
      Exit;
     end;
-   
+
    Sleep(1000);
    Dec(Retry);
-  end;   
+  end;
 end;
 
 {==============================================================================}
@@ -223,7 +247,7 @@ initialization
  {Nothing}
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 
@@ -231,4 +255,4 @@ finalization
 {==============================================================================}
 
 end.
- 
+

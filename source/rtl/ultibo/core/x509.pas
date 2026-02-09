@@ -61,11 +61,35 @@ X.509 Public Key Certificates
 {$inline on}      {Allow use of Inline procedures}
 {$pointermath on} {Allow pointer arithmetic}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit X509;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Crypto,ASN1,Classes,SysUtils;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Crypto,
+  Core.ASN1,
+  System.Classes,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Crypto,
+  ASN1,
+  Classes,
+  SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
@@ -157,7 +181,7 @@ const
 
  X509_PEM_EC_PRIVATE_KEY_BEGIN = '-----BEGIN EC PRIVATE KEY-----';
  X509_PEM_EC_PRIVATE_KEY_END = '-----END EC PRIVATE KEY-----';
- 
+
  X509_PEM_ENCRYPTED_PRIVATE_KEY_BEGIN = '-----BEGIN ENCRYPTED PRIVATE KEY-----'; {Encrypted Private Key in PKCS#8 format (RFC5208 - Section 6)}
  X509_PEM_ENCRYPTED_PRIVATE_KEY_END = '-----END ENCRYPTED PRIVATE KEY-----';
 
@@ -169,7 +193,7 @@ const
 
  X509_PEM_EC_PARAMETERS_BEGIN = '-----BEGIN EC PARAMETERS-----';
  X509_PEM_EC_PARAMETERS_END = '-----END EC PARAMETERS-----';
- 
+
  {Certificate File Types}
  X509_FILETYPE_PEM     = 1;
  X509_FILETYPE_ASN1    = 2;
@@ -301,7 +325,7 @@ type
   FLock: TCriticalSectionHandle;
 
   procedure Clear;
-  
+
   function AcquireLock:Boolean;
   function ReleaseLock:Boolean;
  public
@@ -333,7 +357,7 @@ type
   FLock: TCriticalSectionHandle;
 
   procedure Clear; virtual;
-  
+
   function AcquireLock:Boolean;
   function ReleaseLock:Boolean;
  public
@@ -766,7 +790,7 @@ begin
      modulus INTEGER, -- n
      publicExponent INTEGER -- e)}
 
- {$IFDEF X509_DEBUG}       
+ {$IFDEF X509_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('TX509RSAPublicKey.ImportDER Size = ' + IntToStr(ASize));
  {$ENDIF}
 
@@ -858,7 +882,7 @@ begin
  {$IFDEF X509_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('TX509RSAPrivateKey.ImportDER Size = ' + IntToStr(ASize));
  {$ENDIF}
-    
+
  if ABuffer = nil then Exit;
 
  {Get RSAPublicKey (Sequence)}
@@ -973,7 +997,7 @@ begin
 
  {Check End}
  if Next <> Last then Exit;
- 
+
  Result:=True;
 end;
 
@@ -1130,7 +1154,7 @@ begin
   FList.Free;
   inherited Destroy;
  finally
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   CriticalSectionDestroy(FLock);
  end;
 end;
@@ -1504,7 +1528,7 @@ begin
 
   inherited Destroy;
  finally
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   CriticalSectionDestroy(FLock);
  end;
 end;
@@ -2127,8 +2151,8 @@ begin
  if TryEncodeDate(Year,Month,Day,DateValue) and TryEncodeTime(Hour,Minute,Second,0,TimeValue) then
   begin
    ADateTime:=ComposeDateTime(DateValue,TimeValue);
-   
-   Result:=True;  
+
+   Result:=True;
   end;
 end;
 
@@ -2812,7 +2836,7 @@ begin
        Result:=True;
        Exit;
       end;
-     
+
      {Get Next}
      if not ASN1GetTag(Tag.Contents + Tag.Length,LongWord(ASize) - Tag.Length,Tag) then Exit;
 
@@ -3131,7 +3155,7 @@ begin
   begin
    if PLATFORM_LOG_ENABLED then PlatformLogDebug('TX509Certificate.ImportTBSCertificate ExtendedKeyUsage = ' + IntToHex(ExtendedKeyUsage,8));
   end;
- {$ENDIF} 
+ {$ENDIF}
 
  Result:=True;
 end;
@@ -3826,7 +3850,7 @@ begin
  if (Now < NotBefore) or (Now > NotAfter) then
   begin
    if PLATFORM_LOG_ENABLED then PlatformLogError('TX509Certificate.ValidateCertificate - Certificate ' + Subject.GetCN + ' - Expired');
-   
+
    Result:=X509_VALIDATE_CERTIFICATE_EXPIRED;
    Exit;
   end;
@@ -3838,7 +3862,7 @@ begin
    if Issuer.Compare(AIssuer.Subject) <> 0 then
     begin
      if PLATFORM_LOG_ENABLED then PlatformLogError('TX509Certificate.ValidateCertificate - Certificate ' + Subject.GetCN + ' -  Issuer subject mismatch');
-     
+
      Result:=X509_VALIDATE_CERTIFICATE_UNKNOWN;
      Exit;
     end;
@@ -3847,7 +3871,7 @@ begin
    if not AIssuer.IsValidIssuer then
     begin
      if PLATFORM_LOG_ENABLED then PlatformLogError('TX509Certificate.ValidateCertificate - Certificate ' + Subject.GetCN + ' -  Issuer not valid');
-     
+
      Result:=X509_VALIDATE_BAD_CERTIFICATE;
      Exit;
     end;
@@ -3858,7 +3882,7 @@ begin
      if (Chain <> nil) and (Chain.GetPathLength(Self) > AIssuer.PathLenConstraint) then
       begin
        if PLATFORM_LOG_ENABLED then PlatformLogError('TX509Certificate.ValidateCertificate - Certificate ' + Subject.GetCN + ' -  pathLenConstraint exceeded');
-       
+
        Result:=X509_VALIDATE_BAD_CERTIFICATE;
        Exit;
       end;
@@ -3868,7 +3892,7 @@ begin
    if not VerifySignature(AIssuer) then
     begin
      if PLATFORM_LOG_ENABLED then PlatformLogError('TX509Certificate.ValidateCertificate - Certificate ' + Subject.GetCN + ' -  Invalid signature');
-     
+
      Result:=X509_VALIDATE_BAD_CERTIFICATE;
      Exit;
     end;

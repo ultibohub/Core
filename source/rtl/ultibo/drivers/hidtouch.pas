@@ -49,11 +49,37 @@ HID Touch
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit HIDTouch;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,HID,Touch,Mouse,SysUtils;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  Core.HID,
+  Core.Touch,
+  Core.Mouse,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  HID,
+  Touch,
+  Mouse,
+  SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
@@ -298,7 +324,7 @@ begin
   begin
    TimerDestroy(PHIDTouchDevice(Touch).Timer);
    PHIDTouchDevice(Touch).Timer:=INVALID_HANDLE_VALUE;
-  end; 
+  end;
 
  {Cancel Reports}
  Definition:=PHIDTouchDevice(Touch).Definitions;
@@ -388,7 +414,7 @@ begin
 
       {Reset First Identifier}
       PHIDTouchDevice(Touch).FirstIdentifier:=INFINITE;
-      
+
       {Update Flags}
       if MaxPoints > 1 then
        begin
@@ -932,7 +958,7 @@ begin
       if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_RELEASE_TIMER) <> 0 then
        begin
         TimerDisable(Touch.Timer);
-       end; 
+       end;
 
       {Check State}
       if Touch.Touch.TouchState <> TOUCH_STATE_ENABLED then
@@ -1144,7 +1170,7 @@ begin
       if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_RELEASE_TIMER) <> 0 then
        begin
         TimerEnable(Touch.Timer);
-       end; 
+       end;
 
       Result:=ERROR_SUCCESS;
      finally

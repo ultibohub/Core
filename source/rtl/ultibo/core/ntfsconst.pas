@@ -17,19 +17,19 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
  <See NTFS.pas>
- 
+
 References
 ==========
 
  <See NTFS.pas>
- 
+
 NT Filesystem
 =============
 
@@ -38,18 +38,46 @@ NT Filesystem
  Notes: NTFS uses 64 bit cluster values in all cases
 
         All structures in NTFS are 8 byte aligned
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit NTFSConst;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,FileSystem,SysUtils,Classes,Unicode,Security,Ultibo,UltiboUtils,UltiboClasses;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.FileSystem,
+  System.SysUtils,
+  System.Classes,
+  Core.Unicode,
+  Core.Security,
+  Core.Ultibo,
+  Core.UltiboUtils,
+  Core.UltiboClasses;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  FileSystem,
+  SysUtils,
+  Classes,
+  Unicode,
+  Security,
+  Ultibo,
+  UltiboUtils,
+  UltiboClasses;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
@@ -151,7 +179,7 @@ const
  ntfsSecurityOffsetMask    = $0003FFFF; {Used to determine the offset within a section from the offset}
  ntfsSecuritySectionMask   = $FFFC0000; {Used to determine the start of a section from the offset}
  ntfsSecurityMirrorTest    = $00040000; {Mirror blocks will always be 40000 or C0000}
- 
+
  ntfsMaxPath = 260;
  ntfsMaxFile = 255;
 
@@ -216,7 +244,7 @@ const
  ntfsUnknownRecordNumber = -1; {Int64}
 
  ntfsBitmapUnknown    = LongWord(-1);
- 
+
  ntfsBlockCountMask8  = $FFFFFFFFFFFFFFF8; {0000000000000007}
  ntfsBlockCountMask64 = $FFFFFFFFFFFFFFC0; {000000000000003F}
 
@@ -452,7 +480,7 @@ const
  ntfsRootFileReference   = $0005000000000005; {Only used during Format}
  ntfsExtendFileReference = $000B00000000000B; {Only used during Format}
  ntfsVolumeFileReference = $0003000000000003; {Only used during Format}
- 
+
  {NTFS File Names}
  ntfsFileNameMft       = '$MFT';
  ntfsFileNameMftMirr   = '$MFTMirr';
@@ -1110,7 +1138,7 @@ const
 
  {NTFS Update Sequence Sizes}
  ntfsUpdateSequenceSize = 512;                  {Constant size}{Always 512 regardless of the sector size}
- 
+
 const
  {NTFS Attribute Definitions}
  ntfs12MaxAttrDefine = 13;
@@ -1304,7 +1332,7 @@ const
 var
  {NTFS specific variables}
  SecurityHashPadding:LongWord = ntfsSecurityHashPadding;
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -1313,4 +1341,4 @@ implementation
 {==============================================================================}
 {==============================================================================}
 
-end. 
+end.

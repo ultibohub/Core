@@ -17,19 +17,19 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
  <See NTFS.pas>
- 
+
 References
 ==========
 
  <See NTFS.pas>
- 
+
 NT Filesystem
 =============
 
@@ -48,28 +48,57 @@ NT Filesystem
 
          Time/Attributes - TNTFSStandardInformation
          Size            - TNTFSData (DataSize - Resident, StreamSize - NonResident)
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit NTFSTypes; 
+{$IFNDEF FPC_DOTTEDUNITS}
+unit NTFSTypes;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,FileSystem,SysUtils,Classes,Unicode,Security,Ultibo,UltiboUtils,UltiboClasses,
-     NTFSConst;
-     
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.FileSystem,
+  System.SysUtils,
+  System.Classes,
+  Core.Unicode,
+  Core.Security,
+  Core.Ultibo,
+  Core.UltiboUtils,
+  Core.UltiboClasses,
+  Core.NTFSConst;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  FileSystem,
+  SysUtils,
+  Classes,
+  Unicode,
+  Security,
+  Ultibo,
+  UltiboUtils,
+  UltiboClasses,
+  NTFSConst;
+{$ENDIF FPC_DOTTEDUNITS}
+
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-     
+
 {==============================================================================}
 type
  {NTFS specific types}
- TNTFSType = (ntNONE,ntNTFS12,ntNTFS30,ntNTFS31); 
+ TNTFSType = (ntNONE,ntNTFS12,ntNTFS30,ntNTFS31);
 
  {Record Number Types}
  PNTFSRecordNumber = ^TNTFSRecordNumber;
@@ -752,7 +781,7 @@ type
 
  {Compression Types}
   {Nothing}
-  
+
 {==============================================================================}
 {==============================================================================}
 
@@ -761,4 +790,4 @@ implementation
 {==============================================================================}
 {==============================================================================}
 
-end. 
+end.

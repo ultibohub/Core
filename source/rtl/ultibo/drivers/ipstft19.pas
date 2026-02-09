@@ -69,11 +69,41 @@ Adafruit 1.9" 320x170 Color IPS TFT
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit IPSTFT19;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,GPIO,PWM,SPI,Framebuffer,ST77XX,SysUtils;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  Core.GPIO,
+  Core.PWM,
+  Core.SPI,
+  Core.Framebuffer,
+  Drivers.ST77XX,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  GPIO,
+  PWM,
+  SPI,
+  Framebuffer,
+  ST77XX,
+  SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
@@ -154,6 +184,7 @@ procedure IPSTFT19Init;
 {Note: Called only during system startup}
 var
  WorkInt:LongWord;
+ WorkBool:LongBool;
  WorkBuffer:String;
 begin
  {}
@@ -162,16 +193,16 @@ begin
 
  {Check Environment Variables}
  {IPSTFT19_AUTOSTART}
- WorkInt:=StrToIntDef(EnvironmentGet('IPSTFT19_AUTOSTART'),1);
- if WorkInt = 0 then IPSTFT19_AUTOSTART:=False;
+ WorkBool:=StrToBoolDef(EnvironmentGet('IPSTFT19_AUTOSTART'),IPSTFT19_AUTOSTART);
+ if WorkBool <> IPSTFT19_AUTOSTART then IPSTFT19_AUTOSTART:=WorkBool;
 
  {IPSTFT19_SPI_DEVICE}
  WorkBuffer:=EnvironmentGet('IPSTFT19_SPI_DEVICE');
- if Length(WorkBuffer) <> 0 then IPSTFT19_SPI_DEVICE:=WorkBuffer;
+ if Length(WorkBuffer) > 0 then IPSTFT19_SPI_DEVICE:=WorkBuffer;
 
  {IPSTFT19_LCD_CHIPSELECT}
- WorkInt:=StrToIntDef(EnvironmentGet('IPSTFT19_LCD_CHIPSELECT'),0);
- if WorkInt > 0 then IPSTFT19_LCD_CHIPSELECT:=WorkInt;
+ WorkInt:=StrToIntDef(EnvironmentGet('IPSTFT19_LCD_CHIPSELECT'),IPSTFT19_LCD_CHIPSELECT);
+ if WorkInt <> IPSTFT19_LCD_CHIPSELECT then IPSTFT19_LCD_CHIPSELECT:=WorkInt;
 
  {Start IPSTFT19}
  if IPSTFT19_AUTOSTART then

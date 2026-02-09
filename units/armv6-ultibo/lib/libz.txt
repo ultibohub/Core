@@ -60,7 +60,7 @@ ARMv6
  CC=arm-none-eabi-gcc CFLAGS="--specs=nosys.specs -O2 -mabi=aapcs -marm -march=armv6 -mfpu=vfp -mfloat-abi=hard -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS" ./configure --static --prefix=$HOME/libraries/zlib-1.3.1/armv6
 
  make libz.a
- 
+
  make install
 
  make clean

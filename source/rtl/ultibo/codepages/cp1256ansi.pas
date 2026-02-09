@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -39,16 +39,30 @@ CP1256 ANSI (Arabic)
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit CP1256ANSI;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Locale;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Locale;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
-        
+
 {==============================================================================}
 {const}
  {CP1256ANSI specific constants}
@@ -64,19 +78,25 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
 {==============================================================================}
 {Initialization Functions}
 procedure CP1256ANSIInit;
- 
+
 {==============================================================================}
 {CP1256ANSI Functions}
- 
+
 {==============================================================================}
 {CP1256ANSI Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
 implementation
 
-uses CP720OEM;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  CodePages.CP720OEM;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  CP720OEM;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {==============================================================================}
@@ -124,7 +144,7 @@ var
   $064B,$064C,$064D,$064E,$00F4,$064F,$0650,$00F7,
   $0651,$00F9,$0652,$00FB,$00FC,$200E,$200F,$06D2)
  );
- 
+
  CP1256Lower:TLowerTable = (
   LowerID:1256;
   Values:(
@@ -145,7 +165,7 @@ var
   $E0,$E1,$E2,$E3,$E4,$E5,$E6,$E7,$E8,$E9,$EA,$EB,$EC,$ED,$EE,$EF,
   $F0,$F1,$F2,$F3,$F4,$F5,$F6,$F7,$F8,$F9,$FA,$FB,$FC,$FD,$FE,$FF)
  );
- 
+
  CP1256Upper:TUpperTable = (
   UpperID:1256;
   Values:(
@@ -166,7 +186,7 @@ var
   $41,$E1,$41,$E3,$E4,$E5,$E6,$43,$45,$45,$45,$45,$EC,$ED,$49,$49,
   $F0,$F1,$F2,$F3,$4F,$F5,$F6,$F7,$F8,$55,$FA,$55,$55,$FD,$FE,$FF)
  );
- 
+
  CP1256TO720:TTransTable = (
   TransID:720;
   Values:(
@@ -187,7 +207,7 @@ var
   $85,$E9,$83,$EA,$EB,$EC,$ED,$87,$8A,$82,$88,$89,$EE,$EF,$8C,$8B,
   $F1,$F2,$F3,$F4,$93,$F5,$F6,$5F,$91,$97,$92,$96,$5F,$5F,$5F,$5F)
  );
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -217,9 +237,9 @@ end;
 
 initialization
  CP1256ANSIInit;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

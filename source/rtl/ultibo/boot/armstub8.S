@@ -30,7 +30,7 @@
 /*
  * Raspberry Pi ARM boot stub for Pi 3/4 (64 bit)
  *
- * Modified for Ultibo to allow access to Secure Mode to enable optional features 
+ * Modified for Ultibo to allow access to Secure Mode to enable optional features
  * including setting oscillator frequency and enabling FIQ support on Raspberry Pi 4.
  *
  * Based on a similar modification created by the Circle C++ project.

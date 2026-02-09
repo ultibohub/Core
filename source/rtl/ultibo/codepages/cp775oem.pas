@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -39,16 +39,30 @@ CP775 OEM (Baltic)
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit CP775OEM;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Locale;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Locale;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
-        
+
 {==============================================================================}
 {const}
  {CP775OEM specific constants}
@@ -64,19 +78,25 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
 {==============================================================================}
 {Initialization Functions}
 procedure CP775OEMInit;
- 
+
 {==============================================================================}
 {CP775OEM Functions}
- 
+
 {==============================================================================}
 {CP775OEM Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
 implementation
 
-uses CP1257ANSI;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  CodePages.CP1257ANSI;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  CP1257ANSI;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {==============================================================================}
@@ -124,7 +144,7 @@ var
   $00AD,$00B1,$201C,$00BE,$00B6,$00A7,$00F7,$201E,
   $00B0,$2219,$00B7,$00B9,$00B3,$00B2,$25A0,$00A0)
  );
- 
+
  CP775TO1257:TTransTable = (
   TransID:1257;
   Values:(
@@ -145,7 +165,7 @@ var
   $D3,$DF,$D4,$D1,$F5,$D5,$B5,$F1,$CD,$ED,$CF,$EF,$F2,$C7,$D2,$92,
   $AD,$B1,$93,$BE,$B6,$A7,$F7,$84,$B0,$5F,$B7,$B9,$B3,$B2,$5F,$A0)
  );
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -175,9 +195,9 @@ end;
 
 initialization
  CP775OEMInit;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

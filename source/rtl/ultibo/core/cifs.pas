@@ -18,13 +18,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -40,11 +40,39 @@ Common Internet File System (CIFS)
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit CIFS;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,FileSystem,SysUtils,Classes,UltiboClasses,Winsock2;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  Core.FileSystem,
+  System.SysUtils,
+  System.Classes,
+  Core.UltiboClasses,
+  Core.Winsock2;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  FileSystem,
+  SysUtils,
+  Classes,
+  UltiboClasses,
+  Winsock2;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //See: https://en.wikipedia.org/wiki/Server_Message_Block
 
@@ -59,9 +87,9 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,FileSystem,Sy
 //const
  {CIFS specific constants}
 
-//To Do //A generic CIFS unit 
-                           
-              
+//To Do //A generic CIFS unit
+
+
 {==============================================================================}
 //type
  {CIFS specific types}
@@ -73,7 +101,7 @@ var
  CIFSInitialized:Boolean;
 
  //To Do
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure CIFSInit;
@@ -95,9 +123,9 @@ begin
  {}
  {Check Initialized}
  if CIFSInitialized then Exit;
- 
+
  //To Do
- 
+
  CIFSInitialized:=True;
 end;
 
@@ -113,7 +141,7 @@ initialization
  CIFSInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

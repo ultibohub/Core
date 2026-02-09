@@ -1,0 +1,3 @@
+unit Drivers.HD44780;
+{$DEFINE FPC_DOTTEDUNITS}
+{$i hd44780.pas}

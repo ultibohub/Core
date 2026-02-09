@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -38,11 +38,27 @@ MPEG
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit MPEG;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
@@ -52,9 +68,9 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads;
 //const
  {MPEG specific constants}
 
-//To Do //A generic MPEG unit 
-                           
-              
+//To Do //A generic MPEG unit
+
+
 {==============================================================================}
 //type
  {MPEG specific types}
@@ -66,7 +82,7 @@ var
  MPEGInitialized:Boolean;
 
  //To Do
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure MPEGInit;
@@ -88,9 +104,9 @@ begin
  {}
  {Check Initialized}
  if MPEGInitialized then Exit;
- 
+
  //To Do
- 
+
  MPEGInitialized:=True;
 end;
 
@@ -106,7 +122,7 @@ initialization
  MPEGInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

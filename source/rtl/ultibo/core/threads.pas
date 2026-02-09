@@ -1,6 +1,6 @@
 {
 Ultibo Threads interface unit.
-           
+
 Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -56,7 +56,7 @@ Threads
 
          Lock/Unlock (Data accessed by threads and interrupt handlers)
 
-         To use a Spin lock to synchronise data access between threads and an interrupt handler each thread should call SpinLockIRQ() or SpinLockFIQ(), depending on 
+         To use a Spin lock to synchronise data access between threads and an interrupt handler each thread should call SpinLockIRQ() or SpinLockFIQ(), depending on
          whether the interrupt handler is servicing IRQ or FIQ requests, before accessing the data and SpinUnlockIRQ() or SpinUnlockFIQ() when finished accessing the data.
          These calls disable interrupts before acquiring the lock (with deadlock protection) and restore interrupts after releasing the lock and therefore should only be
          used to protect very short sections of code accessing shared data to minimise the impact on interrupt latency.
@@ -173,7 +173,7 @@ Threads
               Create/Destroy
 
               Semaphores are created using SemaphoreCreate() and destroyed using SemaphoreDestroy(). With additional flags and options
-              available by calling SemaphoreCreateEx(). The initial count of the Semaphore must be specified when calling create, in 
+              available by calling SemaphoreCreateEx(). The initial count of the Semaphore must be specified when calling create, in
               many usages the count will begin at zero but any value required by the application can be specified.
 
               Wait/Signal
@@ -233,20 +233,20 @@ Threads
               Not suitable for use by Interrupt handlers.
               Suitable for use on multiprocessor systems.
               Access is serialized, the next thread released when a condition is woken will be the thread that has been waiting longest (See also stolen wakeups below).
-              
+
               Usage:
               ------
-              
+
               Create/Destroy
-             
+
               Conditions are created using ConditionCreate() and destroyed using ConditionDestroy().
-              
+
               Wait/Wake
 
               Threads call ConditionWait() to begin waiting for the condition to be woken, additional versions of wait exist that allow releasing
               another lock before waiting and reacquiring it when the thread is woken after waiting.
 
-              These are ConditionWaitMutex(), ConditionWaitSynchronizer(), ConditionWaitCriticalSection() which apply to Mutex, Synchronizer and 
+              These are ConditionWaitMutex(), ConditionWaitSynchronizer(), ConditionWaitCriticalSection() which apply to Mutex, Synchronizer and
               CriticalSection objects respectively.
 
               Calling ConditionWake() will release one thread that is currently waiting for the condition, the ConditionWakeAll() function will
@@ -267,7 +267,7 @@ Threads
                Completions can use a counted state rather than a single state if they are created with COMPLETION_FLAG_COUNTED, this is to mimic the implementation of the
                Linux variation however there is a slight but important change in the way counted completions are implemented in Ultibo. The Linux completion sets the count
                to UMAX_INT / 2 on complete_all() which is documented as "effectively infinite". This is of course incorrect and seriously flawed because the count value is
-               only set to a little over 2 billion, a long running application could easily consume this count with calls to wait_for_completion() and then the application 
+               only set to a little over 2 billion, a long running application could easily consume this count with calls to wait_for_completion() and then the application
                would potentially fail without explanation.
 
                To prevent this same fatal flaw the Ultibo implementation sets the count at LongWord(-1) on CompletionCompleteAll() and all other operations check for this
@@ -297,7 +297,7 @@ Threads
                Lock Hierarchy:
                ---------------
                The rules for Completions are the same as those that apply to other serialized objects such as CriticalSection and Synchronizers except that
-               like Semaphores they may be signalled by interrupt handlers if the appropriate flags as passed to create. 
+               like Semaphores they may be signalled by interrupt handlers if the appropriate flags as passed to create.
 
 
  Thread Handling
@@ -458,7 +458,7 @@ Threads
 
   Timer - Timers provide a mechanism to request that a thread from the timer pool perform a specified function call in a certain number
           of milliseconds from the time the request was made. This can be a convenient way to retry an operation after a predetermined
-          amount of time or to delay an operation until a certain amount of time has passed. Timers can be created as once off or 
+          amount of time or to delay an operation until a certain amount of time has passed. Timers can be created as once off or
           recurring and can pass a supplied pointer to the called function.
           Not suitable for use by Interrupt handlers.
           Suitable for use on multiprocessor systems.
@@ -521,8 +521,8 @@ Threads
            enabled and can preempt code that is holding an IRQ lock. If the FIQ handler attempts to access any of these locks then
            the handler can deadlock waiting for code that it had preempted.
 
-           In normal operation the clock interrupt is used to service the tasker list however it is board specific and could be 
-           assigned to either a different interrupt or a dedicated interrupt if required.           
+           In normal operation the clock interrupt is used to service the tasker list however it is board specific and could be
+           assigned to either a different interrupt or a dedicated interrupt if required.
 
            Suitable for use by Fast Interrupt handlers and Interrupt handlers (Not required for Interrupt handlers).
            Suitable for use on multiprocessor systems.
@@ -530,7 +530,7 @@ Threads
            Usage:
            ------
 
-           There are currently five Tasker functions available, TaskerThreadSendMessage(), TaskerMessageslotSend(), 
+           There are currently five Tasker functions available, TaskerThreadSendMessage(), TaskerMessageslotSend(),
            TaskerSemaphoreSignal(), TaskerCompletionReset() and TaskerCompletionComplete() which each perform the same function
            as their non Tasker equivalent.
 
@@ -575,35 +575,57 @@ Threads
   timeout before the specified timeout value has expired.
 
 }
-              
+
 {$mode delphi} {Default to Delphi compatible syntax}
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit Threads;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,HeapManager,Locale,Unicode,SysUtils;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.HeapManager,
+  Core.Locale,
+  Core.Unicode,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  HeapManager,
+  Locale,
+  Unicode,
+  SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //Look for:
 
 //Critical
 
-            
+
 //To Do //All of our Platform and Thread etc functions need to use ThreadSetLastError ?
-            
+
 //To Do //****Deadlock issues****:
-                     
+
                       //All use of SemaphoreWait needs to check for WAIT_ABANDONED on return to allow semaphores to be destroyed
-                      //while threads are waiting. Needs to be implemented on ThreadWake/ThreadAbandon - 
+                      //while threads are waiting. Needs to be implemented on ThreadWake/ThreadAbandon -
                       //Same applies to Event, CriticalSection, Mailslot etc etc
                       //Event Mutex/Spin etc should check for result on Lock (No need on Unlock, cannot destroy while locked)
-                      
+
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-            
+
 {==============================================================================}
 const
  {Thread specific constants}
@@ -613,17 +635,17 @@ const
  LOCK_FLAG_IRQ    = $00000001;
  LOCK_FLAG_FIQ    = $00000002;
  LOCK_FLAG_IRQFIQ = $00000004;
- 
+
  {Spin constants}
  SPIN_SIGNATURE = $0FEC3B82;
- 
+
  {Spin state constants}
  SPIN_STATE_UNLOCKED  = 0;
  SPIN_STATE_LOCKED    = 1;
- 
+
  {Mutex constants}
  MUTEX_SIGNATURE = $1C5D7FA4;
- 
+
  {Mutex state constants}
  MUTEX_STATE_UNLOCKED = 0;
  MUTEX_STATE_LOCKED   = 1;
@@ -632,7 +654,7 @@ const
  MUTEX_FLAG_NONE       = $00000000;
  MUTEX_FLAG_RECURSIVE  = $00000001; {Mutex can be locked multiple times by the same thread if set (Must be unlocked the same number of times)}
  MUTEX_FLAG_ERRORCHECK = $00000002; {Mutex will perform a deadlock check if set, will return with an error if already owned by the same thread (and not recursive)}
- 
+
  {Critical Section constants}
  CRITICAL_SECTION_SIGNATURE = $25F3AE01;
 
@@ -648,47 +670,47 @@ const
  SEMAPHORE_FLAG_IRQ    = LOCK_FLAG_IRQ;
  SEMAPHORE_FLAG_FIQ    = LOCK_FLAG_FIQ;
  SEMAPHORE_FLAG_IRQFIQ = LOCK_FLAG_IRQFIQ;
- 
+
  {Synchronizer constants}
  SYNCHRONIZER_SIGNATURE = $C5D081FB;
- 
+
  {Synchronizer state constants}
  SYNCHRONIZER_STATE_UNLOCKED      = 0;
  SYNCHRONIZER_STATE_READER_LOCKED = 1;
  SYNCHRONIZER_STATE_WRITER_LOCKED = 2;
- 
+
  {Synchronizer flag constants}
  SYNCHRONIZER_FLAG_NONE           = $00000000;
  SYNCHRONIZER_FLAG_READ_PRIORITY  = $00000001;  {Synchronizer prioritises readers over writers} //To Do //Implement these (Change the wait/release priority)
  SYNCHRONIZER_FLAG_WRITE_PRIORITY = $00000002;  {Synchronizer prioritises writers over readers} //To Do //Implement these (Change the wait/release priority)
- 
+
  {Condition constants}
  CONDITION_SIGNATURE = $D14D3C0A;
- 
+
  {Condition flag constants}
  CONDITION_FLAG_NONE           = $00000000;
 
  {Condition lock flag constants}
  CONDITION_LOCK_FLAG_NONE      = $00000000;
  CONDITION_LOCK_FLAG_WRITER    = $00000001; {Condition should release and acquire the writer lock on a Synchronizer when ConditionWaitSynchronizer is called (otherwise release and acquire the reader lock)}
- 
+
  {Completion constants}
  COMPLETION_SIGNATURE = $FCE24CA1;
- 
+
  {Completion state constants}
  COMPLETION_STATE_RESET    = 0;
  COMPLETION_STATE_COMPLETE = 1;
- 
+
  {Completion flag constants}
  COMPLETION_FLAG_NONE    = LOCK_FLAG_NONE;
  COMPLETION_FLAG_IRQ     = LOCK_FLAG_IRQ;    {Disable IRQ during completion operations (Wait/Reset/Complete)}
  COMPLETION_FLAG_FIQ     = LOCK_FLAG_FIQ;    {Disable FIQ during completion operations (Wait/Reset/Complete)}
  COMPLETION_FLAG_IRQFIQ  = LOCK_FLAG_IRQFIQ; {Disable IRQ and FIQ during completion operations (Wait/Reset/Complete)}
  COMPLETION_FLAG_COUNTED = $00000008;        {Use a counted value instead of a single state (Affects behaviour of Wait and Complete)}
- 
+
  {List constants}
  LIST_SIGNATURE = $4A98BE2A;
- 
+
  {List type constants}
  LIST_TYPE_NOT_SPECIFIED     = 0;  {A generic thread list without a specific purpose}
  LIST_TYPE_WAIT_SECTION      = 1;  {A Critical Section Wait List}
@@ -700,13 +722,13 @@ const
  LIST_TYPE_WAIT_THREAD       = 7;  {A Thread Wait List}
  LIST_TYPE_WAIT_MESSAGESLOT  = 8;  {A Messageslot Wait List}
  LIST_TYPE_WAIT_OTHER        = 9;  {Another type of Wait List (Suitable for passing to ThreadWait/ThreadWaitEx/ThreadWaitMultiple/ThreadRelease)}
- 
+
  {List flag constants}
  LIST_FLAG_NONE   = LOCK_FLAG_NONE;
  LIST_FLAG_IRQ    = LOCK_FLAG_IRQ;
  LIST_FLAG_FIQ    = LOCK_FLAG_FIQ;
- LIST_FLAG_IRQFIQ = LOCK_FLAG_IRQFIQ; 
- 
+ LIST_FLAG_IRQFIQ = LOCK_FLAG_IRQFIQ;
+
  {Queue constants}
  QUEUE_SIGNATURE = $57A3BF9E;
 
@@ -723,44 +745,44 @@ const
  QUEUE_TYPE_SCHEDULE_HIGHER       = 9;  {A Scheduler Higher Priority Queue}
  QUEUE_TYPE_SCHEDULE_HIGHEST      = 10; {A Scheduler Highest Priority Queue}
  QUEUE_TYPE_SCHEDULE_CRITICAL     = 11; {A Scheduler Critical Priority Queue}
- 
+
  {Queue flag constants}
  QUEUE_FLAG_NONE        = LOCK_FLAG_NONE;
  QUEUE_FLAG_IRQ         = LOCK_FLAG_IRQ;
- QUEUE_FLAG_FIQ         = LOCK_FLAG_FIQ; 
- QUEUE_FLAG_IRQFIQ      = LOCK_FLAG_IRQFIQ; 
+ QUEUE_FLAG_FIQ         = LOCK_FLAG_FIQ;
+ QUEUE_FLAG_IRQFIQ      = LOCK_FLAG_IRQFIQ;
  QUEUE_FLAG_DESCENDING  = $00000008;
  QUEUE_FLAG_DELTA       = $00000010;
- 
+
  {Queue key constants}
  QUEUE_KEY_NONE = Integer($7FFFFFFF);       {Null key value returned from an empty Queue}
  QUEUE_KEY_MAX  = Integer($7FFFFFFE);       {Max key that can be ordered in a Queue}
  QUEUE_KEY_MIN  = Integer($80000000);       {Min key that can be ordered in a Queue}
- 
+
  {Thread constants}
  THREAD_SIGNATURE = $6C2BA10F;
- 
+
  {Thread type constants}
- THREAD_TYPE_NORMAL = 0;   {A Normal thread (No special case handling)} 
+ THREAD_TYPE_NORMAL = 0;   {A Normal thread (No special case handling)}
  THREAD_TYPE_IDLE   = 1;   {An Idle thread (Used to calculate ultilization and provide an always ready thread)}
  THREAD_TYPE_IRQ    = 2;   {An IRQ thread (Used by the IRQ handler during interrupt time)}
  THREAD_TYPE_FIQ    = 3;   {An FIQ thread (Used by the FIQ handler during interrupt time)}
  THREAD_TYPE_SWI    = 4;   {A Software Interrupt (SWI) thread (Used by the SWI handler during a system call)}
- 
+
  {Thread flag constants}
  THREAD_FLAG_NONE                = $00000000;
  THREAD_FLAG_PERSIST             = $00000001; {If set thread handle will persist until explicitly destroyed (Otherwise destroyed after termination quantum has elapsed)}
  THREAD_FLAG_CANCELLED           = $00000002; {Indicates that thread has been cancelled, for support of external thread APIs (eg pThreads)(Not used internally by Ultibo)}
  THREAD_FLAG_CANCEL_DISABLE      = $00000004; {Indicates that thread cancellation is disabled for a thread, for support of external thread APIs (eg pThreads)(Not used internally by Ultibo)}
  THREAD_FLAG_CANCEL_ASYNCHRONOUS = $00000008; {Indicates that asynchronous thread cancellation is enabled for a thread, for support of external thread APIs (eg pThreads)(Not used internally by Ultibo)}
- 
+
  THREAD_FLAG_INTERNAL = THREAD_FLAG_NONE + $80000000; {Note: Temporary value to avoid warning}
- 
- {Thread state constants} 
- THREAD_STATE_RUNNING         = 1;          {Thread is currently running}     
+
+ {Thread state constants}
+ THREAD_STATE_RUNNING         = 1;          {Thread is currently running}
  THREAD_STATE_READY           = 2;          {Thread is on ready queue}
- THREAD_STATE_SLEEP           = 3;          {Thread is sleeping}      
- THREAD_STATE_SUSPENDED       = 4;          {Thread is suspended} 
+ THREAD_STATE_SLEEP           = 3;          {Thread is sleeping}
+ THREAD_STATE_SUSPENDED       = 4;          {Thread is suspended}
  THREAD_STATE_WAIT            = 5;          {Thread is on a wait list}
  THREAD_STATE_WAIT_TIMEOUT    = 6;          {Thread is on a wait list with timeout}
  THREAD_STATE_RECEIVE         = 7;          {Thread is waiting to receive a message}
@@ -768,7 +790,7 @@ const
  THREAD_STATE_HALTED          = 9;          {Thread has been halted (Due to an unhandled exception etc)}
  THREAD_STATE_TERMINATED      = 10;         {Thread has been terminated}
  //To Do THREAD_STATE_SEND / THREAD_STATE_SEND_TIMEOUT ?  //Who would wake them up ? //Timeout is ok, but what about send only ?
- 
+
  {Thread priority constants}
  THREAD_PRIORITY_NONE      = 0; {Only used for IRQ/FIQ threads which are never selected for scheduling}
  THREAD_PRIORITY_IDLE      = 1;
@@ -783,15 +805,15 @@ const
  THREAD_PRIORITY_MINIMUM       = THREAD_PRIORITY_IDLE;        {Minimum thread priority}
  THREAD_PRIORITY_MAXIMUM       = THREAD_PRIORITY_CRITICAL;    {Maximum thread priority}
  THREAD_PRIORITY_COUNT         = THREAD_PRIORITY_MAXIMUM + 1; {Number of thread priority levels}
- 
+
  {Additional priority aliases for compatibility}
  THREAD_PRIORITY_BELOW_NORMAL  = THREAD_PRIORITY_LOWER;
  THREAD_PRIORITY_ABOVE_NORMAL  = THREAD_PRIORITY_HIGHER;
  THREAD_PRIORITY_TIME_CRITICAL = THREAD_PRIORITY_CRITICAL;
- 
+
  {Thread name constants}
  THREAD_NAME_LENGTH = SIZE_64;   {Length of thread name}
- 
+
  IRQ_THREAD_NAME             = 'IRQ';
  FIQ_THREAD_NAME             = 'FIQ';
  SWI_THREAD_NAME             = 'SWI';
@@ -802,53 +824,53 @@ const
  TIMER_PRIORITY_THREAD_NAME  = 'Priority Timer';
  WORKER_PRIORITY_THREAD_NAME = 'Priority Worker';
  RTL_THREAD_NAME             = 'RTL Thread';
- 
+
  {Thread priority constants}
  TIMER_THREAD_PRIORITY           = THREAD_PRIORITY_NORMAL;
  WORKER_THREAD_PRIORITY          = THREAD_PRIORITY_NORMAL;
  TIMER_PRIORITY_THREAD_PRIORITY  = THREAD_PRIORITY_HIGHEST;
  WORKER_PRIORITY_THREAD_PRIORITY = THREAD_PRIORITY_HIGHER;
- 
+
  {Thread create constants}
  THREAD_CREATE_NONE      = $00000000;
  THREAD_CREATE_SUSPENDED = $00000004;
- 
+
  {Thread TLS constants}
  THREAD_TLS_FREE    = $00000000;
  THREAD_TLS_USED    = $00000001;
  THREAD_TLS_INVALID = $FFFFFFFF;
- 
+
  THREAD_TLS_MAXIMUM = SIZE_64;       {The maximum number TLS index slots available}
- 
+
  {Thread TLS flag constants}
  THREAD_TLS_FLAG_NONE = $00000000;
  THREAD_TLS_FLAG_FREE = $00000001;   {If set then pointer in thread TLS index will be freed on ThreadReleaseTlsIndex or ThreadDestroy}
- 
+
  {Thread wait constants}
  THREAD_LISTS_MAXIMUM = SIZE_64;     {Maximum number of lists a thread can wait on at the same time}
- 
+
  {Messageslot constants}
- MESSAGESLOT_SIGNATURE = $B631CE4B; 
- 
+ MESSAGESLOT_SIGNATURE = $B631CE4B;
+
  {Messageslot flag constants}
  MESSAGESLOT_FLAG_NONE   = LOCK_FLAG_NONE;
  MESSAGESLOT_FLAG_IRQ    = LOCK_FLAG_IRQ;
  MESSAGESLOT_FLAG_FIQ    = LOCK_FLAG_FIQ;
  MESSAGESLOT_FLAG_IRQFIQ = LOCK_FLAG_IRQFIQ;
- 
+
  {Mailslot constants}
  MAILSLOT_SIGNATURE = $7A409BF3;
 
  {Buffer constants}
  BUFFER_SIGNATURE = $830BEA71;
- 
+
  {Buffer flag constants}
  BUFFER_FLAG_NONE    = $00000000;
  BUFFER_FLAG_SHARED  = $00000001;  {If set the buffer memory (Not the buffer entry itself) is allocated from shared memory}
- 
- {Event constants} 
+
+ {Event constants}
  EVENT_SIGNATURE = $903BA69D;
- 
+
  {Event state constants}
  EVENT_STATE_UNSIGNALED = 0;
  EVENT_STATE_SIGNALED   = 1;
@@ -857,32 +879,32 @@ const
  EVENT_FLAG_NONE           = $00000000;
  EVENT_FLAG_INITIAL_STATE  = $00000001;
  EVENT_FLAG_MANUAL_RESET   = $00000002;
- 
+
  {Timer constants}
  TIMER_SIGNATURE = $AB7E07FB;
- 
+
  {Timer state constants}
  TIMER_STATE_DISABLED = 0;
  TIMER_STATE_ENABLED  = 1;
- 
+
  {Timer flag constants}
  TIMER_FLAG_NONE       = $00000000;
  TIMER_FLAG_RESCHEDULE = $00000001;     {Timer should be rescheduled each time the event completes}
  TIMER_FLAG_IMMEDIATE  = $00000002;     {Timer event should be executed immediately and then each interval milliseconds}
  TIMER_FLAG_WORKER     = $00000004;     {Timer event should be executed by a worker thread instead of a timer thread}
  TIMER_FLAG_PRIORITY   = $00000008;     {Timer event should be executed by a priority timer thread}
- 
+
  {Timer key constants}
  TIMER_KEY_NONE = Integer($7FFFFFFF);   {Null key value returned from an empty Timer list}
  TIMER_KEY_MAX  = Integer($7FFFFFFE);   {Max key that can be ordered in a Timer list}
  TIMER_KEY_MIN  = Integer($80000000);   {Min key that can be ordered in a Timer list}
- 
+
  {Worker constants}
  WORKER_SIGNATURE = $EF6A901B;
- 
+
  {Worker flag constants}
  WORKER_FLAG_NONE       = $00000000;
- WORKER_FLAG_RESCHEDULE = $00000001;    {Worker task should be rescheduled each time the task completes}    
+ WORKER_FLAG_RESCHEDULE = $00000001;    {Worker task should be rescheduled each time the task completes}
  WORKER_FLAG_IMMEDIATE  = $00000002;    {Worker task should be executed immediately and then each interval milliseconds}
  WORKER_FLAG_CANCEL     = $00000004;    {Internal flag to indicate the worker task should be cancelled next time the interval expires}
  WORKER_FLAG_NOFREE     = $00000008;    {Internal flag to tell worker execute not to free the worker request when it is completed}
@@ -890,40 +912,40 @@ const
  WORKER_FLAG_IRQ        = $00000020;    {Internal flag to tell worker execute to free IRQ memory when the request is completed}
  WORKER_FLAG_FIQ        = $00000040;    {Internal flag to tell worker execute to free FIQ memory when the request is completed}
  WORKER_FLAG_PRIORITY   = $00000080;    {Worker task should be executed by a priority worker thread}
- 
+
  WORKER_FLAG_INTERNAL = WORKER_FLAG_CANCEL or WORKER_FLAG_NOFREE or WORKER_FLAG_TERMINATE or WORKER_FLAG_IRQ or WORKER_FLAG_FIQ; {Internal only flags}
- 
+
  WORKER_FLAG_EXCLUDED_IRQ = WORKER_FLAG_RESCHEDULE or WORKER_FLAG_IMMEDIATE; {Excluded flags}
  WORKER_FLAG_EXCLUDED_FIQ = WORKER_FLAG_RESCHEDULE or WORKER_FLAG_IMMEDIATE; {Excluded flags}
- 
+
  {Tasker task constants}
  TASKER_TASK_THREADSENDMESSAGE  = 1;  {Perform a ThreadSendMessage() function using the tasker list}
  TASKER_TASK_MESSAGESLOTSEND    = 2;  {Perform a MessageslotSend() function using the tasker list}
  TASKER_TASK_SEMAPHORESIGNAL    = 3;  {Perform a SemaphoreSignal() function using the tasker list}
  TASKER_TASK_COMPLETIONRESET    = 4;  {Perform a CompletionReset() function using the tasker list}
  TASKER_TASK_COMPLETIONCOMPLETE = 5;  {Perform a CompletionComplete() or CompletionCompleteAll() function using the tasker list}
- 
+
  {Scheduler migration constants}
  SCHEDULER_MIGRATION_DISABLED = 0;
  SCHEDULER_MIGRATION_ENABLED  = 1;
- 
+
  {Scheduler preempt constants}
  SCHEDULER_PREEMPT_DISABLED = 0;
  SCHEDULER_PREEMPT_ENABLED  = 1;
- 
+
  {Scheduler allocation constants}
  SCHEDULER_ALLOCATION_DISABLED = 0;
  SCHEDULER_ALLOCATION_ENABLED  = 1;
- 
+
  {Scheduler mask constants}
  SCHEDULER_MASK_NONE        = (1 shl THREAD_PRIORITY_NONE);
  SCHEDULER_MASK_IDLE        = (1 shl THREAD_PRIORITY_IDLE);
- SCHEDULER_MASK_LOWEST      = (1 shl THREAD_PRIORITY_LOWEST); 
- SCHEDULER_MASK_LOWER       = (1 shl THREAD_PRIORITY_LOWER); 
- SCHEDULER_MASK_NORMAL      = (1 shl THREAD_PRIORITY_NORMAL); 
- SCHEDULER_MASK_HIGHER      = (1 shl THREAD_PRIORITY_HIGHER); 
- SCHEDULER_MASK_HIGHEST     = (1 shl THREAD_PRIORITY_HIGHEST); 
- SCHEDULER_MASK_CRITICAL    = (1 shl THREAD_PRIORITY_CRITICAL); 
+ SCHEDULER_MASK_LOWEST      = (1 shl THREAD_PRIORITY_LOWEST);
+ SCHEDULER_MASK_LOWER       = (1 shl THREAD_PRIORITY_LOWER);
+ SCHEDULER_MASK_NORMAL      = (1 shl THREAD_PRIORITY_NORMAL);
+ SCHEDULER_MASK_HIGHER      = (1 shl THREAD_PRIORITY_HIGHER);
+ SCHEDULER_MASK_HIGHEST     = (1 shl THREAD_PRIORITY_HIGHEST);
+ SCHEDULER_MASK_CRITICAL    = (1 shl THREAD_PRIORITY_CRITICAL);
 
  SCHEDULER_MASKS:array[ 0..THREAD_PRIORITY_COUNT - 1] of LongWord = (
   SCHEDULER_MASK_NONE,
@@ -934,7 +956,7 @@ const
   SCHEDULER_MASK_HIGHER,
   SCHEDULER_MASK_HIGHEST,
   SCHEDULER_MASK_CRITICAL);
-  
+
  {Scheduler quantum constants}
  SCHEDULER_QUANTUM_NONE     = 0;
  SCHEDULER_QUANTUM_IDLE     = 0;
@@ -944,7 +966,7 @@ const
  SCHEDULER_QUANTUM_HIGHER   = 6;
  SCHEDULER_QUANTUM_HIGHEST  = 8;
  SCHEDULER_QUANTUM_CRITICAL = 10;
- 
+
  SCHEDULER_QUANTUMS:array[ 0..THREAD_PRIORITY_COUNT - 1] of LongWord = (
   SCHEDULER_QUANTUM_NONE,
   SCHEDULER_QUANTUM_IDLE,
@@ -954,7 +976,7 @@ const
   SCHEDULER_QUANTUM_HIGHER,
   SCHEDULER_QUANTUM_HIGHEST,
   SCHEDULER_QUANTUM_CRITICAL);
- 
+
  {Thread logging}
  THREAD_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Thread debugging messages}
  THREAD_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Thread informational messages, such as a thread being created or destroyed}
@@ -962,19 +984,19 @@ const
  THREAD_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {Thread error messages}
  THREAD_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Thread messages}
 
-var 
- THREAD_DEFAULT_LOG_LEVEL:LongWord = THREAD_LOG_LEVEL_DEBUG; {Minimum level for Thread messages.  Only messages with level greater than or equal to this will be printed} 
- 
-var 
+var
+ THREAD_DEFAULT_LOG_LEVEL:LongWord = THREAD_LOG_LEVEL_DEBUG; {Minimum level for Thread messages.  Only messages with level greater than or equal to this will be printed}
+
+var
  {Thread logging}
- THREAD_LOG_ENABLED:Boolean; 
- 
+ THREAD_LOG_ENABLED:Boolean;
+
 {==============================================================================}
 type
  {Thread specific types}
- 
+
  {See also Handle types in GlobalConst}
- 
+
  {Spin entry}
  {Note: Changes to this structure need to be accounted for in platform specific handlers}
  PSpinEntry = ^TSpinEntry;
@@ -983,13 +1005,13 @@ type
   Signature:LongWord;  {Signature for entry validation}
   State:LongWord;      {State of the lock (Locked/Unlocked)}
   Mask:LongWord;       {IRQ/FIQ Mask for Save/Restore}
-  Owner:TThreadHandle; {Currently owning thread (or INVALID_HANDLE_VALUE if not locked)}  
+  Owner:TThreadHandle; {Currently owning thread (or INVALID_HANDLE_VALUE if not locked)}
   {Internal Properties}
   Prev:PSpinEntry;     {Previous entry in Spin table}
   Next:PSpinEntry;     {Next entry in Spin table}
   {Statistics Properties}
  end;
- 
+
  {Mutex entry}
  {Note: Changes to this structure need to be accounted for in platform specific handlers}
  PMutexEntry = ^TMutexEntry;
@@ -1007,7 +1029,7 @@ type
   Next:PMutexEntry;    {Next entry in Mutex table}
   {Statistics Properties}
  end;
- 
+
  {Critical Section entry}
  {Note: Changes to this structure need to be accounted for in platform specific handlers}
  PCriticalSectionEntry = ^TCriticalSectionEntry;
@@ -1029,7 +1051,7 @@ type
   Next:PCriticalSectionEntry; {Next entry in CriticalSection table}
   {Statistics Properties}
  end;
- 
+
  {Semaphore entry}
  {Note: Changes to this structure need to be accounted for in platform specific handlers}
  PSemaphoreEntry = ^TSemaphoreEntry;
@@ -1037,12 +1059,12 @@ type
   {Semaphore Properties}
   Signature:LongWord;         {Signature for entry validation}
   Count:LongWord;             {Count for this Semaphore (Can be negative when Threads are waiting)}
-  Maximum:LongWord;           {Maximum count for this Semaphore}                                    
+  Maximum:LongWord;           {Maximum count for this Semaphore}
   Flags:LongWord;             {Semaphore Flags (eg SEMAPHORE_FLAG_IRQ)}
   Lock:TSpinHandle;           {Semaphore Lock}
   List:TListHandle;           {List of threads waiting on this Semaphore (or INVALID_HANDLE_VALUE if never used)}
   Wait:TThreadWait;           {Wait function to call to wait on the Semaphore if the count is equal to zero on SemaphoreWait}
-  WaitEx:TThreadWaitEx;       {Wait function to call to wait with timeout on the Semaphore if the count is equal to zero on SemaphoreWait} 
+  WaitEx:TThreadWaitEx;       {Wait function to call to wait with timeout on the Semaphore if the count is equal to zero on SemaphoreWait}
   Release:TThreadRelease;     {Release function to call if any threads are waiting on SemaphoreSignal}
   Abandon:TThreadAbandon;     {Abandon function to call if any threads are waiting when SemaphoreSignal is destroyed}
   {Internal Properties}
@@ -1050,7 +1072,7 @@ type
   Next:PSemaphoreEntry;       {Next entry in Semaphore table}
   {Statistics Properties}
  end;
- 
+
  {Synchronizer entry}
  {Note: Changes to this structure need to be accounted for in platform specific handlers}
  PSynchronizerEntry = ^TSynchronizerEntry;
@@ -1074,7 +1096,7 @@ type
   Next:PSynchronizerEntry;    {Next entry in Synchronizer table}
   {Statistics Properties}
  end;
-  
+
  {Condition entry}
  {Note: Changes to this structure need to be accounted for in platform specific handlers}
  PConditionEntry = ^TConditionEntry;
@@ -1114,7 +1136,7 @@ type
   Next:PCompletionEntry;       {Next entry in Completion table}
   {Statistics Properties}
  end;
- 
+
  {List entry}
  {Note: Changes to this structure need to be accounted for in platform specific handlers}
  PListElement = ^TListElement;
@@ -1123,7 +1145,7 @@ type
   {List Properties}
   Signature:LongWord;         {Signature for entry validation}
   ListType:LongWord;          {Type of this List (eg LIST_TYPE_WAIT_SECTION)}
-  Count:LongWord;             {Count of items currently in this List} 
+  Count:LongWord;             {Count of items currently in this List}
   Flags:LongWord;             {List Flags (eg LIST_FLAG_IRQ)}
   Lock:TSpinHandle;           {List Lock}
   First:PListElement;         {First element in List}
@@ -1140,11 +1162,11 @@ type
   Prev:PListElement;          {Previous element in List}
   Next:PListElement;          {Next element in List}
  end;
- 
+
  {List handles}
  PListHandles = ^TListHandles;
  TListHandles = array[0..THREAD_LISTS_MAXIMUM - 1] of TListHandle;
- 
+
  {Queue entry}
  {Note: Changes to this structure need to be accounted for in platform specific handlers}
  PQueueElement = ^TQueueElement;
@@ -1153,7 +1175,7 @@ type
   {Queue Properties}
   Signature:LongWord;         {Signature for entry validation}
   QueueType:LongWord;         {Type of this Queue (eg QUEUE_TYPE_SCHEDULE_IDLE)}
-  Count:LongWord;             {Count of items currently in this Queue}  
+  Count:LongWord;             {Count of items currently in this Queue}
   Flags:LongWord;             {Queue Flags (eg QUEUE_FLAG_IRQ)}
   Lock:TSpinHandle;           {Queue Lock}
   First:PQueueElement;        {First element in Queue}
@@ -1163,7 +1185,7 @@ type
   Next:PQueueEntry;           {Next entry in Queue table}
   {Statistics Properties}
  end;
- 
+
  {Queue element}
  TQueueElement = record
   Key:Integer;                {Ordering key for Queue}
@@ -1171,7 +1193,7 @@ type
   Prev:PQueueElement;         {Previous element in Queue}
   Next:PQueueElement;         {Next element in Queue}
  end;
- 
+
  {Message list}
  PMessage = ^TMessage;
  PMessageList = ^TMessageList;
@@ -1183,8 +1205,8 @@ type
   {Internal Properties}
   List:PMessage;              {Message list}
   {Statistics Properties}
- end; 
- 
+ end;
+
  {Message}
  TMessage = record
   Msg:PtrUInt;
@@ -1192,7 +1214,7 @@ type
   lParam:PtrInt;
   Time:LongWord;
  end;
- 
+
  {Thread entry}
  {Note: Changes to this structure need to be accounted for in platform specific handlers}
  PThreadEntry = ^TThreadEntry;
@@ -1201,23 +1223,23 @@ type
   Signature:LongWord;                        {Signature for entry validation}
   State:LongWord;                            {State of the Thread (eg THREAD_STATE_RUNNING)}
   Flags:LongWord;                            {Flags of the Thread (eg THREAD_FLAG_PERSIST)}
-  Priority:LongWord;                         {Priority of the Thread (eg THREAD_PRIORITY_NORMAL)}      
+  Priority:LongWord;                         {Priority of the Thread (eg THREAD_PRIORITY_NORMAL)}
   Affinity:LongWord;                         {CPU Affinity mask of the Thread}
-  StackBase:Pointer;                         {Base (Top) of the thread stack} 
-  StackSize:LongWord;                        {Stack length in bytes}   
+  StackBase:Pointer;                         {Base (Top) of the thread stack}
+  StackSize:LongWord;                        {Stack length in bytes}
   Name:array[0..THREAD_NAME_LENGTH - 1] of Char; {The name of the Thread}
   Lock:TSpinHandle;                          {Thread Lock}
-  Parent:TThreadHandle;                      {Handle of the parent thread}   
+  Parent:TThreadHandle;                      {Handle of the parent thread}
   Messages:TMessageList;                     {Messages sent to this thread}
   TlsPointer:Pointer;                        {Thread Local Storage Memory (RTL ThreadVars)}
   TlsTable:array[0..THREAD_TLS_MAXIMUM - 1] of Pointer;  {Thread Local Storage Index Pointers (for ThreadGetTlsValue/ThreadSetTlsValue)}
   TlsFlags:array[0..THREAD_TLS_MAXIMUM - 1] of LongWord; {Thread Local Storage Index Flags (eg THREAD_TLS_FLAG_FREE)}
-  ExitCode:LongWord;                         {Thread Exit Code}        
-  LastError:LongWord;                        {Thread Last Error}       
+  ExitCode:LongWord;                         {Thread Exit Code}
+  LastError:LongWord;                        {Thread Last Error}
   Locale:LCID;                               {Thread Locale}
   {Internal Properties}
   CurrentCPU:LongWord;                       {Saved current CPU from last ContextSwitch}
-  StackPointer:Pointer;                      {Saved current stack pointer from last ContextSwitch}   
+  StackPointer:Pointer;                      {Saved current stack pointer from last ContextSwitch}
   TargetCPU:LongWord;                        {Target CPU of the Thread for next ContextSwitch}
   TargetPriority:LongWord;                   {Target Priority of the Thread for next ContextSwitch (eg THREAD_PRIORITY_NORMAL)}
   List:TListHandle;                          {List of threads waiting on this thread (or INVALID_HANDLE_VALUE if never used)}
@@ -1225,7 +1247,7 @@ type
   WaitLists:PListHandles;                    {The wait lists this thread is currently in if doing a multiple wait (or nil)}
   WaitResult:LongWord;                       {The result code for the last wait with timeout (eg WAIT_TIMEOUT)}
   ReceiveResult:LongWord;                    {The result code for the last receive with timeout (eg WAIT_TIMEOUT)}
-  ScheduleQueue:TQueueHandle;                {The scheduler queue this thread is currently in  (or INVALID_HANDLE_VALUE)}   
+  ScheduleQueue:TQueueHandle;                {The scheduler queue this thread is currently in  (or INVALID_HANDLE_VALUE)}
   ListElement:TListElement;                  {List element for this thread when in a Wait List}
   QueueElement:TQueueElement;                {Queue element for this thread when in a Schedule Queue}
   Prev:PThreadEntry;                         {Previous entry in Thread table}
@@ -1245,15 +1267,15 @@ type
   State:LongWord;                            {State of the Thread (eg THREAD_STATE_RUNNING)}
   Flags:LongWord;                            {Flags of the Thread (eg THREAD_FLAG_PERSIST)}
   CPU:LongWord;                              {CPU from last ContextSwitch}
-  Priority:LongWord;                         {Priority of the Thread (eg THREAD_PRIORITY_NORMAL)}      
+  Priority:LongWord;                         {Priority of the Thread (eg THREAD_PRIORITY_NORMAL)}
   Affinity:LongWord;                         {CPU Affinity mask of the Thread}
-  StackBase:Pointer;                         {Base (Top) of the thread stack} 
-  StackSize:LongWord;                        {Stack length in bytes}   
-  StackPointer:Pointer;                      {Stack pointer from last ContextSwitch}   
+  StackBase:Pointer;                         {Base (Top) of the thread stack}
+  StackSize:LongWord;                        {Stack length in bytes}
+  StackPointer:Pointer;                      {Stack pointer from last ContextSwitch}
   Name:array[0..THREAD_NAME_LENGTH - 1] of Char; {The name of the Thread}
-  Parent:TThreadHandle;                      {Handle of the parent thread}   
-  ExitCode:LongWord;                         {Thread Exit Code}        
-  LastError:LongWord;                        {Thread Last Error}       
+  Parent:TThreadHandle;                      {Handle of the parent thread}
+  ExitCode:LongWord;                         {Thread Exit Code}
+  LastError:LongWord;                        {Thread Last Error}
   Locale:LCID;                               {Thread Locale}
   TargetCPU:LongWord;                        {Target CPU of the Thread for next ContextSwitch}
   TargetPriority:LongWord;                   {Target Priority of the Thread for next ContextSwitch (eg THREAD_PRIORITY_NORMAL)}
@@ -1263,8 +1285,8 @@ type
   SwitchCount:Int64;                         {The number of times this thread has been selected to run by a context switch}
   {Internal Properties}
   Next:PThreadSnapshot;                      {Next entry in Thread snapshot}
- end; 
- 
+ end;
+
  {Messageslot entry}
  PMessageslotEntry = ^TMessageslotEntry;
  TMessageslotEntry = record
@@ -1283,7 +1305,7 @@ type
   Next:PMessageslotEntry;        {Next entry in Messageslot table}
   {Statistics Properties}
  end;
- 
+
  {Mailslot entry}
  PMailslotEntry = ^TMailslotEntry;
  TMailslotEntry = record
@@ -1295,7 +1317,7 @@ type
   Lock:TSpinHandle;           {Mailslot Lock}
   Sender:TSemaphoreHandle;    {Mailslot send Semaphore}
   Receiver:TSemaphoreHandle;  {Mailslot receive Semaphore}
-  Messages:PPtrInt;           {Mailslot message queue} 
+  Messages:PPtrInt;           {Mailslot message queue}
   {Internal Properties}
   Prev:PMailslotEntry;        {Previous entry in Mailslot table}
   Next:PMailslotEntry;        {Next entry in Mailslot table}
@@ -1320,7 +1342,7 @@ type
   First:PBufferItem;          {First available buffer item}
   {Statistics Properties}
  end;
- 
+
  {Buffer item}
  TBufferItem = record
   Parent:TBufferHandle;       {Handle of Buffer owning this item}
@@ -1328,7 +1350,7 @@ type
   Buffer:Pointer;             {Pointer to item data}
   Reserved:LongWord;          {Align to 16 bytes}
  end;
- 
+
  {Event entry}
  PEventEntry = ^TEventEntry;
  TEventEntry = record
@@ -1346,14 +1368,14 @@ type
   Prev:PEventEntry;           {Previous entry in Event table}
   Next:PEventEntry;           {Next entry in Event table}
   {Statistics Properties}
- end; 
- 
+ end;
+
  {Timer list}
  PTimerItem = ^TTimerItem;
  PTimerList = ^TTimerList;
  TTimerList = record
   {List Properties}
-  Count:LongWord;             {Count of items currently in the Timer list} 
+  Count:LongWord;             {Count of items currently in the Timer list}
   Flags:LongWord;             {Timer list Flags (eg LOCK_FLAG_IRQ)}
   Lock:TSpinHandle;           {Timer list Lock}
   First:PTimerItem;           {First item in Timer list}
@@ -1361,7 +1383,7 @@ type
   {Internal Properties}
   {Statistics Properties}
  end;
- 
+
  {Timer item}
  TTimerItem = record
   Key:Integer;                {Ordering key for Timer list}
@@ -1369,7 +1391,7 @@ type
   Prev:PTimerItem;            {Previous item in Timer list}
   Next:PTimerItem;            {Next item in Timer list}
  end;
- 
+
  {Timer entry}
  PTimerEntry = ^TTimerEntry;
  TTimerEntry = record
@@ -1382,13 +1404,13 @@ type
   Event:TTimerEvent;          {Function to call when timer triggers}
   Data:Pointer;               {Data to pass to function when timer triggers}
   {Internal Properties}
-  TimerList:PTimerList;       {The timer list this timer is currently in (or nil)}   
+  TimerList:PTimerList;       {The timer list this timer is currently in (or nil)}
   TimerItem:TTimerItem;       {Timer list item for this timer when in a Timer list}
   Prev:PTimerEntry;           {Previous entry in Timer table}
   Next:PTimerEntry;           {Next entry in Timer table}
   {Statistics Properties}
  end;
- 
+
  {Worker request}
  PWorkerRequest = ^TWorkerRequest;
  TWorkerRequest = record
@@ -1402,20 +1424,20 @@ type
   Data:Pointer;               {Data to pass to task}
   Callback:TWorkerCallback;   {Callback when task is completed}
  end;
- 
+
  {Tasker list}
  PTaskerTask = ^TTaskerTask;
  PTaskerList = ^TTaskerList;
  TTaskerList = record
   {List Properties}
-  Count:LongWord;             {Count of tasks currently in the Tasker list} 
+  Count:LongWord;             {Count of tasks currently in the Tasker list}
   Lock:TSpinHandle;           {Tasker list Lock}
   First:PTaskerTask;          {First task in Tasker list}
   Last:PTaskerTask;           {Last task in Tasker list}
   {Internal Properties}
   {Statistics Properties}
  end;
- 
+
  {Tasker task}
  TTaskerTask = record
   Task:LongWord;              {The task to be performed}
@@ -1433,7 +1455,7 @@ type
   Thread:TThreadHandle;       {Handle of the thread to send a message to}
   Message:TMessage;           {Message to send to the thread}
  end;
- 
+
  {Tasker MessageslotSend task}
  PTaskerMessageslotSend = ^TTaskerMessageslotSend;
  TTaskerMessageslotSend = record
@@ -1444,7 +1466,7 @@ type
   Messageslot:TMessageslotHandle; {Handle of the message slot to send to}
   Message:TMessage;               {Message to be sent}
  end;
-  
+
  {Tasker SemaphoreSignal task}
  PTaskerSemaphoreSignal = ^TTaskerSemaphoreSignal;
  TTaskerSemaphoreSignal = record
@@ -1497,7 +1519,7 @@ type
  TSchedulerStart = procedure(CPUID:LongWord);
  TSecondaryInit = procedure;
  TSecondaryBoot = procedure(CPUID:LongWord);
- 
+
 type
  {Prototypes for Spin Lock/Unlock Handlers}
  TSpinLock = function(Spin:PSpinEntry):LongWord;
@@ -1508,13 +1530,13 @@ type
 
  TSpinLockFIQ = function(Spin:PSpinEntry):LongWord;
  TSpinUnlockFIQ = function(Spin:PSpinEntry):LongWord;
- 
+
  TSpinLockIRQFIQ = function(Spin:PSpinEntry):LongWord;
  TSpinUnlockIRQFIQ = function(Spin:PSpinEntry):LongWord;
- 
+
  TSpinCheckIRQ = function(Spin:PSpinEntry):Boolean;
  TSpinCheckFIQ = function(Spin:PSpinEntry):Boolean;
- 
+
  TSpinExchangeIRQ = function(Spin1,Spin2:PSpinEntry):LongWord;
  TSpinExchangeFIQ = function(Spin1,Spin2:PSpinEntry):LongWord;
 
@@ -1523,66 +1545,66 @@ type
  TMutexLock = function(Mutex:PMutexEntry):LongWord;
  TMutexUnlock = function(Mutex:PMutexEntry):LongWord;
  TMutexTryLock = function(Mutex:PMutexEntry):LongWord;
- 
+
 type
  {Prototypes for CriticalSection Lock/Unlock/TryLock Handlers}
  TCriticalSectionLock = function(CriticalSection:PCriticalSectionEntry):LongWord;
  TCriticalSectionLockEx = function(CriticalSection:PCriticalSectionEntry;Timeout:LongWord):LongWord;
  TCriticalSectionUnlock = function(CriticalSection:PCriticalSectionEntry):LongWord;
  TCriticalSectionTryLock = function(CriticalSection:PCriticalSectionEntry):LongWord;
- 
-type
- {Prototypes for Semaphore Wait/WaitEx/Signal Handlers}
- TSemaphoreWait = function(Semaphore:PSemaphoreEntry):LongWord; 
- TSemaphoreWaitEx = function(Semaphore:PSemaphoreEntry;Timeout:LongWord):LongWord; 
- TSemaphoreSignal = function(Semaphore:PSemaphoreEntry):LongWord; 
 
 type
- {Prototypes for Synchronizer Reader/WriterLock/Unlock Handlers} 
+ {Prototypes for Semaphore Wait/WaitEx/Signal Handlers}
+ TSemaphoreWait = function(Semaphore:PSemaphoreEntry):LongWord;
+ TSemaphoreWaitEx = function(Semaphore:PSemaphoreEntry;Timeout:LongWord):LongWord;
+ TSemaphoreSignal = function(Semaphore:PSemaphoreEntry):LongWord;
+
+type
+ {Prototypes for Synchronizer Reader/WriterLock/Unlock Handlers}
  TSynchronizerLock = function(Synchronizer:PSynchronizerEntry):LongWord;
  TSynchronizerLockEx = function(Synchronizer:PSynchronizerEntry;Timeout:LongWord):LongWord;
  TSynchronizerUnlock = function(Synchronizer:PSynchronizerEntry):LongWord;
  TSynchronizerConvert = function(Synchronizer:PSynchronizerEntry):LongWord;
  TSynchronizerConvertEx = function(Synchronizer:PSynchronizerEntry;Timeout:LongWord):LongWord;
- 
+
 type
- {Prototypes for Condition Wait/Wake/WakeAll Handlers} 
+ {Prototypes for Condition Wait/Wake/WakeAll Handlers}
  TConditionWait = function(Condition:PConditionEntry;Timeout:LongWord):LongWord;
  TConditionWaitMutex = function(Condition:PConditionEntry;Mutex:TMutexHandle;Timeout:LongWord):LongWord;
  TConditionWaitSynchronizer = function(Condition:PConditionEntry;Synchronizer:TSynchronizerHandle;Flags,Timeout:LongWord):LongWord;
  TConditionWaitCriticalSection = function(Condition:PConditionEntry;CriticalSection:TCriticalSectionHandle;Timeout:LongWord):LongWord;
  TConditionWake = function(Condition:PConditionEntry):LongWord;
  TConditionWakeAll = function(Condition:PConditionEntry):LongWord;
- 
+
 type
  {Prototypes for Completion Wait/TryWait/Reset/Complete/CompleteAll Handlers}
- TCompletionWait = function(Completion:PCompletionEntry;Timeout:LongWord):LongWord; 
- TCompletionTryWait = function(Completion:PCompletionEntry):LongWord; 
- TCompletionReset = function(Completion:PCompletionEntry):LongWord; 
- TCompletionComplete = function(Completion:PCompletionEntry):LongWord; 
- TCompletionCompleteAll = function(Completion:PCompletionEntry):LongWord; 
- 
+ TCompletionWait = function(Completion:PCompletionEntry;Timeout:LongWord):LongWord;
+ TCompletionTryWait = function(Completion:PCompletionEntry):LongWord;
+ TCompletionReset = function(Completion:PCompletionEntry):LongWord;
+ TCompletionComplete = function(Completion:PCompletionEntry):LongWord;
+ TCompletionCompleteAll = function(Completion:PCompletionEntry):LongWord;
+
 type
- {Prototypes for Messageslot Send/Receive Handlers} 
+ {Prototypes for Messageslot Send/Receive Handlers}
  TMessageslotSend = function(Messageslot:PMessageslotEntry;Message:PMessage):LongWord;
  TMessageslotReceive = function(Messageslot:PMessageslotEntry;Message:PMessage):LongWord;
  TMessageslotReceiveEx = function(Messageslot:PMessageslotEntry;Message:PMessage;Timeout:LongWord):LongWord;
- 
+
 type
- {Prototypes for Mailslot Send/Receive Handlers} 
+ {Prototypes for Mailslot Send/Receive Handlers}
  TMailslotSend = function(Mailslot:PMailslotEntry;Data:PtrInt):LongWord;
  TMailslotSendEx = function(Mailslot:PMailslotEntry;Data:PtrInt;Timeout:LongWord):LongWord;
  TMailslotReceive = function(Mailslot:PMailslotEntry):PtrInt;
  TMailslotReceiveEx = function(Mailslot:PMailslotEntry;Timeout:LongWord):PtrInt;
- 
+
 type
  {Prototypes for Buffer Get/GetEx/Free Handlers}
  TBufferGet = function(Buffer:PBufferEntry):Pointer;
  TBufferGetEx = function(Buffer:PBufferEntry;Timeout:LongWord):Pointer;
  TBufferFree = function(Buffer:Pointer):LongWord;
- 
+
  TBufferIterate = function(Buffer:PBufferEntry;Previous:Pointer):Pointer;
- 
+
 type
  {Prototypes for Event Wait/WaitEx/Set/Reset/Pulse Handlers}
  TEventWait = function(Event:PEventEntry):LongWord;
@@ -1590,20 +1612,20 @@ type
  TEventSet = function(Event:PEventEntry):LongWord;
  TEventReset = function(Event:PEventEntry):LongWord;
  TEventPulse = function(Event:PEventEntry):LongWord;
- 
+
 type
- {Prototypes for Timer Enable/Disable/Check/Trigger Handlers} 
+ {Prototypes for Timer Enable/Disable/Check/Trigger Handlers}
  TTimerEnable = function(Timer:PTimerEntry):LongWord;
  TTimerEnableEx = function(Timer:PTimerEntry;Interval:LongWord;Event:TTimerEvent;Data:Pointer):LongWord;
  TTimerDisable = function(Timer:PTimerEntry):LongWord;
  TTimerCheck = function:LongWord;
  TTimerTrigger = function:LongWord;
- 
+
 type
  {Prototypes for Tasker Check/Trigger Handlers}
  TTaskerCheck = function:LongWord;
  TTaskerTrigger = function:LongWord;
-  
+
 {type}
  {Prototypes for Thread Yield/Wait/WaitEx/Release/Wake Handlers}
  {Defined in Platform}
@@ -1612,12 +1634,12 @@ type
  {Prototype for Thread Get/SetCurrent Handlers}
  TThreadGetCurrent = function:TThreadHandle;
  TThreadSetCurrent = function(Thread:TThreadHandle):LongWord;
- 
+
 type
  {Prototypes for Thread Start/End Handlers}
  TThreadStart = function(Parameter:Pointer):PtrInt;{$IFDEF i386} stdcall;{$ENDIF}
  TThreadEnd = procedure(ExitCode:LongWord);{$IFDEF i386} stdcall;{$ENDIF}
- 
+
 type
  {Prototypes for Scheduler Check/Wakeup/Expire/Select/Switch Handlers}
  TSchedulerCheck = function(CPUID:LongWord):LongWord;
@@ -1629,21 +1651,21 @@ type
 
  TSchedulerMigrationEnable = function:LongWord;
  TSchedulerMigrationDisable = function:LongWord;
- 
+
  TSchedulerPreemptEnable = function(CPUID:LongWord):LongWord;
  TSchedulerPreemptDisable = function(CPUID:LongWord):LongWord;
- 
+
  TSchedulerAllocationEnable = function(CPUID:LongWord):LongWord;
  TSchedulerAllocationDisable = function(CPUID:LongWord):LongWord;
- 
+
 type
  {Prototype for Thread Setup Stack Handler}
  TThreadSetupStack = function(StackBase:Pointer;StartProc:TThreadStart;ReturnProc:TThreadEnd;Parameter:Pointer):Pointer;
- 
+
 {==============================================================================}
 {var}
  {Thread specific variables}
- 
+
  //To Do //Critical //Can some or all of these be moved to implementation ?
 var
  {Scheduler Variables}
@@ -1651,12 +1673,12 @@ var
  SchedulerThreadMigration:LongWord;               {Enable or Disable thread migration (SCHEDULER_MIGRATION_DISABLED or SCHEDULER_MIGRATION_ENABLED}
 
  SchedulerMigrationQuantum:LongWord;              {Quantum for thread migration checks (CPU 0 only)}
- 
+
  SchedulerThreadCount:array of LongWord;          {Current number of ready threads per CPU (One per CPU, allocated by scheduler initialization) (Protected by InterlockedIncrement/Decrement)}
  SchedulerThreadQuantum:array of LongWord;        {Quantum of current thread per CPU (One per CPU, allocated by scheduler initialization)}
  SchedulerThreadPreempt:array of LongWord;        {Current state of thread preemption per CPU (eg SCHEDULER_PREEMPT_DISABLED) (One per CPU, allocated by scheduler initialization)}
  SchedulerThreadAllocation:array of LongWord;     {Current state of thread allocation per CPU (eg SCHEDULER_ALLOCATION_DISABLED) (One per CPU, allocated by scheduler initialization)}
- 
+
  SchedulerPriorityMask:array of LongWord;         {Mask of ready threads at each priority level (One per CPU, allocated by scheduler initialization) (Protected by InterlockedOr/And)}
 
  {$IFNDEF SCHEDULER_YIELD_ALTERNATE}
@@ -1664,7 +1686,7 @@ var
  {$ENDIF}
  SchedulerStarvationNext:array of LongWord;       {Scheduler starvation priority round robin (One per CPU, allocated by scheduler initialization)}
  SchedulerStarvationQuantum:array of LongWord;    {Quantum for thread starvation checks per CPU (One per CPU, allocated by scheduler initialization)}
- 
+
  SchedulerNoneQueue:array of TQueueHandle;        {Queue of threads that are ready to run at priority level none (One per CPU, allocated by scheduler initialization)}
  SchedulerIdleQueue:array of TQueueHandle;        {Queue of threads that are ready to run at priority level idle (One per CPU, allocated by scheduler initialization)}
  SchedulerLowestQueue:array of TQueueHandle;      {Queue of threads that are ready to run at priority level lowest (One per CPU, allocated by scheduler initialization)}
@@ -1673,21 +1695,21 @@ var
  SchedulerHigherQueue:array of TQueueHandle;      {Queue of threads that are ready to run at priority level higher (One per CPU, allocated by scheduler initialization)}
  SchedulerHighestQueue:array of TQueueHandle;     {Queue of threads that are ready to run at priority level highest (One per CPU, allocated by scheduler initialization)}
  SchedulerCriticalQueue:array of TQueueHandle;    {Queue of threads that are ready to run at priority level critical (One per CPU, allocated by scheduler initialization)}
- 
+
  SchedulerSleepQueue:array of TQueueHandle;       {Queue of threads that are currently sleeping (One per CPU, allocated by scheduler initialization)}
- SchedulerTimeoutQueue:array of TQueueHandle;     {Queue of threads that are currently waiting with a timeout (One per CPU, allocated by scheduler initialization)} 
- SchedulerTerminationQueue:array of TQueueHandle; {Queue of threads that have been terminated (One per CPU, allocated by scheduler initialization)} 
- 
+ SchedulerTimeoutQueue:array of TQueueHandle;     {Queue of threads that are currently waiting with a timeout (One per CPU, allocated by scheduler initialization)}
+ SchedulerTerminationQueue:array of TQueueHandle; {Queue of threads that have been terminated (One per CPU, allocated by scheduler initialization)}
+
  SchedulerLast:array of LongWord;                 {The timer value of the last scheduler interrupt (One per CPU, allocated by scheduler initialization)}
  SchedulerInterrupts:array of LongWord;           {Current number of scheduler interrupts per CPU (When this reaches SCHEDULER_INTERRUPTS_PER_SECOND then UtilizationLast is updated and UtilizationCurrent is reset) (One per CPU, allocated by scheduler initialization)}
 
  {$IFDEF SCHEDULER_DEBUG}
- SchedulerInterruptCounter:array of Int64; 
- SchedulerInterruptOffset:array of LongWord;  
- SchedulerInterruptMinOffset:array of LongWord; 
- SchedulerInterruptMaxOffset:array of LongWord; 
- SchedulerInterruptRollover:array of LongWord; 
- 
+ SchedulerInterruptCounter:array of Int64;
+ SchedulerInterruptOffset:array of LongWord;
+ SchedulerInterruptMinOffset:array of LongWord;
+ SchedulerInterruptMaxOffset:array of LongWord;
+ SchedulerInterruptRollover:array of LongWord;
+
  SchedulerSelectEntry:array of Int64;              {Number of times the scheduler select routine has been called (One per CPU)}
  SchedulerSelectYield:array of Int64;              {Number of times the scheduler select routine has been called with yield equal to true (One per CPU)}
  SchedulerSelectForce:array of Int64;              {Number of times the scheduler forced a thread switch due to starvation quantum (One per CPU)}
@@ -1697,33 +1719,33 @@ var
  SchedulerSelectFailure:array of Int64;            {Number of times the scheduler failed to enqueue the currently running thread (Should never happen)(One per CPU)}
  SchedulerSelectNoReady:array of Int64;            {Number of times the scheduler selection found no ready thread available to run (Should never happen)(One per CPU)}
  SchedulerSelectDefaulted:array of Int64;          {Number of times the scheduler selection defaulted to an IDLE or NONE thread (Should never happen)(One per CPU)}
-                                                   
+
  SchedulerStarvationReset:array of Int64;          {Number of times the scheduler reset the starvation quantum (One per CPU)} //To Do //Remove
  SchedulerStarvationDecrement:array of Int64;      {Number of times the scheduler decremented the starvation quantum (One per CPU)}
-                                                   
+
  SchedulerSelectCPU:array of Int64;                {Number of times the scheduler selection changed the CurrentCPU on a running thread (One per CPU)}
- SchedulerSelectPriority:array of Int64;           {Number of times the scheduler selection changed the Priority on a running thread (One per CPU)}          
+ SchedulerSelectPriority:array of Int64;           {Number of times the scheduler selection changed the Priority on a running thread (One per CPU)}
  SchedulerSelectAffinity:array of Int64;           {Number of times the scheduler selection changed the CurrentCPU on a running thread due to Affinity mismatch (One per CPU)}
-                                                   
+
  SchedulerSwitchEntry:array of Int64;              {Number of times the scheduler switch routine has been called (One per CPU)}
  SchedulerSwitchThread:array of TThreadHandle;     {The thread returned by scheduler select on the last scheduler switch call (One per CPU)}
  SchedulerSwitchCounter:array of Int64;            {Number of times the scheduler switch resulted in a thread switch (One per CPU)}
- SchedulerSwitchCurrent:array of Int64;            {Number of times the scheduler switch resulted in the current thread continuing (One per CPU)}     
+ SchedulerSwitchCurrent:array of Int64;            {Number of times the scheduler switch resulted in the current thread continuing (One per CPU)}
  SchedulerSwitchInvalid:array of Int64;            {Number of times the scheduler switch was returned INVALID_THREAD_HANDLE by scheduler select (Should never happen)(One per CPU)}
-                                                   
- SchedulerRescheduleEntry:array of Int64;          {Number of times the scheduler reschedule routine has been called (One per CPU)}    
+
+ SchedulerRescheduleEntry:array of Int64;          {Number of times the scheduler reschedule routine has been called (One per CPU)}
  SchedulerRescheduleThread:array of TThreadHandle; {The thread returned by scheduler select on the last scheduler reschedule call (One per CPU)}
- SchedulerRescheduleCounter:array of Int64;        {Number of times the scheduler reschedule resulted in a thread switch (One per CPU)}    
- SchedulerRescheduleCurrent:array of Int64;        {Number of times the scheduler reschedule resulted in the current thread continuing (One per CPU)}         
- SchedulerRescheduleInvalid:array of Int64;        {Number of times the scheduler reschedule was returned INVALID_THREAD_HANDLE by scheduler select (Should never happen)(One per CPU)}    
+ SchedulerRescheduleCounter:array of Int64;        {Number of times the scheduler reschedule resulted in a thread switch (One per CPU)}
+ SchedulerRescheduleCurrent:array of Int64;        {Number of times the scheduler reschedule resulted in the current thread continuing (One per CPU)}
+ SchedulerRescheduleInvalid:array of Int64;        {Number of times the scheduler reschedule was returned INVALID_THREAD_HANDLE by scheduler select (Should never happen)(One per CPU)}
 
  SchedulerMigrationCounter:Int64;                  {Number of times scheduler select invoked a thread migration (CPU 0 only)}
- 
+
  SchedulerTerminationCounter:array of Int64;       {Number of threads destroyed by scheduler reschedule (After termination quantum)(One per CPU)}
 
  SchedulerSecondaryWaitCounter:array of Int64;     {Number of wait cycles performed by secondary CPUs while waiting for init completion (One per CPU)}
  {$ENDIF}
- 
+
  {$IFDEF LOCK_DEBUG}
  SpinDeadlockCounter:Int64;
  SpinRecursionCounter:Int64;
@@ -1740,62 +1762,62 @@ var
  MutexSWIThreadCounter:Int64;
  MutexIdleThreadCounter:Int64;
  CriticalSectionDeadlockCounter:Int64;
- SemaphoreDeadlockCounter:Int64;      
- SynchronizerDeadlockCounter:Int64;    
+ SemaphoreDeadlockCounter:Int64;
+ SynchronizerDeadlockCounter:Int64;
  SynchronizerRecursionCounter:Int64;
- ConditionDeadlockCounter:Int64;    
- CompletionDeadlockCounter:Int64;    
- MessageslotDeadlockCounter:Int64;     
- MailslotDeadlockCounter:Int64;        
- BufferDeadlockCounter:Int64;          
- EventDeadlockCounter:Int64;            
+ ConditionDeadlockCounter:Int64;
+ CompletionDeadlockCounter:Int64;
+ MessageslotDeadlockCounter:Int64;
+ MailslotDeadlockCounter:Int64;
+ BufferDeadlockCounter:Int64;
+ EventDeadlockCounter:Int64;
  {$ENDIF}
- 
+
  {$IFDEF SPIN_DEBUG}
- SpinLockEntry:LongWord; 
+ SpinLockEntry:LongWord;
  SpinUnlockEntry:LongWord;
 
- SpinLockExit:LongWord; 
+ SpinLockExit:LongWord;
  SpinUnlockExit:LongWord;
- 
+
  SpinUnlockNoLock:LongWord;
  SpinUnlockNoOwner:LongWord;
- 
+
  SpinLockCounter:LongWord;
  SpinUnlockCounter:LongWord;
- SpinDestroyCounter:LongWord; 
- 
+ SpinDestroyCounter:LongWord;
+
  SpinLockIRQCounter:LongWord;
- SpinUnlockIRQCounter:LongWord;  
- SpinLockFIQCounter:LongWord;  
- SpinUnlockFIQCounter:LongWord;  
- SpinLockIRQFIQCounter:LongWord; 
- SpinUnlockIRQFIQCounter:LongWord; 
+ SpinUnlockIRQCounter:LongWord;
+ SpinLockFIQCounter:LongWord;
+ SpinUnlockFIQCounter:LongWord;
+ SpinLockIRQFIQCounter:LongWord;
+ SpinUnlockIRQFIQCounter:LongWord;
  {$ENDIF}
- 
+
  {$IFDEF MUTEX_DEBUG}
- MutexLockEntry:LongWord; 
+ MutexLockEntry:LongWord;
  MutexUnlockEntry:LongWord;
 
- MutexLockExit:LongWord; 
+ MutexLockExit:LongWord;
  MutexUnlockExit:LongWord;
- 
+
  MutexUnlockNoLock:LongWord;
  MutexUnlockNoOwner:LongWord;
- 
+
  MutexLockCounter:LongWord;
  MutexUnlockCounter:LongWord;
- MutexDestroyCounter:LongWord; 
+ MutexDestroyCounter:LongWord;
  {$ENDIF}
- 
+
 var
  {Heap Manager Variables}
  HeapLock:THeapLock;
- 
+
 var
  {RTL Thread Manager Variables}
  ThreadVarBlockSize:DWORD;
- 
+
 var
  {Inititalization Handlers}
  PrimaryInitHandler:TPrimaryInit;
@@ -1803,7 +1825,7 @@ var
  SchedulerStartHandler:TSchedulerStart;
  SecondaryInitHandler:TSecondaryInit;
  SecondaryBootHandler:TSecondaryBoot;
- 
+
 var
  {SpinLock/Unlock Handlers}
  SpinLockHandler:TSpinLock;
@@ -1814,16 +1836,16 @@ var
 
  SpinLockFIQHandler:TSpinLockFIQ;
  SpinUnlockFIQHandler:TSpinUnlockFIQ;
- 
+
  SpinLockIRQFIQHandler:TSpinLockIRQFIQ;
  SpinUnlockIRQFIQHandler:TSpinUnlockIRQFIQ;
- 
+
  SpinCheckIRQHandler:TSpinCheckIRQ;
  SpinCheckFIQHandler:TSpinCheckFIQ;
- 
+
  SpinExchangeIRQHandler:TSpinExchangeIRQ;
  SpinExchangeFIQHandler:TSpinExchangeFIQ;
- 
+
 var
  {MutexLock/Unlock Handlers}
  MutexLockHandler:TMutexLock;
@@ -1836,7 +1858,7 @@ var
  CriticalSectionLockExHandler:TCriticalSectionLockEx;
  CriticalSectionUnlockHandler:TCriticalSectionUnlock;
  CriticalSectionTryLockHandler:TCriticalSectionTryLock;
- 
+
 var
  {Semaphore Wait/Signal Handlers}
  SemaphoreWaitHandler:TSemaphoreWait;
@@ -1854,7 +1876,7 @@ var
  SynchronizerReaderConvertHandler:TSynchronizerConvert;
  SynchronizerWriterConvertHandler:TSynchronizerConvert;
  SynchronizerReaderConvertExHandler:TSynchronizerConvertEx;
- 
+
 var
  {Condition Wait/Wake/WakeAll Handlers}
  ConditionWaitHandler:TConditionWait;
@@ -1863,7 +1885,7 @@ var
  ConditionWaitCriticalSectionHandler:TConditionWaitCriticalSection;
  ConditionWakeHandler:TConditionWake;
  ConditionWakeAllHandler:TConditionWakeAll;
- 
+
 var
  {Completion Wait/TryWait/Reset/Complete/CompleteAll Handlers}
  CompletionWaitHandler:TCompletionWait;
@@ -1871,28 +1893,28 @@ var
  CompletionResetHandler:TCompletionReset;
  CompletionCompleteHandler:TCompletionComplete;
  CompletionCompleteAllHandler:TCompletionCompleteAll;
- 
+
 var
  {Messageslot Send/Receive Handlers}
  MessageslotSendHandler:TMessageslotSend;
  MessageslotReceiveHandler:TMessageslotReceive;
  MessageslotReceiveExHandler:TMessageslotReceiveEx;
- 
+
 var
  {Mailslot Send/Receive Handlers}
  MailslotSendHandler:TMailslotSend;
  MailslotSendExHandler:TMailslotSendEx;
  MailslotReceiveHandler:TMailslotReceive;
  MailslotReceiveExHandler:TMailslotReceiveEx;
- 
+
 var
  {Buffer Get/GetEx/Free Handlers}
  BufferGetHandler:TBufferGet;
  BufferGetExHandler:TBufferGetEx;
  BufferFreeHandler:TBufferFree;
- 
+
  BufferIterateHandler:TBufferIterate;
- 
+
 var
  {Event Wait/Set/Reset/Pulse Handlers}
  EventWaitHandler:TEventWait;
@@ -1908,12 +1930,12 @@ var
  TimerDisableHandler:TTimerDisable;
  TimerCheckHandler:TTimerCheck;
  TimerTriggerHandler:TTimerTrigger;
- 
+
 var
  {Tasker Check/Trigger Handlers}
  TaskerCheckHandler:TTaskerCheck;
  TaskerTriggerHandler:TTaskerTrigger;
- 
+
 var
  {Thread Get/SetCurrent Handlers}
  ThreadGetCurrentHandler:TThreadGetCurrent;
@@ -1930,21 +1952,21 @@ var
 
  SchedulerMigrationEnableHandler:TSchedulerMigrationEnable;
  SchedulerMigrationDisableHandler:TSchedulerMigrationDisable;
- 
+
  SchedulerPreemptEnableHandler:TSchedulerPreemptEnable;
  SchedulerPreemptDisableHandler:TSchedulerPreemptDisable;
- 
+
  SchedulerAllocationEnableHandler:TSchedulerAllocationEnable;
  SchedulerAllocationDisableHandler:TSchedulerAllocationDisable;
- 
+
 var
  {Thread SetupStack Handlers}
  ThreadSetupStackHandler:TThreadSetupStack;
- 
+
 {==============================================================================}
 {External Declarations}
-procedure Pascalmain; external name 'PASCALMAIN'; 
- 
+procedure Pascalmain; external name 'PASCALMAIN';
+
 {==============================================================================}
 {Initialization Functions}
 procedure LocksInit;
@@ -1997,7 +2019,7 @@ function SpinCheckFIQ(Spin:TSpinHandle):Boolean;
 
 function SpinExchangeIRQ(Spin1,Spin2:TSpinHandle):LongWord;
 function SpinExchangeFIQ(Spin1,Spin2:TSpinHandle):LongWord;
- 
+
 function SpinMaskExchange(Spin1,Spin2:TSpinHandle):LongWord; //Remove
 
 {==============================================================================}
@@ -2085,12 +2107,12 @@ function CompletionDestroy(Completion:TCompletionHandle):LongWord;
 
 function CompletionState(Completion:TCompletionHandle):LongWord;
 
-function CompletionWait(Completion:TCompletionHandle;Timeout:LongWord = INFINITE):LongWord; 
-function CompletionTryWait(Completion:TCompletionHandle):LongWord; 
- 
-function CompletionReset(Completion:TCompletionHandle):LongWord; 
-function CompletionComplete(Completion:TCompletionHandle):LongWord; 
-function CompletionCompleteAll(Completion:TCompletionHandle):LongWord; 
+function CompletionWait(Completion:TCompletionHandle;Timeout:LongWord = INFINITE):LongWord;
+function CompletionTryWait(Completion:TCompletionHandle):LongWord;
+
+function CompletionReset(Completion:TCompletionHandle):LongWord;
+function CompletionComplete(Completion:TCompletionHandle):LongWord;
+function CompletionCompleteAll(Completion:TCompletionHandle):LongWord;
 
 {==============================================================================}
 {List Functions}
@@ -2189,13 +2211,13 @@ function ThreadGetPriority(Thread:TThreadHandle):LongWord;
 function ThreadSetPriority(Thread:TThreadHandle;Priority:LongWord):LongWord;
 
 function ThreadGetLastError:LongWord;
-procedure ThreadSetLastError(LastError:LongWord); 
+procedure ThreadSetLastError(LastError:LongWord);
 function ThreadSetLastErrorEx(LastError:LongWord):LongWord;
 
 function ThreadGetWaitResult:LongWord;
 function ThreadGetReceiveResult:LongWord;
 
-function ThreadGetTlsIndex(TlsIndex:LongWord):LongWord;                      
+function ThreadGetTlsIndex(TlsIndex:LongWord):LongWord;
 function ThreadAllocTlsIndex:LongWord; inline;
 function ThreadAllocTlsIndexEx(Flags:LongWord):LongWord;
 function ThreadReleaseTlsIndex(TlsIndex:LongWord):LongWord;
@@ -2213,7 +2235,7 @@ function ThreadMigrate(Thread:TThreadHandle;CPU:LongWord):LongWord;
 
 procedure ThreadEnd(ExitCode:LongWord);
 function ThreadHalt(ExitCode:LongWord):LongWord;
-function ThreadTerminate(Thread:TThreadHandle;ExitCode:LongWord):LongWord; 
+function ThreadTerminate(Thread:TThreadHandle;ExitCode:LongWord):LongWord;
 
 function ThreadYield:LongWord;
 function ThreadSleep(Milliseconds:LongWord):LongWord;
@@ -2231,12 +2253,12 @@ function ThreadWaitTerminate(Thread:TThreadHandle;Timeout:LongWord):LongWord;   
 function ThreadSuspend(Thread:TThreadHandle):LongWord;
 function ThreadResume(Thread:TThreadHandle):LongWord;
 
-function ThreadWaitMessage:LongWord;                     
+function ThreadWaitMessage:LongWord;
 function ThreadSendMessage(Thread:TThreadHandle;const Message:TMessage):LongWord;
 //To Do //ThreadSendMessageEx //Wait for response/space with Timeout ?            {Timeout = 0 then No Wait, Timeout = INFINITE then Wait forever}
 //To Do //Could also be ThreadPostMessage/Ex (Send with no response wait or not)
 //To Do //ThreadReplyMessage //Reply to a received message to release a thread waiting for a reply
-function ThreadReceiveMessage(var Message:TMessage):LongWord;                     
+function ThreadReceiveMessage(var Message:TMessage):LongWord;
 function ThreadReceiveMessageEx(var Message:TMessage;Timeout:LongWord;Remove:Boolean):LongWord; {Timeout = 0 then no Wait, Timeout = INFINITE then Wait forever}
 function ThreadAbandonMessage(Thread:TThreadHandle):LongWord;
 
@@ -2287,7 +2309,7 @@ function MailslotReceiveEx(Mailslot:TMailslotHandle;Timeout:LongWord):PtrInt;   
 
 {==============================================================================}
 {Buffer Functions}
-function BufferCreate(Size,Count:LongWord):TBufferHandle; {$IFDEF BUFFER_INLINE}inline;{$ENDIF} 
+function BufferCreate(Size,Count:LongWord):TBufferHandle; {$IFDEF BUFFER_INLINE}inline;{$ENDIF}
 function BufferCreateEx(Size,Count,Flags:LongWord):TBufferHandle;
 function BufferDestroy(Buffer:TBufferHandle):LongWord;
 
@@ -2390,7 +2412,7 @@ function ThreadMain(Parameter:Pointer):PtrInt;
 
 function SysBeginThread(SignalAction:Pointer;StackSize:PtrUInt;ThreadFunction:TThreadFunc;ThreadParameter:Pointer;CreationFlags:DWORD;var ThreadId:TThreadID):TThreadID;
 function SysBeginThreadEx(SignalAction:Pointer;StackSize:PtrUInt;ThreadFunction:TThreadFunc;ThreadParameter:Pointer;CreationFlags:DWORD;Priority,Affinity,CPU:LongWord;Name:PChar;var ThreadId:TThreadID):TThreadID;
- 
+
 procedure SysEndThread(ExitCode:DWORD);
 
 function SysSuspendThread(ThreadHandle:TThreadID):DWORD;
@@ -2584,7 +2606,7 @@ const
   SemaphoreWait:@SysSemaphoreWait; {Removed from current FPC RTL}
   {$ENDIF}
  );
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -2596,28 +2618,28 @@ var
  {Thread specific variables}
  LocksInitialized:Boolean;
  ThreadsInitialized:Boolean;
- 
+
  PrimaryInitialized:Boolean;
  SchedulerInitialized:Boolean;
  SecondaryInitialized:Boolean;
- 
+
  InitializationCompleted:array of LongBool;  {True if all initialization has completed (One per CPU)}
- 
+
  SysLastInitProc:CodePointer = nil;
  SysInitializationCompleted:Boolean;         {True if unit initialization has completed}
- 
+
  SpinTable:PSpinEntry;
  SpinTableLock:TSpinHandle;
  SpinTableCount:LongWord;
- 
+
  MutexTable:PMutexEntry;
  MutexTableLock:TSpinHandle;
  MutexTableCount:LongWord;
- 
+
  CriticalSectionTable:PCriticalSectionEntry;
  CriticalSectionTableLock:TSpinHandle;
  CriticalSectionTableCount:LongWord;
- 
+
  SemaphoreTable:PSemaphoreEntry;
  SemaphoreTableLock:TSpinHandle;
  SemaphoreTableCount:LongWord;
@@ -2633,57 +2655,57 @@ var
  CompletionTable:PCompletionEntry;
  CompletionTableLock:TSpinHandle;
  CompletionTableCount:LongWord;
- 
+
  ListTable:PListEntry;
  ListTableLock:TSpinHandle;
  ListTableCount:LongWord;
- 
+
  QueueTable:PQueueEntry;
  QueueTableLock:TSpinHandle;
  QueueTableCount:LongWord;
- 
+
  ThreadTable:PThreadEntry;
  ThreadTableLock:TSpinHandle;
  ThreadTableCount:LongWord;
  ThreadTlsTable:array[0..THREAD_TLS_MAXIMUM - 1] of LongWord; {Thread Local Storage Indexes (for ThreadAllocTlsIndex/ThreadReleaseTlsIndex)}
  ThreadTlsTableCount:LongWord;
  ThreadTerminationTimer:TTimerHandle;
- 
+
  MessageslotTable:PMessageslotEntry;
  MessageslotTableLock:TSpinHandle;
  MessageslotTableCount:LongWord;
- 
+
  MailslotTable:PMailslotEntry;
  MailslotTableLock:TSpinHandle;
  MailslotTableCount:LongWord;
- 
+
  BufferTable:PBufferEntry;
  BufferTableLock:TSpinHandle;
  BufferTableCount:LongWord;
- 
+
  EventTable:PEventEntry;
  EventTableLock:TSpinHandle;
  EventTableCount:LongWord;
- 
+
  TimerList:PTimerList;
  TimerTable:PTimerEntry;
  TimerTableLock:TSpinHandle;
  TimerTableCount:LongWord;
  TimerMessageslot:TMessageslotHandle;
  TimerPriorityMessageslot:TMessageslotHandle;
- 
+
  WorkerThreadLock:TSpinHandle;
  WorkerThreadCount:LongWord;
  WorkerThreadNext:LongWord;
  WorkerMessageslot:TMessageslotHandle;
- 
+
  WorkerPriorityThreadLock:TSpinHandle;
  WorkerPriorityThreadCount:LongWord;
  WorkerPriorityThreadNext:LongWord;
  WorkerPriorityMessageslot:TMessageslotHandle;
 
  TaskerList:PTaskerList;
- 
+
  MainThread:TThreadHandle;
 
 {==============================================================================}
@@ -2745,37 +2767,37 @@ begin
   begin
    {Setup InitializationCompleted (Done here to allow for early init)}
    SetLength(InitializationCompleted,CPUGetCount);
-  end; 
- 
+  end;
+
  {Initialize Spin Table (First entry is always its own lock)}
  if SPIN_SHARED_MEMORY then
   begin
-   SpinTable:=AllocSharedMem(SizeOf(TSpinEntry)); 
+   SpinTable:=AllocSharedMem(SizeOf(TSpinEntry));
   end
  else
   begin
-   SpinTable:=AllocMem(SizeOf(TSpinEntry)); 
+   SpinTable:=AllocMem(SizeOf(TSpinEntry));
   end;
  SpinTableLock:=INVALID_HANDLE_VALUE;
  SpinTableCount:=0;
  if SpinTable <> nil then
-  begin 
+  begin
    SpinTable.Signature:=SPIN_SIGNATURE;
    SpinTable.State:=SPIN_STATE_UNLOCKED;
    SpinTableLock:=TSpinHandle(SpinTable);
    SpinTableCount:=1;
-  end; 
- 
+  end;
+
  {Initialize Mutex Table}
  MutexTable:=nil;
  MutexTableLock:=SpinCreate;
  MutexTableCount:=0;
- 
- {Initialize Critical Section Table} 
+
+ {Initialize Critical Section Table}
  CriticalSectionTable:=nil;
  CriticalSectionTableLock:=SpinCreate;
  CriticalSectionTableCount:=0;
- 
+
  {Initialize Semaphore Table}
  SemaphoreTable:=nil;
  SemaphoreTableLock:=SpinCreate;
@@ -2795,7 +2817,7 @@ begin
  CompletionTable:=nil;
  CompletionTableLock:=SpinCreate;
  CompletionTableCount:=0;
- 
+
  {Initialize List Table}
  ListTable:=nil;
  ListTableLock:=SpinCreate;
@@ -2805,7 +2827,7 @@ begin
  QueueTable:=nil;
  QueueTableLock:=SpinCreate;
  QueueTableCount:=0;
- 
+
  LocksInitialized:=True;
 end;
 
@@ -2817,85 +2839,85 @@ procedure ThreadsInit;
 {Note: Called only during system startup}
 var
  Count:LongWord;
- Thread:TThreadHandle; 
+ Thread:TThreadHandle;
 begin
  {}
  {Check Initialized}
  if ThreadsInitialized then Exit;
- 
+
  {Initialize Logging}
  THREAD_LOG_ENABLED:=(THREAD_DEFAULT_LOG_LEVEL <> THREAD_LOG_LEVEL_NONE);
- 
+
  {Initialize SCHEDULER_FIQ_ENABLED}
  if not(FIQ_ENABLED) then SCHEDULER_FIQ_ENABLED:=False;
- 
+
  {Initialize SCHEDULER_SWI_ENABLED}
  if not(SWI_ENABLED) then SCHEDULER_SWI_ENABLED:=False;
- 
+
  {Initialize SCHEDULER_CPU_COUNT/MASK/BOOT}
  SCHEDULER_CPU_COUNT:=CPUGetCount;
  SCHEDULER_CPU_MASK:=CPUGetMask;
  SCHEDULER_CPU_BOOT:=CPUGetBoot;
- 
+
  {Setup BOOT_STACK_BASE/BOOT_THREAD_HANDLE}
  SetLength(BOOT_STACK_BASE,SCHEDULER_CPU_COUNT);
  SetLength(BOOT_THREAD_HANDLE,SCHEDULER_CPU_COUNT);
- 
+
  {Setup IDLE_THREAD_HANDLE}
  SetLength(IDLE_THREAD_HANDLE,SCHEDULER_CPU_COUNT);
- 
+
  {Setup IRQ_STACK_BASE/IRQ_THREAD_HANDLE}
  SetLength(IRQ_STACK_BASE,SCHEDULER_CPU_COUNT);
  SetLength(IRQ_THREAD_HANDLE,SCHEDULER_CPU_COUNT);
- 
+
  {Setup FIQ_STACK_BASE/FIQ_THREAD_HANDLE}
  SetLength(FIQ_STACK_BASE,SCHEDULER_CPU_COUNT);
  SetLength(FIQ_THREAD_HANDLE,SCHEDULER_CPU_COUNT);
- 
+
  {Setup SWI_STACK_BASE/SWI_THREAD_HANDLE}
  SetLength(SWI_STACK_BASE,SCHEDULER_CPU_COUNT);
  SetLength(SWI_THREAD_HANDLE,SCHEDULER_CPU_COUNT);
 
  {Setup ABORT_STACK_BASE}
  SetLength(ABORT_STACK_BASE,SCHEDULER_CPU_COUNT);
- 
+
  {Setup UNDEFINED_STACK_BASE}
  SetLength(UNDEFINED_STACK_BASE,SCHEDULER_CPU_COUNT);
- 
+
  {Check InitializationCompleted}
  if Length(InitializationCompleted) = 0 then
   begin
    {Setup InitializationCompleted}
    SetLength(InitializationCompleted,SCHEDULER_CPU_COUNT);
-  end; 
- 
+  end;
+
  {Initialize Primary CPU}
  PrimaryInit;
- 
+
  {Setup THREAD_NAME_DEFAULT}
  THREAD_NAME_DEFAULT:=RTL_THREAD_NAME;
- 
+
  {Setup TIMER_THREAD_COUNT/TIMER_PRIORITY_THREAD_COUNT}
  if TIMER_THREAD_COUNT < 1 then TIMER_THREAD_COUNT:=1;
  if TIMER_PRIORITY_THREAD_COUNT < 1 then TIMER_PRIORITY_THREAD_COUNT:=1;
- 
+
  {Setup WORKER_THREAD_COUNT/WORKER_PRIORITY_THREAD_COUNT}
  if WORKER_THREAD_COUNT < 1 then WORKER_THREAD_COUNT:=1;
  if WORKER_PRIORITY_THREAD_COUNT < 1 then WORKER_PRIORITY_THREAD_COUNT:=1;
- 
+
  {Setup System CPUCount}
  SystemCPUCount:=SCHEDULER_CPU_COUNT;
 
  {Setup System InitProc}
  SysLastInitProc:=InitProc;
  InitProc:=@SysInitProc;
- 
+
  {Setup System ExitProc}
  AddExitProc(SysExitProc);
- 
+
  {Setup System Handlers}
  SysGetProcessIDHandler:=SysGetProcessID;
- 
+
  {Setup SysUtils Handlers}
  {Thread Functions}
  SysUtilsSleepHandler:=ThreadSleep;
@@ -2903,14 +2925,14 @@ begin
  SysUtilsGetLastErrorHandler:=ThreadGetLastError;
  {Locale Functions}
  SysUtilsSysErrorMessageHandler:=SysErrorToString;
- 
+
  {Setup Global Handlers}
  GetLastErrorHandler:=ThreadGetLastError;
  SetLastErrorHandler:=ThreadSetLastError;
- 
+
  {Setup Platform Handlers}
  HaltThreadHandler:=ThreadHalt;
- 
+
  {Setup Spin Default Handlers}
  if not Assigned(SpinLockHandler) then SpinLockHandler:=SpinLockDefault;
  if not Assigned(SpinUnlockHandler) then SpinUnlockHandler:=SpinUnlockDefault;
@@ -2923,21 +2945,21 @@ begin
 
  if not Assigned(SpinLockIRQFIQHandler) then SpinLockIRQFIQHandler:=SpinLockIRQFIQDefault;
  if not Assigned(SpinUnlockIRQFIQHandler) then SpinUnlockIRQFIQHandler:=SpinUnlockIRQFIQDefault;
- 
+
  {Setup Mutex Default Handlers}
  if not Assigned(MutexLockHandler) then MutexLockHandler:=MutexLockDefault;
  if not Assigned(MutexUnlockHandler) then MutexUnlockHandler:=MutexUnlockDefault;
  if not Assigned(MutexTryLockHandler) then MutexTryLockHandler:=MutexTryLockDefault;
- 
+
  {Initialize Locale Support}
  LocaleInit;
- 
+
  {Initialize Unicode Support}
  UnicodeInit;
- 
+
  {Initialize Locking Primitives}
  LocksInit;
- 
+
  {Initialize Thread Table (First entry is always the IRQ or FIQ thread on the boot CPU)}
  if THREAD_SHARED_MEMORY then
   begin
@@ -2951,7 +2973,7 @@ begin
  ThreadTableCount:=0;
  ThreadTlsTableCount:=0;
  if ThreadTable <> nil then
-  begin 
+  begin
    if SCHEDULER_FIQ_ENABLED then
     begin
      {Setup FIQ Thread}
@@ -2976,30 +2998,30 @@ begin
      ThreadTable.CurrentCPU:=SCHEDULER_CPU_BOOT;         {Must always run on the Boot CPU}
      ThreadTable.StackPointer:=nil;                      {Set on first context switch}
      ThreadTable.TargetCPU:=SCHEDULER_CPU_BOOT;          {Must always run on the Boot CPU}
-     ThreadTable.TargetPriority:=THREAD_PRIORITY_NORMAL;       
+     ThreadTable.TargetPriority:=THREAD_PRIORITY_NORMAL;
      ThreadTable.List:=ListCreateEx(LIST_TYPE_WAIT_THREAD,SchedulerGetListFlags(LIST_TYPE_WAIT_THREAD));  {INVALID_HANDLE_VALUE;} {Preallocated on threads to prevent IRQ/FIQ deadlocks in ListCreate}
      ThreadTable.WaitList:=INVALID_HANDLE_VALUE;
      ThreadTable.WaitLists:=nil;
      ThreadTable.WaitResult:=ERROR_SUCCESS;
      ThreadTable.ReceiveResult:=ERROR_SUCCESS;
      ThreadTable.ScheduleQueue:=INVALID_HANDLE_VALUE;
-     ThreadTable.ListElement.Thread:=TThreadHandle(ThreadTable); 
+     ThreadTable.ListElement.Thread:=TThreadHandle(ThreadTable);
      ThreadTable.QueueElement.Thread:=TThreadHandle(ThreadTable);
      {Statistics Properties}
      ThreadTable.CreateTime:=ClockGetTime;
      ThreadTable.ExitTime:=TIME_TICKS_TO_1899;
      ThreadTable.KernelTime:=TIME_TICKS_TO_1899;
      ThreadTable.SwitchCount:=0;
-     
+
      {Set Boot Thread}
      BOOT_THREAD_HANDLE[SCHEDULER_CPU_BOOT]:=TThreadHandle(ThreadTable);
-     
+
      {Set Thread Handle}
      FIQ_THREAD_HANDLE[SCHEDULER_CPU_BOOT]:=TThreadHandle(ThreadTable);
 
      {Set Current Thread}
      ThreadSetCurrent(FIQ_THREAD_HANDLE[SCHEDULER_CPU_BOOT]);
-     
+
      {Increment Thread Count}
      Inc(ThreadTableCount);
      end
@@ -3027,14 +3049,14 @@ begin
      ThreadTable.CurrentCPU:=SCHEDULER_CPU_BOOT;         {Must always run on the Boot CPU}
      ThreadTable.StackPointer:=nil;                      {Set on first context switch}
      ThreadTable.TargetCPU:=SCHEDULER_CPU_BOOT;          {Must always run on the Boot CPU}
-     ThreadTable.TargetPriority:=THREAD_PRIORITY_NORMAL;       
+     ThreadTable.TargetPriority:=THREAD_PRIORITY_NORMAL;
      ThreadTable.List:=ListCreateEx(LIST_TYPE_WAIT_THREAD,SchedulerGetListFlags(LIST_TYPE_WAIT_THREAD));  {INVALID_HANDLE_VALUE;} {Preallocated on threads to prevent IRQ/FIQ deadlocks in ListCreate}
      ThreadTable.WaitList:=INVALID_HANDLE_VALUE;
      ThreadTable.WaitLists:=nil;
      ThreadTable.WaitResult:=ERROR_SUCCESS;
      ThreadTable.ReceiveResult:=ERROR_SUCCESS;
      ThreadTable.ScheduleQueue:=INVALID_HANDLE_VALUE;
-     ThreadTable.ListElement.Thread:=TThreadHandle(ThreadTable); 
+     ThreadTable.ListElement.Thread:=TThreadHandle(ThreadTable);
      ThreadTable.QueueElement.Thread:=TThreadHandle(ThreadTable);
      {Statistics Properties}
      ThreadTable.CreateTime:=ClockGetTime;
@@ -3044,28 +3066,28 @@ begin
 
      {Set Boot Thread}
      BOOT_THREAD_HANDLE[SCHEDULER_CPU_BOOT]:=TThreadHandle(ThreadTable);
-     
+
      {Set Thread Handle}
      IRQ_THREAD_HANDLE[SCHEDULER_CPU_BOOT]:=TThreadHandle(ThreadTable);
 
      {Set Current Thread}
      ThreadSetCurrent(IRQ_THREAD_HANDLE[SCHEDULER_CPU_BOOT]);
-     
+
      {Increment Thread Count}
      Inc(ThreadTableCount);
-    end;  
+    end;
   end;
 
  {Initialize Messageslot Table}
  MessageslotTable:=nil;
  MessageslotTableLock:=SpinCreate;
  MessageslotTableCount:=0;
- 
+
  {Initialize Mailslot Table}
  MailslotTable:=nil;
  MailslotTableLock:=SpinCreate;
  MailslotTableCount:=0;
- 
+
  {Initialize Buffer Table}
  BufferTable:=nil;
  BufferTableLock:=SpinCreate;
@@ -3075,16 +3097,16 @@ begin
  EventTable:=nil;
  EventTableLock:=SpinCreate;
  EventTableCount:=0;
- 
+
  {Initialize Timer Table}
  TimerList:=nil;
  TimerTable:=nil;
  TimerTableLock:=SpinCreate;
  TimerTableCount:=0;
- 
+
  {Initialize Tasker List}
  TaskerList:=nil;
- 
+
  {Initialize Heap Lock}
  {$IF DEFINED(HEAP_LOCK_IRQ) or DEFINED(HEAP_LOCK_FIQ) or DEFINED(HEAP_LOCK_IRQFIQ)}
  HeapLock.Lock:=SpinCreate;
@@ -3113,9 +3135,9 @@ begin
  HeapLock.AcquireIRQLock:=SpinLockIRQ;
  HeapLock.ReleaseIRQLock:=SpinUnlockIRQ;
  if FIQ_ENABLED then HeapLock.AcquireFIQLock:=SpinLockIRQFIQ else HeapLock.AcquireFIQLock:=SpinLockIRQ;
- if FIQ_ENABLED then HeapLock.ReleaseFIQLock:=SpinUnlockIRQFIQ else HeapLock.ReleaseFIQLock:=SpinUnlockIRQ; 
+ if FIQ_ENABLED then HeapLock.ReleaseFIQLock:=SpinUnlockIRQFIQ else HeapLock.ReleaseFIQLock:=SpinUnlockIRQ;
  RegisterHeapLock(HeapLock);
- 
+
  {Initialize Clock Lock}
  ClockLock.Lock:=SpinCreate;
  ClockLock.AcquireLock:=SpinLock;
@@ -3125,7 +3147,7 @@ begin
  PowerLock.Lock:=SpinCreate;
  PowerLock.AcquireLock:=SpinLock;
  PowerLock.ReleaseLock:=SpinUnlock;
- 
+
  {Initialize Mailbox Lock}
  MailboxLock.Lock:=SpinCreate;
  MailboxLock.AcquireLock:=SpinLock;
@@ -3135,27 +3157,27 @@ begin
  ShutdownLock.Lock:=SpinCreate;
  ShutdownLock.AcquireLock:=SpinLock;
  ShutdownLock.ReleaseLock:=SpinUnlock;
- 
+
  {Initialize Interrupt Lock}
  InterruptLock.Lock:=SpinCreate;
  InterruptLock.AcquireLock:=SpinLockIRQFIQ;
  InterruptLock.ReleaseLock:=SpinUnlockIRQFIQ;
- 
+
  {Initialize Page Table Lock}
  PageTableLock.Lock:=SpinCreate;
- PageTableLock.AcquireLock:=SpinLockIRQFIQ; 
- PageTableLock.ReleaseLock:=SpinUnlockIRQFIQ; 
+ PageTableLock.AcquireLock:=SpinLockIRQFIQ;
+ PageTableLock.ReleaseLock:=SpinUnlockIRQFIQ;
 
  {Initialize Vector Table Lock}
  VectorTableLock.Lock:=SpinCreate;
  VectorTableLock.AcquireLock:=SpinLockIRQFIQ;
- VectorTableLock.ReleaseLock:=SpinUnlockIRQFIQ; 
- 
+ VectorTableLock.ReleaseLock:=SpinUnlockIRQFIQ;
+
  {Initialize Handle Name Lock}
  HandleNameLock.Lock:=MutexCreate;
  HandleNameLock.AcquireLock:=MutexLock;
  HandleNameLock.ReleaseLock:=MutexUnlock;
- 
+
  {Initialize Handle Table Lock}
  HandleTableLock.Lock:=SpinCreate;
  HandleTableLock.AcquireLock:=SpinLock;
@@ -3170,7 +3192,7 @@ begin
  UtilityLock.Lock:=SpinCreate;
  UtilityLock.AcquireLock:=SpinLock;
  UtilityLock.ReleaseLock:=SpinUnlock;
- 
+
  {Initialize Environment Lock}
  EnvironmentLock.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
  EnvironmentLock.AcquireLock:=MutexLock;
@@ -3180,10 +3202,10 @@ begin
  ShutdownSemaphore.Semaphore:=SemaphoreCreate(0);
  ShutdownSemaphore.WaitSemaphore:=SemaphoreWaitEx;
  ShutdownSemaphore.SignalSemaphore:=SemaphoreSignal;
- 
+
  {Initialize Shutdown Worker}
  ShutdownWorker.ScheduleWorker:=WorkerSchedule;
- 
+
  {Initialize CodePage Lock}
  CodePageLock.Lock:=MutexCreate;
  CodePageLock.AcquireLock:=MutexLock;
@@ -3191,11 +3213,11 @@ begin
 
  {Initialize Thread Manager}
  SetThreadManager(MyThreadManager);
- 
+
  {Initialize Thread Variables}
  InitThreadVars(@SysRelocateThreadVar);
  IsMultiThread:=True;
- 
+
  {Setup Initial Thread Tls Memory}
  {ThreadTable.TlsPointer:=AllocMem(ThreadVarBlockSize);} {Must be done statically above for the Initial Thread}
  if ThreadVarBlockSize > INITIAL_TLS_SIZE then
@@ -3203,13 +3225,13 @@ begin
    {$IFDEF THREAD_DEBUG}
    if THREAD_LOG_ENABLED then ThreadLogDebug('TLS block size exceeds initial allocation, System Halted');
    {$ENDIF}
-   
+
    Halt;
-  end; 
+  end;
 
  {Initialize Thread}
  InitThread(INITIAL_STACK_SIZE);
- 
+
  {Initialize Standard Text IO (Input/Output/ErrOutput/StdOut/StdErr)}
  {Note: Normally done by InitThread}
  TextIOOpen(Input,TextIOWriteChar,TextIOReadChar,fmInput,nil);
@@ -3217,35 +3239,35 @@ begin
  TextIOOpen(ErrOutput,TextIOWriteChar,TextIOReadChar,fmOutput,nil);
  TextIOOpen(StdOut,TextIOWriteChar,TextIOReadChar,fmOutput,nil);
  TextIOOpen(StdErr,TextIOWriteChar,TextIOReadChar,fmOutput,nil);
- 
+
  {Initialize InOutRes}
  {Note: Normally done by InitThread}
  InOutRes:=0;
- 
+
  {Initialize Stack Checking}
  {Note: Normally done by InitThread}
  {StackLength:=CheckInitialStkLen(ThreadInfo.StackLength);}
  {StackBottom:=Sptr - StackLength;}
- 
+
  {Initialize Exception Support}
  SysUtilsInitExceptions;
 
  {Initialize Unhandled Exceptions}
  ExceptProc:=@UnhandledException;
- 
+
  {Initialize Scheduler}
- SchedulerInit; 
+ SchedulerInit;
 
  if SCHEDULER_FIQ_ENABLED then
   begin
    {Create IRQ Thread (FIQ Thread is the Initial Thread)}
    IRQ_THREAD_HANDLE[SCHEDULER_CPU_BOOT]:=SysBeginThreadEx(nil,IRQ_STACK_SIZE,IRQExecute,nil,0,THREAD_PRIORITY_NORMAL,(1 shl SCHEDULER_CPU_BOOT),SCHEDULER_CPU_BOOT,PChar(IRQ_THREAD_NAME + IntToStr(SCHEDULER_CPU_BOOT)),Thread);
-   if IRQ_THREAD_HANDLE[SCHEDULER_CPU_BOOT] = INVALID_HANDLE_VALUE then 
+   if IRQ_THREAD_HANDLE[SCHEDULER_CPU_BOOT] = INVALID_HANDLE_VALUE then
     begin
      {$IFDEF THREAD_DEBUG}
      if THREAD_LOG_ENABLED then ThreadLogDebug('Failed to create IRQ thread, System Halted');
      {$ENDIF}
-     
+
      Halt;
     end;
    {Setup IRQ Thread}
@@ -3262,12 +3284,12 @@ begin
    if FIQ_ENABLED then
     begin
      FIQ_THREAD_HANDLE[SCHEDULER_CPU_BOOT]:=SysBeginThreadEx(nil,FIQ_STACK_SIZE,FIQExecute,nil,0,THREAD_PRIORITY_NORMAL,(1 shl SCHEDULER_CPU_BOOT),SCHEDULER_CPU_BOOT,PChar(FIQ_THREAD_NAME + IntToStr(SCHEDULER_CPU_BOOT)),Thread);
-     if FIQ_THREAD_HANDLE[SCHEDULER_CPU_BOOT] = INVALID_HANDLE_VALUE then 
+     if FIQ_THREAD_HANDLE[SCHEDULER_CPU_BOOT] = INVALID_HANDLE_VALUE then
       begin
        {$IFDEF THREAD_DEBUG}
        if THREAD_LOG_ENABLED then ThreadLogDebug('Failed to create FIQ thread, System Halted');
        {$ENDIF}
-       
+
        Halt;
       end;
      {Setup FIQ Thread}
@@ -3277,19 +3299,19 @@ begin
      ThreadSetPriority(FIQ_THREAD_HANDLE[SCHEDULER_CPU_BOOT],THREAD_PRIORITY_NORMAL);
      {Affinity (Must always run on the Boot CPU)}
      ThreadSetAffinity(FIQ_THREAD_HANDLE[SCHEDULER_CPU_BOOT],(1 shl SCHEDULER_CPU_BOOT));
-    end; 
-  end;  
+    end;
+  end;
 
  {Create SWI Thread}
  if SWI_ENABLED then
   begin
    SWI_THREAD_HANDLE[SCHEDULER_CPU_BOOT]:=SysBeginThreadEx(nil,SWI_STACK_SIZE,SWIExecute,nil,0,THREAD_PRIORITY_NORMAL,(1 shl SCHEDULER_CPU_BOOT),SCHEDULER_CPU_BOOT,PChar(SWI_THREAD_NAME + IntToStr(SCHEDULER_CPU_BOOT)),Thread);
-   if SWI_THREAD_HANDLE[SCHEDULER_CPU_BOOT] = INVALID_HANDLE_VALUE then 
+   if SWI_THREAD_HANDLE[SCHEDULER_CPU_BOOT] = INVALID_HANDLE_VALUE then
     begin
      {$IFDEF THREAD_DEBUG}
      if THREAD_LOG_ENABLED then ThreadLogDebug('Failed to create SWI thread, System Halted');
      {$ENDIF}
-     
+
      Halt;
     end;
    {Setup SWI Thread}
@@ -3299,16 +3321,16 @@ begin
    ThreadSetPriority(SWI_THREAD_HANDLE[SCHEDULER_CPU_BOOT],THREAD_PRIORITY_NORMAL);
    {Affinity (Must always run on the Boot CPU)}
    ThreadSetAffinity(SWI_THREAD_HANDLE[SCHEDULER_CPU_BOOT],(1 shl SCHEDULER_CPU_BOOT));
-  end; 
- 
+  end;
+
  {Create Idle Thread}
  IDLE_THREAD_HANDLE[SCHEDULER_CPU_BOOT]:=SysBeginThreadEx(nil,IDLE_STACK_SIZE,IdleExecute,nil,0,THREAD_PRIORITY_IDLE,(1 shl SCHEDULER_CPU_BOOT),SCHEDULER_CPU_BOOT,PChar(IDLE_THREAD_NAME + IntToStr(SCHEDULER_CPU_BOOT)),Thread);
- if IDLE_THREAD_HANDLE[SCHEDULER_CPU_BOOT] = INVALID_HANDLE_VALUE then 
+ if IDLE_THREAD_HANDLE[SCHEDULER_CPU_BOOT] = INVALID_HANDLE_VALUE then
   begin
    {$IFDEF THREAD_DEBUG}
    if THREAD_LOG_ENABLED then ThreadLogDebug('Failed to create idle thread, System Halted');
    {$ENDIF}
-   
+
    Halt;
   end;
  {Setup Idle Thread}
@@ -3318,20 +3340,20 @@ begin
  ThreadSetPriority(IDLE_THREAD_HANDLE[SCHEDULER_CPU_BOOT],THREAD_PRIORITY_IDLE);
  {Affinity (Must always run on the Boot CPU)}
  ThreadSetAffinity(IDLE_THREAD_HANDLE[SCHEDULER_CPU_BOOT],(1 shl SCHEDULER_CPU_BOOT));
- 
+
  {Create Main Thread}
  MainThread:=SysBeginThreadEx(nil,THREAD_STACK_DEFAULT_SIZE,MainExecute,nil,0,THREAD_PRIORITY_NORMAL,SCHEDULER_CPU_MASK,SCHEDULER_CPU_BOOT,PChar(MAIN_THREAD_NAME),Thread);
- if MainThread = INVALID_HANDLE_VALUE then 
+ if MainThread = INVALID_HANDLE_VALUE then
   begin
    {$IFDEF THREAD_DEBUG}
    if THREAD_LOG_ENABLED then ThreadLogDebug('Failed to create main thread, System Halted');
    {$ENDIF}
-   
+
    Halt;
   end;
  {Setup Main Thread}
  ThreadSetName(MainThread,MAIN_THREAD_NAME);
- 
+
  {Create Timer List}
  TimerList:=AllocMem(SizeOf(TTimerList));
  if TimerList <> nil then
@@ -3342,21 +3364,21 @@ begin
    TimerList.First:=nil;
    TimerList.Last:=nil;
   end;
- 
+
  {Create Timer Messageslot}
  TimerMessageslot:=MessageslotCreateEx(TIMER_MESSAGESLOT_MAXIMUM,TimerGetMessageslotFlags);
- 
+
  {Create Timer Threads}
  for Count:=0 to TIMER_THREAD_COUNT - 1 do
   begin
    {Create Timer Thread}
    Thread:=BeginThread(TimerExecute,nil,Thread,THREAD_STACK_DEFAULT_SIZE);
-   if Thread = INVALID_HANDLE_VALUE then 
+   if Thread = INVALID_HANDLE_VALUE then
     begin
      {$IFDEF THREAD_DEBUG}
      if THREAD_LOG_ENABLED then ThreadLogDebug('Failed to create timer thread, System Halted');
      {$ENDIF}
-     
+
      Halt;
     end;
    {Setup Timer Thread}
@@ -3364,22 +3386,22 @@ begin
    ThreadSetName(Thread,TIMER_THREAD_NAME + IntToStr(Count));
    {Priority}
    ThreadSetPriority(Thread,TIMER_THREAD_PRIORITY);
-  end; 
+  end;
 
  {Create Timer Priority Messageslot}
  TimerPriorityMessageslot:=MessageslotCreateEx(TIMER_MESSAGESLOT_MAXIMUM,TimerGetMessageslotFlags);
-  
+
  {Create Timer Priority Threads}
  for Count:=0 to TIMER_PRIORITY_THREAD_COUNT - 1 do
   begin
    {Create Timer Priority Thread}
    Thread:=BeginThread(TimerPriorityExecute,nil,Thread,THREAD_STACK_DEFAULT_SIZE);
-   if Thread = INVALID_HANDLE_VALUE then 
+   if Thread = INVALID_HANDLE_VALUE then
     begin
      {$IFDEF THREAD_DEBUG}
      if THREAD_LOG_ENABLED then ThreadLogDebug('Failed to create timer priority thread, System Halted');
      {$ENDIF}
-     
+
      Halt;
     end;
    {Setup Timer Priority Thread}
@@ -3387,27 +3409,27 @@ begin
    ThreadSetName(Thread,TIMER_PRIORITY_THREAD_NAME + IntToStr(Count));
    {Priority}
    ThreadSetPriority(Thread,TIMER_PRIORITY_THREAD_PRIORITY);
-  end; 
-  
+  end;
+
  {Create Worker Lock}
  WorkerThreadLock:=SpinCreate;
  WorkerThreadCount:=0;
  WorkerThreadNext:=0;
- 
+
  {Create Worker Messageslot}
  WorkerMessageslot:=MessageslotCreateEx(WORKER_MESSAGESLOT_MAXIMUM,WorkerGetMessageslotFlags);
- 
- {Create Worker Threads} 
+
+ {Create Worker Threads}
  for Count:=0 to WORKER_THREAD_COUNT - 1 do
   begin
    {Create Worker Thread}
    Thread:=BeginThread(WorkerExecute,nil,Thread,THREAD_STACK_DEFAULT_SIZE);
-   if Thread = INVALID_HANDLE_VALUE then 
+   if Thread = INVALID_HANDLE_VALUE then
     begin
      {$IFDEF THREAD_DEBUG}
      if THREAD_LOG_ENABLED then ThreadLogDebug('Failed to create worker thread, System Halted');
      {$ENDIF}
-     
+
      Halt;
     end;
    {Setup Worker Thread}
@@ -3415,29 +3437,29 @@ begin
    ThreadSetName(Thread,WORKER_THREAD_NAME + IntToStr(WorkerThreadNext));
    {Priority}
    ThreadSetPriority(Thread,WORKER_THREAD_PRIORITY);
-   
+
    Inc(WorkerThreadNext);
   end;
- 
+
  {Create Worker Priority Lock}
  WorkerPriorityThreadLock:=SpinCreate;
  WorkerPriorityThreadCount:=0;
  WorkerPriorityThreadNext:=0;
- 
+
  {Create Worker Priority Messageslot}
  WorkerPriorityMessageslot:=MessageslotCreateEx(WORKER_MESSAGESLOT_MAXIMUM,WorkerGetMessageslotFlags);
- 
- {Create Worker Priority Threads} 
+
+ {Create Worker Priority Threads}
  for Count:=0 to WORKER_PRIORITY_THREAD_COUNT - 1 do
   begin
    {Create Worker Priority Thread}
    Thread:=BeginThread(WorkerPriorityExecute,nil,Thread,THREAD_STACK_DEFAULT_SIZE);
-   if Thread = INVALID_HANDLE_VALUE then 
+   if Thread = INVALID_HANDLE_VALUE then
     begin
      {$IFDEF THREAD_DEBUG}
      if THREAD_LOG_ENABLED then ThreadLogDebug('Failed to create worker priority thread, System Halted');
      {$ENDIF}
-     
+
      Halt;
     end;
    {Setup Worker Priority Thread}
@@ -3445,10 +3467,10 @@ begin
    ThreadSetName(Thread,WORKER_PRIORITY_THREAD_NAME + IntToStr(WorkerPriorityThreadNext));
    {Priority}
    ThreadSetPriority(Thread,WORKER_PRIORITY_THREAD_PRIORITY);
-   
+
    Inc(WorkerPriorityThreadNext);
   end;
- 
+
  {Create Tasker List}
  TaskerList:=AllocMem(SizeOf(TTaskerList));
  if TaskerList <> nil then
@@ -3458,18 +3480,18 @@ begin
    TaskerList.First:=nil;
    TaskerList.Last:=nil;
   end;
- 
+
  {Create Termination Timer}
  ThreadTerminationTimer:=TimerCreateEx(SCHEDULER_TERMINATION_INITIAL,TIMER_STATE_ENABLED,TIMER_FLAG_RESCHEDULE or TIMER_FLAG_WORKER,TTimerEvent(ThreadTimer),nil); {Rescheduled Automatically}
- 
+
  {Calibrate Idle Thread}
  SCHEDULER_IDLE_PER_SECOND:=IdleCalibrate;
- 
+
  ThreadsInitialized:=True;
- 
+
  {Synchronization Barrier}
  DataSynchronizationBarrier;
- 
+
  if SCHEDULER_FIQ_ENABLED then
   begin
    {Call the FIQ Thread Handler}
@@ -3479,7 +3501,7 @@ begin
   begin
    {Call the IRQ Thread Handler}
    IRQExecute(nil);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -3492,23 +3514,23 @@ begin
  {}
  {Check Initialized}
  if PrimaryInitialized then Exit;
- 
+
  {Perform default initialization}
  {Setup Boot Stack}
  BOOT_STACK_BASE[SCHEDULER_CPU_BOOT]:=INITIAL_STACK_BASE;
- 
+
  {Create IRQ Stack}
  if IRQ_ENABLED and IRQ_STACK_ENABLED then
   begin
-   IRQ_STACK_BASE[SCHEDULER_CPU_BOOT]:=PtrUInt(AllocAlignedMem(IRQ_STACK_SIZE,STACK_MIN_ALIGNMENT)); 
+   IRQ_STACK_BASE[SCHEDULER_CPU_BOOT]:=PtrUInt(AllocAlignedMem(IRQ_STACK_SIZE,STACK_MIN_ALIGNMENT));
    {Get the top of the IRQ Stack}
    if IRQ_STACK_BASE[SCHEDULER_CPU_BOOT] <> 0 then IRQ_STACK_BASE[SCHEDULER_CPU_BOOT]:=IRQ_STACK_BASE[SCHEDULER_CPU_BOOT] + (IRQ_STACK_SIZE - STACK_MIN_ALIGNMENT);
   end;
- 
+
  {Create FIQ Stack}
  if FIQ_ENABLED and FIQ_STACK_ENABLED then
   begin
-   FIQ_STACK_BASE[SCHEDULER_CPU_BOOT]:=PtrUInt(AllocAlignedMem(FIQ_STACK_SIZE,STACK_MIN_ALIGNMENT)); 
+   FIQ_STACK_BASE[SCHEDULER_CPU_BOOT]:=PtrUInt(AllocAlignedMem(FIQ_STACK_SIZE,STACK_MIN_ALIGNMENT));
    {Get the top of the FIQ Stack}
    if FIQ_STACK_BASE[SCHEDULER_CPU_BOOT] <> 0 then FIQ_STACK_BASE[SCHEDULER_CPU_BOOT]:=FIQ_STACK_BASE[SCHEDULER_CPU_BOOT] + (FIQ_STACK_SIZE - STACK_MIN_ALIGNMENT);
   end;
@@ -3516,7 +3538,7 @@ begin
  {Create SWI Stack}
  if SWI_ENABLED and SWI_STACK_ENABLED then
   begin
-   SWI_STACK_BASE[SCHEDULER_CPU_BOOT]:=PtrUInt(AllocAlignedMem(SWI_STACK_SIZE,STACK_MIN_ALIGNMENT)); 
+   SWI_STACK_BASE[SCHEDULER_CPU_BOOT]:=PtrUInt(AllocAlignedMem(SWI_STACK_SIZE,STACK_MIN_ALIGNMENT));
    {Get the top of the SWI Stack}
    if SWI_STACK_BASE[SCHEDULER_CPU_BOOT] <> 0 then SWI_STACK_BASE[SCHEDULER_CPU_BOOT]:=SWI_STACK_BASE[SCHEDULER_CPU_BOOT] + (SWI_STACK_SIZE - STACK_MIN_ALIGNMENT);
   end;
@@ -3524,19 +3546,19 @@ begin
  {Create ABORT Stack}
  if ABORT_ENABLED and ABORT_STACK_ENABLED then
   begin
-   ABORT_STACK_BASE[SCHEDULER_CPU_BOOT]:=PtrUInt(AllocAlignedMem(ABORT_STACK_SIZE,STACK_MIN_ALIGNMENT)); 
+   ABORT_STACK_BASE[SCHEDULER_CPU_BOOT]:=PtrUInt(AllocAlignedMem(ABORT_STACK_SIZE,STACK_MIN_ALIGNMENT));
    {Get the top of the ABORT Stack}
    if ABORT_STACK_BASE[SCHEDULER_CPU_BOOT] <> 0 then ABORT_STACK_BASE[SCHEDULER_CPU_BOOT]:=ABORT_STACK_BASE[SCHEDULER_CPU_BOOT] + (ABORT_STACK_SIZE - STACK_MIN_ALIGNMENT);
   end;
-  
+
  {Create UNDEFINED Stack}
  if UNDEFINED_ENABLED and UNDEFINED_STACK_ENABLED then
   begin
-   UNDEFINED_STACK_BASE[SCHEDULER_CPU_BOOT]:=PtrUInt(AllocAlignedMem(UNDEFINED_STACK_SIZE,STACK_MIN_ALIGNMENT)); 
+   UNDEFINED_STACK_BASE[SCHEDULER_CPU_BOOT]:=PtrUInt(AllocAlignedMem(UNDEFINED_STACK_SIZE,STACK_MIN_ALIGNMENT));
    {Get the top of the UNDEFINED Stack}
    if UNDEFINED_STACK_BASE[SCHEDULER_CPU_BOOT] <> 0 then UNDEFINED_STACK_BASE[SCHEDULER_CPU_BOOT]:=UNDEFINED_STACK_BASE[SCHEDULER_CPU_BOOT] + (UNDEFINED_STACK_SIZE - STACK_MIN_ALIGNMENT);
   end;
-  
+
  {Check the Handler}
  if Assigned(PrimaryInitHandler) then
   begin
@@ -3546,10 +3568,10 @@ begin
 
  {Perform default initialization}
  {Nothing}
- 
+
  PrimaryInitialized:=True;
 end;
-  
+
 {==============================================================================}
 
 procedure SchedulerInit;
@@ -3562,26 +3584,26 @@ begin
  {}
  {Check Initialized}
  if SchedulerInitialized then Exit;
- 
+
  {Perform default initialization}
  {Setup SCHEDULER_PRIORITY_MASK}
  SetLength(SCHEDULER_PRIORITY_MASK,THREAD_PRIORITY_COUNT);
- 
+
  {Setup SCHEDULER_PRIORITY_QUANTUM}
  SetLength(SCHEDULER_PRIORITY_QUANTUM,THREAD_PRIORITY_COUNT);
- 
+
  {Setup SchedulerThreadCount}
  SetLength(SchedulerThreadCount,SCHEDULER_CPU_COUNT);
- 
+
  {Setup SchedulerThreadQuantum}
  SetLength(SchedulerThreadQuantum,SCHEDULER_CPU_COUNT);
- 
+
  {Setup SchedulerThreadPreempt}
  SetLength(SchedulerThreadPreempt,SCHEDULER_CPU_COUNT);
 
  {Setup SchedulerThreadAllocation}
  SetLength(SchedulerThreadAllocation,SCHEDULER_CPU_COUNT);
- 
+
  {Setup SchedulerPriorityMask}
  SetLength(SchedulerPriorityMask,SCHEDULER_CPU_COUNT);
 
@@ -3589,13 +3611,13 @@ begin
  {Setup SchedulerYieldCurrent}
  SetLength(SchedulerYieldCurrent,SCHEDULER_CPU_COUNT);
  {$ENDIF}
- 
+
  {Setup SchedulerStarvationNext}
  SetLength(SchedulerStarvationNext,SCHEDULER_CPU_COUNT);
- 
+
  {Setup SchedulerStarvationQuantum}
  SetLength(SchedulerStarvationQuantum,SCHEDULER_CPU_COUNT);
- 
+
  {Setup SchedulerNoneQueue}
  SetLength(SchedulerNoneQueue,SCHEDULER_CPU_COUNT);
 
@@ -3622,16 +3644,16 @@ begin
 
  {Setup SchedulerSleepQueue}
  SetLength(SchedulerSleepQueue,SCHEDULER_CPU_COUNT);
- 
+
  {Setup SchedulerTimeoutQueue}
  SetLength(SchedulerTimeoutQueue,SCHEDULER_CPU_COUNT);
- 
+
  {Setup SchedulerTerminationQueue}
  SetLength(SchedulerTerminationQueue,SCHEDULER_CPU_COUNT);
- 
+
  {Setup SchedulerLast}
  SetLength(SchedulerLast,SCHEDULER_CPU_COUNT);
- 
+
  {Setup SchedulerInterrupts}
  SetLength(SchedulerInterrupts,SCHEDULER_CPU_COUNT);
 
@@ -3650,13 +3672,13 @@ begin
 
  {Setup SchedulerInterruptRollover}
  SetLength(SchedulerInterruptRollover,SCHEDULER_CPU_COUNT);
- 
+
  {Setup SchedulerSelectEntry}
  SetLength(SchedulerSelectEntry,SCHEDULER_CPU_COUNT);
 
  {Setup SchedulerSelectYield}
  SetLength(SchedulerSelectYield,SCHEDULER_CPU_COUNT);
- 
+
  {Setup SchedulerSelectForce}
  SetLength(SchedulerSelectForce,SCHEDULER_CPU_COUNT);
 
@@ -3665,7 +3687,7 @@ begin
 
  {Setup SchedulerSelectNormal}
  SetLength(SchedulerSelectNormal,SCHEDULER_CPU_COUNT);
- 
+
  {Setup SchedulerSelectInvalid}
  SetLength(SchedulerSelectInvalid,SCHEDULER_CPU_COUNT);
 
@@ -3680,10 +3702,10 @@ begin
 
  {Setup SchedulerStarvationReset}
  SetLength(SchedulerStarvationReset,SCHEDULER_CPU_COUNT);
- 
+
  {Setup SchedulerStarvationDecrement}
  SetLength(SchedulerStarvationDecrement,SCHEDULER_CPU_COUNT);
- 
+
  {Setup SchedulerSelectCPU}
  SetLength(SchedulerSelectCPU,SCHEDULER_CPU_COUNT);
 
@@ -3692,7 +3714,7 @@ begin
 
  {Setup SchedulerSelectAffinity}
  SetLength(SchedulerSelectAffinity,SCHEDULER_CPU_COUNT);
- 
+
  {Setup SchedulerSwitchEntry}
  SetLength(SchedulerSwitchEntry,SCHEDULER_CPU_COUNT);
 
@@ -3729,7 +3751,7 @@ begin
  {Setup SchedulerSecondaryWaitCounter}
  SetLength(SchedulerSecondaryWaitCounter,SCHEDULER_CPU_COUNT);
  {$ENDIF}
- 
+
  {$IF DEFINED(IRQ_STATISTICS) or DEFINED(INTERRUPT_DEBUG)}
  {Setup DispatchInterruptCounter}
  SetLength(DispatchInterruptCounter,SCHEDULER_CPU_COUNT);
@@ -3742,11 +3764,11 @@ begin
  {Setup DispatchSystemCallCounter}
  SetLength(DispatchSystemCallCounter,SCHEDULER_CPU_COUNT);
  {$ENDIF}
- 
+
  {Setup UtilizationLast/Current}
  SetLength(UtilizationLast,SCHEDULER_CPU_COUNT);
  SetLength(UtilizationCurrent,SCHEDULER_CPU_COUNT);
- 
+
  {Initialize SCHEDULER_THREAD_QUANTUM}
  {Use Default}
 
@@ -3755,27 +3777,27 @@ begin
 
  {Initialize SCHEDULER_STARVATION_QUANTUM}
  {Use Default}
- 
+
  {Initialize SCHEDULER_TERMINATION_QUANTUM}
  {Use Default}
-  
+
  {Get Priority Count}
  for Count:=0 to THREAD_PRIORITY_COUNT - 1 do
   begin
    {Initialize SCHEDULER_PRIORITY_MASK}
    SCHEDULER_PRIORITY_MASK[Count]:=SCHEDULER_MASKS[Count];
-   
+
    {Initialize SCHEDULER_PRIORITY_QUANTUM}
    SCHEDULER_PRIORITY_QUANTUM[Count]:=SCHEDULER_QUANTUMS[Count];
   end;
- 
+
  {Check the Handler}
  if Assigned(SchedulerInitHandler) then
   begin
    {Call the Handler}
    SchedulerInitHandler;
   end;
-  
+
  {Perform default initialization}
  {Initialize SchedulerThreadNext}
  SchedulerThreadNext:=SCHEDULER_CPU_BOOT;
@@ -3783,29 +3805,29 @@ begin
  {Initialize SchedulerThreadMigration}
  SchedulerThreadMigration:=SCHEDULER_MIGRATION_ENABLED;
  if SCHEDULER_SECONDARY_DISABLED then SchedulerThreadMigration:=SCHEDULER_MIGRATION_DISABLED;
- 
+
  {Initialize SchedulerMigrationQuantum}
  SchedulerMigrationQuantum:=SCHEDULER_MIGRATION_QUANTUM;
- 
+
  {Get CPU Count}
  for Count:=0 to SCHEDULER_CPU_COUNT - 1 do
   begin
    {Initialize SchedulerThreadCount}
    SchedulerThreadCount[Count]:=0;
    {if Count = SCHEDULER_CPU_BOOT then SchedulerThreadCount[Count]:=1;} {Ready threads only}
- 
+
    {Initialize SchedulerThreadQuantum}
    SchedulerThreadQuantum[Count]:=0;
    if Count = SCHEDULER_CPU_BOOT then SchedulerThreadQuantum[Count]:=SCHEDULER_THREAD_QUANTUM;
 
    {Initialize SchedulerThreadPreempt}
    SchedulerThreadPreempt[Count]:=SCHEDULER_PREEMPT_ENABLED;
-   
+
    {Initialize SchedulerThreadAllocation}
-   SchedulerThreadAllocation[Count]:=SCHEDULER_ALLOCATION_ENABLED; 
+   SchedulerThreadAllocation[Count]:=SCHEDULER_ALLOCATION_ENABLED;
    if ((1 shl Count) and SCHEDULER_CPU_RESERVE) <> 0 then SchedulerThreadAllocation[Count]:=SCHEDULER_ALLOCATION_DISABLED;
    if (Count <> SCHEDULER_CPU_BOOT) and (SCHEDULER_SECONDARY_DISABLED) then SchedulerThreadAllocation[Count]:=SCHEDULER_ALLOCATION_DISABLED;
-   
+
    {Initialize SchedulerPriorityMask}
    SchedulerPriorityMask[Count]:=0;
 
@@ -3813,13 +3835,13 @@ begin
    {Initialize SchedulerYieldCurrent}
    SchedulerYieldCurrent[Count]:=False;
    {$ENDIF}
-   
+
    {Initialize SchedulerStarvationNext}
    SchedulerStarvationNext[Count]:=THREAD_PRIORITY_NORMAL;
-   
+
    {Initialize SchedulerStarvationQuantum}
    SchedulerStarvationQuantum[Count]:=SCHEDULER_STARVATION_QUANTUM;
-   
+
    {Initialize SchedulerNoneQueue}
    SchedulerNoneQueue[Count]:=QueueCreateEx(QUEUE_TYPE_SCHEDULE_NONE,SchedulerGetQueueFlags(QUEUE_TYPE_SCHEDULE_NONE));
 
@@ -3837,28 +3859,28 @@ begin
 
    {Initialize SchedulerHigherQueue}
    SchedulerHigherQueue[Count]:=QueueCreateEx(QUEUE_TYPE_SCHEDULE_HIGHER,SchedulerGetQueueFlags(QUEUE_TYPE_SCHEDULE_HIGHER));
-   
+
    {Initialize SchedulerHighestQueue}
    SchedulerHighestQueue[Count]:=QueueCreateEx(QUEUE_TYPE_SCHEDULE_HIGHEST,SchedulerGetQueueFlags(QUEUE_TYPE_SCHEDULE_HIGHEST));
 
    {Initialize SchedulerCriticalQueue}
    SchedulerCriticalQueue[Count]:=QueueCreateEx(QUEUE_TYPE_SCHEDULE_CRITICAL,SchedulerGetQueueFlags(QUEUE_TYPE_SCHEDULE_CRITICAL));
-   
+
    {Initialize SchedulerSleepQueue}
    SchedulerSleepQueue[Count]:=QueueCreateEx(QUEUE_TYPE_SCHEDULE_SLEEP,SchedulerGetQueueFlags(QUEUE_TYPE_SCHEDULE_SLEEP));
-   
+
    {Initialize SchedulerTimeoutQueue}
    SchedulerTimeoutQueue[Count]:=QueueCreateEx(QUEUE_TYPE_SCHEDULE_TIMEOUT,SchedulerGetQueueFlags(QUEUE_TYPE_SCHEDULE_TIMEOUT));
-   
+
    {Initialize SchedulerTerminationQueue}
    SchedulerTerminationQueue[Count]:=QueueCreateEx(QUEUE_TYPE_SCHEDULE_TERMINATION,SchedulerGetQueueFlags(QUEUE_TYPE_SCHEDULE_TERMINATION));
-   
+
    {Initialize SchedulerLast}
    SchedulerLast[Count]:=0;
-   
+
    {Initialize SchedulerInterrupts}
    SchedulerInterrupts[Count]:=0;
-   
+
    {Initialize UtilizationLast/Current}
    UtilizationLast[Count]:=0;
    UtilizationCurrent[Count]:=SCHEDULER_IDLE_PER_SECOND;
@@ -3897,7 +3919,7 @@ begin
 
  {Perform default initialization}
  {Nothing}
- 
+
  {Check the Handler}
  if Assigned(SecondaryInitHandler) then
   begin
@@ -3916,14 +3938,14 @@ begin
      if Count <> SCHEDULER_CPU_BOOT then
       begin
        {Create Boot Stack}
-       BOOT_STACK_BASE[Count]:=PtrUInt(AllocAlignedMem(BOOT_STACK_SIZE,STACK_MIN_ALIGNMENT)); 
+       BOOT_STACK_BASE[Count]:=PtrUInt(AllocAlignedMem(BOOT_STACK_SIZE,STACK_MIN_ALIGNMENT));
        {Get the top of the Boot Stack}
        if BOOT_STACK_BASE[Count] <> 0 then BOOT_STACK_BASE[Count]:=BOOT_STACK_BASE[Count] + (BOOT_STACK_SIZE - STACK_MIN_ALIGNMENT);
-       
+
        {Create IRQ Stack}
        if IRQ_ENABLED and IRQ_STACK_ENABLED then
         begin
-         IRQ_STACK_BASE[Count]:=PtrUInt(AllocAlignedMem(IRQ_STACK_SIZE,STACK_MIN_ALIGNMENT)); 
+         IRQ_STACK_BASE[Count]:=PtrUInt(AllocAlignedMem(IRQ_STACK_SIZE,STACK_MIN_ALIGNMENT));
          {Get the top of the IRQ Stack}
          if IRQ_STACK_BASE[Count] <> 0 then IRQ_STACK_BASE[Count]:=IRQ_STACK_BASE[Count] + (IRQ_STACK_SIZE - STACK_MIN_ALIGNMENT);
         end;
@@ -3931,35 +3953,35 @@ begin
        {Create FIQ Stack}
        if FIQ_ENABLED and FIQ_STACK_ENABLED then
         begin
-         FIQ_STACK_BASE[Count]:=PtrUInt(AllocAlignedMem(FIQ_STACK_SIZE,STACK_MIN_ALIGNMENT)); 
+         FIQ_STACK_BASE[Count]:=PtrUInt(AllocAlignedMem(FIQ_STACK_SIZE,STACK_MIN_ALIGNMENT));
          {Get the top of the FIQ Stack}
          if FIQ_STACK_BASE[Count] <> 0 then FIQ_STACK_BASE[Count]:=FIQ_STACK_BASE[Count] + (FIQ_STACK_SIZE - STACK_MIN_ALIGNMENT);
         end;
-       
+
        {Create SWI Stack}
        if SWI_ENABLED and SWI_STACK_ENABLED then
         begin
-         SWI_STACK_BASE[Count]:=PtrUInt(AllocAlignedMem(SWI_STACK_SIZE,STACK_MIN_ALIGNMENT)); 
+         SWI_STACK_BASE[Count]:=PtrUInt(AllocAlignedMem(SWI_STACK_SIZE,STACK_MIN_ALIGNMENT));
          {Get the top of the SWI Stack}
          if SWI_STACK_BASE[Count] <> 0 then SWI_STACK_BASE[Count]:=SWI_STACK_BASE[Count] + (SWI_STACK_SIZE - STACK_MIN_ALIGNMENT);
         end;
- 
+
        {Create ABORT Stack}
        if ABORT_ENABLED and ABORT_STACK_ENABLED then
         begin
-         ABORT_STACK_BASE[Count]:=PtrUInt(AllocAlignedMem(ABORT_STACK_SIZE,STACK_MIN_ALIGNMENT)); 
+         ABORT_STACK_BASE[Count]:=PtrUInt(AllocAlignedMem(ABORT_STACK_SIZE,STACK_MIN_ALIGNMENT));
          {Get the top of the ABORT Stack}
          if ABORT_STACK_BASE[Count] <> 0 then ABORT_STACK_BASE[Count]:=ABORT_STACK_BASE[Count] + (ABORT_STACK_SIZE - STACK_MIN_ALIGNMENT);
         end;
- 
+
        {Create UNDEFINED Stack}
        if UNDEFINED_ENABLED and UNDEFINED_STACK_ENABLED then
         begin
-         UNDEFINED_STACK_BASE[Count]:=PtrUInt(AllocAlignedMem(UNDEFINED_STACK_SIZE,STACK_MIN_ALIGNMENT)); 
+         UNDEFINED_STACK_BASE[Count]:=PtrUInt(AllocAlignedMem(UNDEFINED_STACK_SIZE,STACK_MIN_ALIGNMENT));
          {Get the top of the UNDEFINED Stack}
          if UNDEFINED_STACK_BASE[Count] <> 0 then UNDEFINED_STACK_BASE[Count]:=UNDEFINED_STACK_BASE[Count] + (UNDEFINED_STACK_SIZE - STACK_MIN_ALIGNMENT);
         end;
-        
+
        {Create Boot Thread}
        if THREAD_SHARED_MEMORY then
         begin
@@ -3995,24 +4017,24 @@ begin
            ThreadEntry.CurrentCPU:=Count;                          {Must always run on the same Secondary CPU}
            ThreadEntry.StackPointer:=nil;                          {Set on first context switch}
            ThreadEntry.TargetCPU:=Count;                           {Must always run on the same Secondary CPU}
-           ThreadEntry.TargetPriority:=THREAD_PRIORITY_NORMAL;       
+           ThreadEntry.TargetPriority:=THREAD_PRIORITY_NORMAL;
            ThreadEntry.List:=ListCreateEx(LIST_TYPE_WAIT_THREAD,SchedulerGetListFlags(LIST_TYPE_WAIT_THREAD));  {INVALID_HANDLE_VALUE;} {Preallocated on threads to prevent IRQ/FIQ deadlocks in ListCreate}
            ThreadEntry.WaitList:=INVALID_HANDLE_VALUE;
            ThreadEntry.WaitLists:=nil;
            ThreadEntry.WaitResult:=ERROR_SUCCESS;
            ThreadEntry.ReceiveResult:=ERROR_SUCCESS;
            ThreadEntry.ScheduleQueue:=INVALID_HANDLE_VALUE;
-           ThreadEntry.ListElement.Thread:=TThreadHandle(ThreadEntry); 
+           ThreadEntry.ListElement.Thread:=TThreadHandle(ThreadEntry);
            ThreadEntry.QueueElement.Thread:=TThreadHandle(ThreadEntry);
            {Statistics Properties}
            ThreadEntry.CreateTime:=ClockGetTime;
            ThreadEntry.ExitTime:=TIME_TICKS_TO_1899;
            ThreadEntry.KernelTime:=TIME_TICKS_TO_1899;
            ThreadEntry.SwitchCount:=0;
-           
+
            {Insert Thread entry}
            if SpinLock(ThreadTableLock) = ERROR_SUCCESS then
-            begin                                                    
+            begin
              {Link Thread entry}
              if ThreadTable = nil then
               begin
@@ -4024,23 +4046,23 @@ begin
                ThreadTable.Prev:=ThreadEntry;
                ThreadTable:=ThreadEntry;
               end;
-              
+
              {Increment Thread Count}
              Inc(ThreadTableCount);
-              
+
              {Set Boot Thread}
              BOOT_THREAD_HANDLE[Count]:=TThreadHandle(ThreadEntry);
-             
+
              {Set Thread Handle}
              FIQ_THREAD_HANDLE[Count]:=TThreadHandle(ThreadEntry);
-              
-             SpinUnlock(ThreadTableLock); 
+
+             SpinUnlock(ThreadTableLock);
             end
            else
             begin
              {Invalidate Boot Thread}
              BOOT_THREAD_HANDLE[Count]:=INVALID_HANDLE_VALUE;
-             
+
              {Invalidate Thread Handle}
              FIQ_THREAD_HANDLE[Count]:=INVALID_HANDLE_VALUE;
             end;
@@ -4069,24 +4091,24 @@ begin
            ThreadEntry.CurrentCPU:=Count;                          {Must always run on the same Secondary CPU}
            ThreadEntry.StackPointer:=nil;                          {Set on first context switch}
            ThreadEntry.TargetCPU:=Count;                           {Must always run on the same Secondary CPU}
-           ThreadEntry.TargetPriority:=THREAD_PRIORITY_NORMAL;       
+           ThreadEntry.TargetPriority:=THREAD_PRIORITY_NORMAL;
            ThreadEntry.List:=ListCreateEx(LIST_TYPE_WAIT_THREAD,SchedulerGetListFlags(LIST_TYPE_WAIT_THREAD));  {INVALID_HANDLE_VALUE;} {Preallocated on threads to prevent IRQ/FIQ deadlocks in ListCreate}
            ThreadEntry.WaitList:=INVALID_HANDLE_VALUE;
            ThreadEntry.WaitLists:=nil;
            ThreadEntry.WaitResult:=ERROR_SUCCESS;
            ThreadEntry.ReceiveResult:=ERROR_SUCCESS;
            ThreadEntry.ScheduleQueue:=INVALID_HANDLE_VALUE;
-           ThreadEntry.ListElement.Thread:=TThreadHandle(ThreadEntry); 
+           ThreadEntry.ListElement.Thread:=TThreadHandle(ThreadEntry);
            ThreadEntry.QueueElement.Thread:=TThreadHandle(ThreadEntry);
            {Statistics Properties}
            ThreadEntry.CreateTime:=ClockGetTime;
            ThreadEntry.ExitTime:=TIME_TICKS_TO_1899;
            ThreadEntry.KernelTime:=TIME_TICKS_TO_1899;
            ThreadEntry.SwitchCount:=0;
-      
+
            {Insert Thread entry}
            if SpinLock(ThreadTableLock) = ERROR_SUCCESS then
-            begin                                                    
+            begin
              {Link Thread entry}
              if ThreadTable = nil then
               begin
@@ -4098,32 +4120,32 @@ begin
                ThreadTable.Prev:=ThreadEntry;
                ThreadTable:=ThreadEntry;
               end;
-              
+
              {Increment Thread Count}
              Inc(ThreadTableCount);
-              
+
              {Set Boot Thread}
              BOOT_THREAD_HANDLE[Count]:=TThreadHandle(ThreadEntry);
-             
+
              {Set Thread Handle}
              IRQ_THREAD_HANDLE[Count]:=TThreadHandle(ThreadEntry);
-              
-             SpinUnlock(ThreadTableLock); 
+
+             SpinUnlock(ThreadTableLock);
             end
            else
             begin
              {Invalidate Boot Thread}
              BOOT_THREAD_HANDLE[Count]:=INVALID_HANDLE_VALUE;
-             
+
              {Invalidate Thread Handle}
              IRQ_THREAD_HANDLE[Count]:=INVALID_HANDLE_VALUE;
             end;
           end;
-         
+
          {Check Boot Thread}
          if BOOT_THREAD_HANDLE[Count] <> INVALID_HANDLE_VALUE then
           begin
-           
+
            {Boot Secondary CPU}
            SecondaryBoot(Count);
           end
@@ -4132,7 +4154,7 @@ begin
            {$IFDEF THREAD_DEBUG}
            if THREAD_LOG_ENABLED then ThreadLogDebug('Failed to initialize boot thread, Secondary CPU cannot start');
            {$ENDIF}
-          end;          
+          end;
         end
        else
         begin
@@ -4140,10 +4162,10 @@ begin
          if THREAD_LOG_ENABLED then ThreadLogDebug('Failed to create boot thread, Secondary CPU cannot start');
          {$ENDIF}
         end;
-      end; 
-    end; 
-  end; 
- 
+      end;
+    end;
+  end;
+
  SecondaryInitialized:=True;
 end;
 
@@ -4156,8 +4178,8 @@ procedure SecondaryBoot(CPUID:LongWord);
 begin
  {}
  {Clean Cache for Secondary CPU Boot}
- CleanDataCache; 
- 
+ CleanDataCache;
+
  {Check the Handler}
  if Assigned(SecondaryBootHandler) then
   begin
@@ -4172,41 +4194,41 @@ procedure SecondaryStart(CPUID:LongWord);
 {Startup procedure for secondary CPUs (Where Applicable)}
 {Note: The Secondary Boot procedure should have already cleared L1 cache, enabled FPU, MMU, Vectors and PageTables before
        calling this function. The thread id of the IRQ or FIQ should also have been loaded into the appropriate registers}
-       
+
 {Note: Called only during system startup}
 var
- Thread:TThreadHandle; 
+ Thread:TThreadHandle;
 begin
  {}
  {Check CPU}
  if CPUID > (CPUGetCount - 1) then Exit;
- 
+
  {Wait for Initialized}
  while not(SecondaryInitialized) do
   begin
    {Nothing}
   end;
- 
+
  {Check for Disable}
  if SCHEDULER_SECONDARY_DISABLED then
   begin
    {Halt CPU (Forever)}
    Halt;
   end;
- 
+
  {Start Scheduler for CPU}
- SchedulerStart(CPUID); 
- 
+ SchedulerStart(CPUID);
+
  if SCHEDULER_FIQ_ENABLED then
   begin
    {Create IRQ Thread (FIQ Thread is the Boot Thread)}
    IRQ_THREAD_HANDLE[CPUID]:=SysBeginThreadEx(nil,IRQ_STACK_SIZE,IRQExecute,nil,0,THREAD_PRIORITY_NORMAL,(1 shl CPUID),CPUID,PChar(IRQ_THREAD_NAME + IntToStr(CPUID)),Thread);
-   if IRQ_THREAD_HANDLE[CPUID] = INVALID_HANDLE_VALUE then 
+   if IRQ_THREAD_HANDLE[CPUID] = INVALID_HANDLE_VALUE then
     begin
      {$IFDEF THREAD_DEBUG}
      if THREAD_LOG_ENABLED then ThreadLogDebug('Failed to create IRQ thread, Secondary Halted');
      {$ENDIF}
-     
+
      Halt;
     end;
    {Setup IRQ Thread}
@@ -4223,12 +4245,12 @@ begin
    if FIQ_ENABLED then
     begin
      FIQ_THREAD_HANDLE[CPUID]:=SysBeginThreadEx(nil,FIQ_STACK_SIZE,FIQExecute,nil,0,THREAD_PRIORITY_NORMAL,(1 shl CPUID),CPUID,PChar(FIQ_THREAD_NAME + IntToStr(CPUID)),Thread);
-     if FIQ_THREAD_HANDLE[CPUID] = INVALID_HANDLE_VALUE then 
+     if FIQ_THREAD_HANDLE[CPUID] = INVALID_HANDLE_VALUE then
       begin
        {$IFDEF THREAD_DEBUG}
        if THREAD_LOG_ENABLED then ThreadLogDebug('Failed to create FIQ thread, Secondary Halted');
        {$ENDIF}
-       
+
        Halt;
       end;
      {Setup FIQ Thread}
@@ -4239,18 +4261,18 @@ begin
      {Affinity (Must always run on the same Secondary CPU)}
      ThreadSetAffinity(FIQ_THREAD_HANDLE[CPUID],(1 shl CPUID));
     end;
-  end;  
+  end;
 
  {Create SWI Thread}
  if SWI_ENABLED then
   begin
    SWI_THREAD_HANDLE[CPUID]:=SysBeginThreadEx(nil,SWI_STACK_SIZE,SWIExecute,nil,0,THREAD_PRIORITY_NORMAL,(1 shl CPUID),CPUID,PChar(SWI_THREAD_NAME + IntToStr(CPUID)),Thread);
-   if SWI_THREAD_HANDLE[CPUID] = INVALID_HANDLE_VALUE then 
+   if SWI_THREAD_HANDLE[CPUID] = INVALID_HANDLE_VALUE then
     begin
      {$IFDEF THREAD_DEBUG}
      if THREAD_LOG_ENABLED then ThreadLogDebug('Failed to create SWI thread, Secondary Halted');
      {$ENDIF}
-     
+
      Halt;
     end;
    {Setup SWI Thread}
@@ -4260,16 +4282,16 @@ begin
    ThreadSetPriority(SWI_THREAD_HANDLE[CPUID],THREAD_PRIORITY_NORMAL);
    {Affinity (Must always run on the same Secondary CPU)}
    ThreadSetAffinity(SWI_THREAD_HANDLE[CPUID],(1 shl CPUID));
-  end; 
-  
+  end;
+
  {Create Idle Thread}
  IDLE_THREAD_HANDLE[CPUID]:=SysBeginThreadEx(nil,IDLE_STACK_SIZE,IdleExecute,nil,0,THREAD_PRIORITY_IDLE,(1 shl CPUID),CPUID,PChar(IDLE_THREAD_NAME + IntToStr(CPUID)),Thread);
- if IDLE_THREAD_HANDLE[CPUID] = INVALID_HANDLE_VALUE then 
+ if IDLE_THREAD_HANDLE[CPUID] = INVALID_HANDLE_VALUE then
   begin
    {$IFDEF THREAD_DEBUG}
    if THREAD_LOG_ENABLED then ThreadLogDebug('Failed to create idle thread, Secondary Halted');
    {$ENDIF}
-   
+
    Halt;
   end;
  {Setup Idle Thread}
@@ -4279,20 +4301,20 @@ begin
  ThreadSetPriority(IDLE_THREAD_HANDLE[CPUID],THREAD_PRIORITY_IDLE);
  {Affinity (Must always run on the same Secondary CPU)}
  ThreadSetAffinity(IDLE_THREAD_HANDLE[CPUID],(1 shl CPUID));
- 
+
  {Wait for Ready}
  while SCHEDULER_SECONDARY_WAIT and not(SysInitializationCompleted) do
   begin
    {$IFDEF SCHEDULER_DEBUG}
    Inc(SchedulerSecondaryWaitCounter[CPUID]);
    {$ENDIF}
-   
+
    {Nothing}
   end;
-  
+
  {Synchronization Barrier}
  DataSynchronizationBarrier;
-  
+
  if SCHEDULER_FIQ_ENABLED then
   begin
    {Call the FIQ Thread Handler}
@@ -4302,7 +4324,7 @@ begin
   begin
    {Call the IRQ Thread Handler}
    IRQExecute(nil);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -4314,46 +4336,46 @@ function IRQExecute(Parameter:Pointer):PtrInt;
 begin
  {}
  Result:=0;
- 
+
  {When IRQ threads are created their priority is set to normal so that they will
   be scheduled initially in order to complete their initialization
-    
+
   The thread needs to run to here in order to initialize ThreadVars, Exceptions etc
   but will never run again once they reach this routine
-  
+
   Once here the threads will perform the secondary CPU init (where applicable),
   enable IRQ and then change their priority to none so that they will never be
   rescheduled again
-    
+
   The IRQ handler will switch to the appropriate IRQ thread and stack for the CPU
   in order to execute the interrupt handlers}
 
  {Note: IRQExecute does not have a default exception handler, this is intentional
   as the IRQ threads as never scheduled and only execute on an IRQ which then runs
   on a different stack to the actual thread}
-  
+
  {Inititalize Secondary CPUs}
  if not(SCHEDULER_FIQ_ENABLED) and (CPUGetCurrent = SCHEDULER_CPU_BOOT) then SecondaryInit;
- 
+
  {Mark Initialization Completed}
  if not(SCHEDULER_FIQ_ENABLED) then InitializationCompleted[CPUGetCurrent]:=True;
- 
+
  {Enable Abort}
  if not(SCHEDULER_FIQ_ENABLED) then EnableAbort;
- 
+
  {Enable IRQ}
  EnableIRQ;
- 
+
  {Set Priority}
  ThreadSetPriority(ThreadGetCurrent,THREAD_PRIORITY_NONE);
- 
+
  {Reschedule immediately}
  SchedulerReschedule(True);
- 
+
  {Never Executed}
  while True do
   begin
-   {Nothing} 
+   {Nothing}
   end;
 end;
 
@@ -4366,42 +4388,42 @@ function FIQExecute(Parameter:Pointer):PtrInt;
 begin
  {}
  Result:=0;
- 
+
  {When FIQ threads are created their priority is set to normal so that they will
   be scheduled initially in order to complete their initialization
-    
+
   The thread needs to run to here in order to initialize ThreadVars, Exceptions etc
   but will never run again once they reach this routine
-  
+
   Once here the threads will perform the secondary CPU init (where applicable),
   enable FIQ and then change their priority to none so that they will never be
   rescheduled again
-    
+
   The FIQ handler will switch to the appropriate FIQ thread and stack for the CPU
   in order to execute the interrupt handlers}
 
  {Note: FIQExecute does not have a default exception handler, this is intentional
   as the FIQ threads as never scheduled and only execute on an FIQ which then runs
   on a different stack to the actual thread}
-  
+
  {Inititalize Secondary CPUs}
  if SCHEDULER_FIQ_ENABLED and (CPUGetCurrent = SCHEDULER_CPU_BOOT) then SecondaryInit;
- 
+
  {Mark Initialization Completed}
  if SCHEDULER_FIQ_ENABLED then InitializationCompleted[CPUGetCurrent]:=True;
- 
+
  {Enable Abort}
  if SCHEDULER_FIQ_ENABLED then EnableAbort;
- 
+
  {Enable FIQ}
  EnableFIQ;
- 
+
  {Set Priority}
  ThreadSetPriority(ThreadGetCurrent,THREAD_PRIORITY_NONE);
- 
+
  {Reschedule immediately}
- SchedulerReschedule(True); 
- 
+ SchedulerReschedule(True);
+
  {Never Executed}
  while True do
   begin
@@ -4421,33 +4443,33 @@ begin
 
  {When SWI threads are created their priority is set to normal so that they will
   be scheduled initially in order to complete their initialization
-    
+
   The thread needs to run to here in order to initialize ThreadVars, Exceptions etc
   but will never run again once they reach this routine
-  
+
   Once here the threads will change their priority to none so that they will never be
   rescheduled again
-    
+
   The SWI handler will switch to the appropriate SWI thread and stack for the CPU
   in order to execute the software interrupt handlers}
 
  {Note: SWIExecute does not have a default exception handler, this is intentional
   as the SWI threads as never scheduled and only execute on an SWI call which then
   runs on a different stack to the actual thread}
-  
+
  {Set Priority}
  ThreadSetPriority(ThreadGetCurrent,THREAD_PRIORITY_NONE);
-  
+
  {Reschedule immediately}
- SchedulerReschedule(True); 
-  
+ SchedulerReschedule(True);
+
  {Never Executed}
  while True do
   begin
    {Nothing}
   end;
 end;
-  
+
 {==============================================================================}
 
 function IdleExecute(Parameter:Pointer):PtrInt;
@@ -4459,33 +4481,33 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Idle threads are responsible for calculating CPU utilization and also serve
   as an always ready thread to be run when no other threads are ready
-  
+
   For this reason Idle threads must never Sleep, Yield or Wait and must never
   acquire any Locks or other resources
-  
+
   CPU utilization is based on the number of loops this routine can complete in
   a second and is independent for each CPU in the system
-  
+
   The value UtilizationCurrent is set to the value of SCHEDULER_IDLE_PER_SECOND
   by the scheduler interrupt and then decremented on each loop of this routine
 
   At the end of each second the scheduler interrupt saves the value for the last
   second to UtilizationLast and resets the value of UtilizationCurrent again}
-  
+
  {Note: IdleExecute does not have a default exception handler, this is intentional
   as the idle threads must never sleep, yield or wait}
-  
- {Get Current CPU} 
+
+ {Get Current CPU}
  CurrentCPU:=CPUGetCurrent;
- 
+
  while True do
   begin
    {Delay}
    MicrosecondDelayEx(SCHEDULER_IDLE_OFFSET * 1000,SCHEDULER_IDLE_WAIT); {Offset * 1ms}
-   
+
    {Decrement Utilization}
    Dec(UtilizationCurrent[CurrentCPU],SCHEDULER_IDLE_OFFSET);
   end;
@@ -4501,14 +4523,14 @@ begin
  {}
  Result:=0;
  try
-  {Note: The RTL will call the Initialization section of each unit at the start of 
+  {Note: The RTL will call the Initialization section of each unit at the start of
          PASCALMAIN. Some units (such as Platform, Threads, Console etc) have already
          been initialized to get to this point. The Initialized flag will catch that
          and prevent them being called twice}
-  
+
   {Call Pascal Main which will call initialization of all units}
   PASCALMAIN;
-  
+
   {Note: The RTL will call the Finalization section of each unit at the end of
          PASCALMAIN. It is not expected that this will ever happen but it may
          be part of a specific design to shutdown the system (leaving only the
@@ -4518,7 +4540,7 @@ begin
    begin
     if THREAD_LOG_ENABLED then ThreadLogError('MainThread: Exception: ' + E.Message + ' at ' + PtrToHex(ExceptAddr));
    end;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4532,7 +4554,7 @@ var
  Flags:LongWord;
  Data:Pointer;
  Event:TTimerEvent;
- 
+
  Message:TMessage;
  Timer:TTimerHandle;
  TimerEntry:PTimerEntry;
@@ -4543,24 +4565,24 @@ begin
  try
   {The timer threads are responsible for calling timer callbacks on each timer
    trigger
-   
+
    Enabled timers are held on a delta ascending ordered list which is checked
    and decremented on each clock tick by the clock interrupt handler
-   
+
    When the first key in the list reaches zero the timer is dequeued from the
    list and a message sent to the next available timer thread to call the event
    registered for that timer
-   
+
    The timer thread first checks the event and data and then if the timer is
    enabled and marked as reschedule it is inserted back into the list in order
    based on the timer interval
-   
+
    If the timer is not marked as rescheduled it is set to disabled and the owner
    will need to call timer enable in order to trigger the event again
-   
+
    The timer thread then calls the registered event, passing the data parameter,
    and returns to waiting for messages}
-   
+
   while True do
    begin
     {Wait to Receive Message}
@@ -4569,7 +4591,7 @@ begin
      begin
       {Process Message}
       Timer:=TTimerHandle(Message.Msg);
-      
+
       {Check Timer}
       if Timer <> INVALID_HANDLE_VALUE then
        begin
@@ -4578,16 +4600,16 @@ begin
         if (TimerEntry <> nil) and (TimerEntry.Signature = TIMER_SIGNATURE) then
          begin
           {Acquire the Lock}
-          if SpinLock(TimerEntry.Lock) = ERROR_SUCCESS then 
+          if SpinLock(TimerEntry.Lock) = ERROR_SUCCESS then
            begin
             try
              {Get the Event and Data}
              Event:=TimerEntry.Event;
              Data:=TimerEntry.Data;
-             
+
              {Get the Flags}
              Flags:=TimerEntry.Flags;
-             
+
              {Check the State}
              if TimerEntry.State = TIMER_STATE_ENABLED then
               begin
@@ -4596,7 +4618,7 @@ begin
                 begin
                  {Calculate Ticks}
                  Ticks:=CLOCK_TICKS_PER_MILLISECOND * TimerEntry.Interval;
-            
+
                  {Insert in List}
                  TimerInsertKey(Timer,Ticks);
                 end
@@ -4609,8 +4631,8 @@ begin
             finally
              {Release the Lock}
              SpinUnlock(TimerEntry.Lock);
-            end;           
-            
+            end;
+
             {Check the Flags}
             if (Flags and TIMER_FLAG_WORKER) = 0 then
              begin
@@ -4621,7 +4643,7 @@ begin
                 Event(Data);
                end;
              end
-            else 
+            else
              begin
               {Get Worker Request}
               WorkerRequest:=PWorkerRequest(PtrUInt(TimerEntry) + PtrUInt(SizeOf(TTimerEntry)));
@@ -4630,7 +4652,7 @@ begin
                 {Submit Worker Request}
                 FillChar(Message,SizeOf(TMessage),0);
                 Message.Msg:=PtrUInt(WorkerRequest);
-                
+
                 {Check the Flags}
                 if (WorkerRequest.Flags and WORKER_FLAG_PRIORITY) = 0 then
                  begin
@@ -4640,21 +4662,21 @@ begin
                  begin
                   MessageslotSend(WorkerPriorityMessageslot,Message);
                  end;
-                
+
                 {Worker Request will NOT be freed by WorkerExecute/WorkerPriorityExecute}
-               end; 
-             end;            
-           end; 
-         end; 
-       end; 
+               end;
+             end;
+           end;
+         end;
+       end;
      end;
-   end; 
+   end;
  except
   on E: Exception do
    begin
     if THREAD_LOG_ENABLED then ThreadLogError('TimerThread: Exception: ' + E.Message + ' at ' + PtrToHex(ExceptAddr));
    end;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4666,9 +4688,9 @@ function WorkerExecute(Parameter:Pointer):PtrInt;
 var
  Data:Pointer;
  Task:TWorkerTask;
- Callback:TWorkerCallback; 
+ Callback:TWorkerCallback;
 
- Flags:LongWord; 
+ Flags:LongWord;
  Message:TMessage;
  WorkerRequest:PWorkerRequest;
 begin
@@ -4676,27 +4698,27 @@ begin
  Result:=0;
  try
   {The worker threads are responsible for calling worker tasks and callbacks
-  
+
    Worker requests are created by WorkerSchedule and either submitted immediately
    to the worker threads for processing or scheduled on a timer for processing at
    a later time.
-   
+
    For worker requests that are scheduled for later, the timer event calls WorkerTimer
    which then submits the worker request to the worker threads and either resubmits
    the timer or cleans up depending on the flags passed to WorkerSchedule.
-   
+
    Once a request is received the worker thread then calls the registered task, passing
    the data parameter, and when complete calls the callback and returns to waiting for
    messages}
-  
+
   {Update Worker Count}
   if SpinLock(WorkerThreadLock) = ERROR_SUCCESS then
    begin
     Inc(WorkerThreadCount);
-    
+
     SpinUnlock(WorkerThreadLock);
    end;
-  
+
   while True do
    begin
     {Wait to Receive Message}
@@ -4705,7 +4727,7 @@ begin
      begin
       {Process Message}
       WorkerRequest:=PWorkerRequest(Message.Msg);
-      
+
       {Check Worker Request}
       if (WorkerRequest <> nil) and (WorkerRequest.Signature = WORKER_SIGNATURE)  then
        begin
@@ -4713,10 +4735,10 @@ begin
         Task:=WorkerRequest.Task;
         Data:=WorkerRequest.Data;
         Callback:=WorkerRequest.Callback;
-      
+
         {Get the Flags}
         Flags:=WorkerRequest.Flags;
-        
+
         {Check Flags}
         if (Flags and WORKER_FLAG_NOFREE) = 0 then
          begin
@@ -4731,18 +4753,18 @@ begin
             FreeFIQMem(WorkerRequest);
            end
           else
-           begin         
+           begin
             {Free Worker Request}
             FreeMem(WorkerRequest);
-           end; 
-         end; 
- 
+           end;
+         end;
+
         {Check the Task}
         if Assigned(Task) then
          begin
           {Call the Task}
           Task(Data);
-          
+
           {Check the Callback}
           if Assigned(Callback) then
            begin
@@ -4750,7 +4772,7 @@ begin
             Callback(Data);
            end;
          end;
-         
+
         {Check Flags}
         if (Flags and WORKER_FLAG_TERMINATE) <> 0 then
          begin
@@ -4759,13 +4781,13 @@ begin
          end;
        end;
      end;
-   end; 
-   
+   end;
+
   {Update Worker Count}
   if SpinLock(WorkerThreadLock) = ERROR_SUCCESS then
    begin
     Dec(WorkerThreadCount);
-    
+
     SpinUnlock(WorkerThreadLock);
    end;
  except
@@ -4773,7 +4795,7 @@ begin
    begin
     if THREAD_LOG_ENABLED then ThreadLogError('WorkerThread: Exception: ' + E.Message + ' at ' + PtrToHex(ExceptAddr));
    end;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4787,7 +4809,7 @@ var
  Flags:LongWord;
  Data:Pointer;
  Event:TTimerEvent;
- 
+
  Message:TMessage;
  Timer:TTimerHandle;
  TimerEntry:PTimerEntry;
@@ -4797,10 +4819,10 @@ begin
  Result:=0;
  try
   {High priority implementation of the timer threads, see TimerExecute() for more information}
-  
+
   {Update Priority}
   ThreadSleep({$IFDEF SCHEDULER_YIELD_ALTERNATE}1{$ELSE}0{$ENDIF});
-  
+
   while True do
    begin
     {Wait to Receive Message}
@@ -4809,7 +4831,7 @@ begin
      begin
       {Process Message}
       Timer:=TTimerHandle(Message.Msg);
-      
+
       {Check Timer}
       if Timer <> INVALID_HANDLE_VALUE then
        begin
@@ -4818,16 +4840,16 @@ begin
         if (TimerEntry <> nil) and (TimerEntry.Signature = TIMER_SIGNATURE) then
          begin
           {Acquire the Lock}
-          if SpinLock(TimerEntry.Lock) = ERROR_SUCCESS then 
+          if SpinLock(TimerEntry.Lock) = ERROR_SUCCESS then
            begin
             try
              {Get the Event and Data}
              Event:=TimerEntry.Event;
              Data:=TimerEntry.Data;
-             
+
              {Get the Flags}
              Flags:=TimerEntry.Flags;
-             
+
              {Check the State}
              if TimerEntry.State = TIMER_STATE_ENABLED then
               begin
@@ -4836,7 +4858,7 @@ begin
                 begin
                  {Calculate Ticks}
                  Ticks:=CLOCK_TICKS_PER_MILLISECOND * TimerEntry.Interval;
-            
+
                  {Insert in List}
                  TimerInsertKey(Timer,Ticks);
                 end
@@ -4849,8 +4871,8 @@ begin
             finally
              {Release the Lock}
              SpinUnlock(TimerEntry.Lock);
-            end;           
-            
+            end;
+
             {Check the Flags}
             if (Flags and TIMER_FLAG_WORKER) = 0 then
              begin
@@ -4861,7 +4883,7 @@ begin
                 Event(Data);
                end;
              end
-            else 
+            else
              begin
               {Get Worker Request}
               WorkerRequest:=PWorkerRequest(PtrUInt(TimerEntry) + PtrUInt(SizeOf(TTimerEntry)));
@@ -4870,7 +4892,7 @@ begin
                 {Submit Worker Request}
                 FillChar(Message,SizeOf(TMessage),0);
                 Message.Msg:=PtrUInt(WorkerRequest);
-                
+
                 {Check the Flags}
                 if (WorkerRequest.Flags and WORKER_FLAG_PRIORITY) = 0 then
                  begin
@@ -4880,23 +4902,23 @@ begin
                  begin
                   MessageslotSend(WorkerPriorityMessageslot,Message);
                  end;
-                
+
                 {Worker Request will NOT be freed by WorkerExecute/WorkerPriorityExecute}
-               end; 
-             end;            
-           end; 
-         end; 
-       end; 
+               end;
+             end;
+           end;
+         end;
+       end;
      end;
-   end; 
+   end;
  except
   on E: Exception do
    begin
     if THREAD_LOG_ENABLED then ThreadLogError('TimerPriorityThread: Exception: ' + E.Message + ' at ' + PtrToHex(ExceptAddr));
    end;
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
 
 function WorkerPriorityExecute(Parameter:Pointer):PtrInt;
@@ -4906,9 +4928,9 @@ function WorkerPriorityExecute(Parameter:Pointer):PtrInt;
 var
  Data:Pointer;
  Task:TWorkerTask;
- Callback:TWorkerCallback; 
+ Callback:TWorkerCallback;
 
- Flags:LongWord; 
+ Flags:LongWord;
  Message:TMessage;
  WorkerRequest:PWorkerRequest;
 begin
@@ -4921,13 +4943,13 @@ begin
   if SpinLock(WorkerPriorityThreadLock) = ERROR_SUCCESS then
    begin
     Inc(WorkerPriorityThreadCount);
-    
+
     SpinUnlock(WorkerPriorityThreadLock);
    end;
- 
+
   {Update Priority}
   ThreadSleep({$IFDEF SCHEDULER_YIELD_ALTERNATE}1{$ELSE}0{$ENDIF});
-  
+
   while True do
    begin
     {Wait to Receive Message}
@@ -4936,7 +4958,7 @@ begin
      begin
       {Process Message}
       WorkerRequest:=PWorkerRequest(Message.Msg);
-      
+
       {Check Worker Request}
       if (WorkerRequest <> nil) and (WorkerRequest.Signature = WORKER_SIGNATURE)  then
        begin
@@ -4944,10 +4966,10 @@ begin
         Task:=WorkerRequest.Task;
         Data:=WorkerRequest.Data;
         Callback:=WorkerRequest.Callback;
-      
+
         {Get the Flags}
         Flags:=WorkerRequest.Flags;
-        
+
         {Check Flags}
         if (Flags and WORKER_FLAG_NOFREE) = 0 then
          begin
@@ -4962,18 +4984,18 @@ begin
             FreeFIQMem(WorkerRequest);
            end
           else
-           begin         
+           begin
             {Free Worker Request}
             FreeMem(WorkerRequest);
-           end; 
-         end; 
- 
+           end;
+         end;
+
         {Check the Task}
         if Assigned(Task) then
          begin
           {Call the Task}
           Task(Data);
-          
+
           {Check the Callback}
           if Assigned(Callback) then
            begin
@@ -4981,7 +5003,7 @@ begin
             Callback(Data);
            end;
          end;
-         
+
         {Check Flags}
         if (Flags and WORKER_FLAG_TERMINATE) <> 0 then
          begin
@@ -4990,13 +5012,13 @@ begin
          end;
        end;
      end;
-   end; 
-  
+   end;
+
   {Update Priority Worker Count}
   if SpinLock(WorkerPriorityThreadLock) = ERROR_SUCCESS then
    begin
     Dec(WorkerPriorityThreadCount);
-    
+
     SpinUnlock(WorkerPriorityThreadLock);
    end;
  except
@@ -5004,11 +5026,11 @@ begin
    begin
     if THREAD_LOG_ENABLED then ThreadLogError('WorkerPriorityThread: Exception: ' + E.Message + ' at ' + PtrToHex(ExceptAddr));
    end;
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
-    
+
 function IdleCalibrate:LongWord;
 {Calibrate the idle thread loop by counting the number of loops in 100ms}
 
@@ -5021,47 +5043,47 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Calculate Delay (Number of clock ticks in 100ms)}
- Delay:=CLOCK_CYCLES_PER_MILLISECOND * 100; 
- 
+ Delay:=CLOCK_CYCLES_PER_MILLISECOND * 100;
+
  {Get Starting Clock Count}
  Start:=ClockGetTotal;
- 
+
  {Get Ending Clock Count}
  Target:=Start + Delay;
 
  {Check Count}
  if Target >= Start then
   begin
-   {Get Current CPU} 
+   {Get Current CPU}
    CurrentCPU:=CPUGetCurrent;
-  
-   {Set Counter}  
+
+   {Set Counter}
    UtilizationCurrent[CurrentCPU]:=0;
-   
+
    {Count Loops}
    while ClockGetTotal < Target do
     begin
      {Delay}
      MicrosecondDelayEx(SCHEDULER_IDLE_OFFSET * 1000,False); {Offset * 1ms} {Not SCHEDULER_IDLE_WAIT interrupts are not enabled}
-   
+
      {Increment Count}
      Inc(UtilizationCurrent[CurrentCPU],SCHEDULER_IDLE_OFFSET);
     end;
-    
+
    {Get 1 second result}
    Result:=UtilizationCurrent[CurrentCPU] * 10;
-   
+
    {Reset Counter}
    UtilizationCurrent[CurrentCPU]:=SCHEDULER_IDLE_PER_SECOND;
   end
  else
   begin
    Result:=SCHEDULER_IDLE_PER_SECOND;
-  end;  
+  end;
 end;
-    
+
 {==============================================================================}
 {==============================================================================}
 {Spin Functions}
@@ -5084,7 +5106,7 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Create Spin entry}
  if SPIN_SHARED_MEMORY then
   begin
@@ -5093,22 +5115,22 @@ begin
  else
   begin
    SpinEntry:=AllocMem(SizeOf(TSpinEntry));
-  end;  
+  end;
  if SpinEntry = nil then Exit;
- 
+
  {Setup Spin entry}
  SpinEntry.Signature:=SPIN_SIGNATURE;
  SpinEntry.State:=SPIN_STATE_UNLOCKED;
  SpinEntry.Mask:=0;
  SpinEntry.Owner:=INVALID_HANDLE_VALUE;
- 
+
  {Setup Spin entry}
  if InitialOwner then
   begin
    SpinEntry.State:=SPIN_STATE_LOCKED;
    SpinEntry.Owner:=ThreadGetCurrent;
   end;
- 
+
  {Insert Spin entry}
  if SpinLock(SpinTableLock) = ERROR_SUCCESS then
   begin
@@ -5124,10 +5146,10 @@ begin
       SpinTable.Prev:=SpinEntry;
       SpinTable:=SpinEntry;
      end;
-    
+
     {Increment Spin Count}
     Inc(SpinTableCount);
-    
+
     {Return Spin entry}
     Result:=TSpinHandle(SpinEntry);
    finally
@@ -5138,7 +5160,7 @@ begin
   begin
    {Free Spin Entry}
    FreeMem(SpinEntry);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -5154,26 +5176,26 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF SPIN_DEBUG}
  InterlockedIncrement(LongInt(SpinDestroyCounter));
  {$ENDIF}
- 
+
  {Check Spin}
  if Spin = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  SpinEntry:=PSpinEntry(Spin);
  if SpinEntry = nil then Exit;
  if SpinEntry.Signature <> SPIN_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  Result:=SpinLock(Spin);
  if Result <> ERROR_SUCCESS then Exit;
- 
+
  {Invalidate Spin entry}
  SpinEntry.Signature:=0;
- 
+
  {Remove Spin entry}
  if SpinLock(SpinTableLock) = ERROR_SUCCESS then
   begin
@@ -5187,7 +5209,7 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -5195,25 +5217,25 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=PrevEntry;
-       end;       
-     end;     
-    
+       end;
+     end;
+
     {Decrement Spin Count}
     Dec(SpinTableCount);
-    
+
     {Check Spin Count}
     if SpinTableCount < 1 then
      begin
       {$IFDEF THREAD_DEBUG}
       if THREAD_LOG_ENABLED then ThreadLogDebug('Final spin lock destroyed, System Halted');
       {$ENDIF}
-      
+
       Halt;
      end;
-    
+
     {Free Spin Entry}
     FreeMem(SpinEntry);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -5224,11 +5246,11 @@ begin
   begin
    {Restore Spin entry}
    SpinEntry.Signature:=SPIN_SIGNATURE;
-  
+
    {Release the Lock}
    Result:=SpinUnlock(Spin);
    if Result <> ERROR_SUCCESS then Exit;
-   
+
    {Return Result}
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;
@@ -5245,10 +5267,10 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Spin}
  if Spin = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  SpinEntry:=PSpinEntry(Spin);
  if SpinEntry = nil then Exit;
@@ -5269,19 +5291,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF SPIN_DEBUG}
  InterlockedIncrement(LongInt(SpinLockEntry));
  {$ENDIF}
- 
+
  {Check Spin}
  if Spin = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  SpinEntry:=PSpinEntry(Spin);
  if SpinEntry = nil then Exit;
  if SpinEntry.Signature <> SPIN_SIGNATURE then Exit;
- 
+
  {$IFDEF LOCK_DEBUG}
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -5319,17 +5341,17 @@ begin
    Inc(SpinIdleThreadCounter);
   end;
  {$ENDIF}
- 
+
  {Check the Handler}
  if Assigned(SpinLockHandler) then
   begin
    {Use the Handler method}
    {Acquire the Lock}
    Result:=SpinLockHandler(SpinEntry);
-   
+
    {$IFDEF SPIN_DEBUG}
    InterlockedIncrement(LongInt(SpinLockCounter));
-   InterlockedIncrement(LongInt(SpinLockExit)); 
+   InterlockedIncrement(LongInt(SpinLockExit));
    {$ENDIF}
   end;
 end;
@@ -5345,19 +5367,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF SPIN_DEBUG}
  InterlockedIncrement(LongInt(SpinUnlockEntry));
  {$ENDIF}
- 
+
  {Check Spin}
  if Spin = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  SpinEntry:=PSpinEntry(Spin);
  if SpinEntry = nil then Exit;
  if SpinEntry.Signature <> SPIN_SIGNATURE then Exit;
- 
+
  {Check the Handler}
  if Assigned(SpinUnlockHandler) then
   begin
@@ -5365,10 +5387,10 @@ begin
    {$IFDEF SPIN_DEBUG}
    InterlockedIncrement(LongInt(SpinUnlockCounter));
    {$ENDIF}
-   
+
    {Release the Lock}
    Result:=SpinUnlockHandler(SpinEntry);
-   
+
    {$IFDEF SPIN_DEBUG}
    InterlockedIncrement(LongInt(SpinUnlockExit));
    {$ENDIF}
@@ -5386,15 +5408,15 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Spin}
  if Spin = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  SpinEntry:=PSpinEntry(Spin);
  if SpinEntry = nil then Exit;
  if SpinEntry.Signature <> SPIN_SIGNATURE then Exit;
- 
+
  {$IFDEF LOCK_DEBUG}
  if (SpinEntry.Owner = ThreadGetCurrent) and (InitializationCompleted[CPUGetCurrent]) then
   begin
@@ -5402,16 +5424,16 @@ begin
    SpinRecursionThread:=SpinEntry.Owner;
   end;
  {$ENDIF}
- 
+
  {Check the Handler}
  if Assigned(SpinLockIRQHandler) then
   begin
    {Use the Handler method}
    {Acquire the Lock}
    Result:=SpinLockIRQHandler(SpinEntry);
-   
+
    {$IFDEF SPIN_DEBUG}
-   InterlockedIncrement(LongInt(SpinLockIRQCounter)); 
+   InterlockedIncrement(LongInt(SpinLockIRQCounter));
    {$ENDIF}
   end;
 end;
@@ -5427,15 +5449,15 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Spin}
  if Spin = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  SpinEntry:=PSpinEntry(Spin);
  if SpinEntry = nil then Exit;
  if SpinEntry.Signature <> SPIN_SIGNATURE then Exit;
- 
+
  {Check the Handler}
  if Assigned(SpinUnlockIRQHandler) then
   begin
@@ -5443,7 +5465,7 @@ begin
    {$IFDEF SPIN_DEBUG}
    InterlockedIncrement(LongInt(SpinUnlockIRQCounter));
    {$ENDIF}
-   
+
    {Release the Lock}
    Result:=SpinUnlockIRQHandler(SpinEntry);
   end;
@@ -5460,15 +5482,15 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Spin}
  if Spin = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  SpinEntry:=PSpinEntry(Spin);
  if SpinEntry = nil then Exit;
  if SpinEntry.Signature <> SPIN_SIGNATURE then Exit;
- 
+
  {$IFDEF LOCK_DEBUG}
  if (SpinEntry.Owner = ThreadGetCurrent) and (InitializationCompleted[CPUGetCurrent]) then
   begin
@@ -5476,14 +5498,14 @@ begin
    SpinRecursionThread:=SpinEntry.Owner;
   end;
  {$ENDIF}
- 
+
  {Check the Handler}
  if Assigned(SpinLockFIQHandler) then
   begin
    {Use the Handler method}
    {Acquire the Lock}
    Result:=SpinLockFIQHandler(SpinEntry);
-   
+
    {$IFDEF SPIN_DEBUG}
    InterlockedIncrement(LongInt(SpinLockFIQCounter));
    {$ENDIF}
@@ -5501,15 +5523,15 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Spin}
  if Spin = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  SpinEntry:=PSpinEntry(Spin);
  if SpinEntry = nil then Exit;
  if SpinEntry.Signature <> SPIN_SIGNATURE then Exit;
- 
+
  {Check the Handler}
  if Assigned(SpinUnlockFIQHandler) then
   begin
@@ -5517,7 +5539,7 @@ begin
    {$IFDEF SPIN_DEBUG}
    InterlockedIncrement(LongInt(SpinUnlockFIQCounter));
    {$ENDIF}
-   
+
    {Release the Lock}
    Result:=SpinUnlockFIQHandler(SpinEntry);
   end;
@@ -5534,15 +5556,15 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Spin}
  if Spin = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  SpinEntry:=PSpinEntry(Spin);
  if SpinEntry = nil then Exit;
  if SpinEntry.Signature <> SPIN_SIGNATURE then Exit;
- 
+
  {$IFDEF LOCK_DEBUG}
  if (SpinEntry.Owner = ThreadGetCurrent) and (InitializationCompleted[CPUGetCurrent]) then
   begin
@@ -5550,14 +5572,14 @@ begin
    SpinRecursionThread:=SpinEntry.Owner;
   end;
  {$ENDIF}
- 
+
  {Check the Handler}
  if Assigned(SpinLockIRQFIQHandler) then
   begin
    {Use the Handler method}
    {Acquire the Lock}
    Result:=SpinLockIRQFIQHandler(SpinEntry);
-   
+
    {$IFDEF SPIN_DEBUG}
    InterlockedIncrement(LongInt(SpinLockIRQFIQCounter));
    {$ENDIF}
@@ -5575,15 +5597,15 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Spin}
  if Spin = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  SpinEntry:=PSpinEntry(Spin);
  if SpinEntry = nil then Exit;
  if SpinEntry.Signature <> SPIN_SIGNATURE then Exit;
- 
+
  {Check the Handler}
  if Assigned(SpinUnlockIRQFIQHandler) then
   begin
@@ -5591,7 +5613,7 @@ begin
    {$IFDEF SPIN_DEBUG}
    InterlockedIncrement(LongInt(SpinUnlockIRQFIQCounter));
    {$ENDIF}
-   
+
    {Release the Lock}
    Result:=SpinUnlockIRQFIQHandler(SpinEntry);
   end;
@@ -5615,7 +5637,7 @@ begin
  else
   begin
    Result:=SpinLockIRQ(Spin);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -5636,7 +5658,7 @@ begin
  else
   begin
    Result:=SpinUnlockIRQ(Spin);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -5648,24 +5670,24 @@ function SpinCheckIRQ(Spin:TSpinHandle):Boolean;
 {Note: The Spin entry must be locked by the current thread}
 var
  SpinEntry:PSpinEntry;
-begin 
+begin
  {}
  Result:=False;
- 
+
  {Check Spin}
  if Spin = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  SpinEntry:=PSpinEntry(Spin);
  if SpinEntry = nil then Exit;
  if SpinEntry.Signature <> SPIN_SIGNATURE then Exit;
- 
+
  {Check the Lock}
  if SpinEntry.State <> SPIN_STATE_LOCKED then Exit;
 
  {Check the Owner}
  if SpinEntry.Owner <> ThreadGetCurrent then Exit;
- 
+
  {Check the Handler}
  if Assigned(SpinCheckIRQHandler) then
   begin
@@ -5678,7 +5700,7 @@ begin
    {Nothing}
   end;
 end;
-    
+
 {==============================================================================}
 
 function SpinCheckFIQ(Spin:TSpinHandle):Boolean;
@@ -5688,24 +5710,24 @@ function SpinCheckFIQ(Spin:TSpinHandle):Boolean;
 {Note: The Spin entry must be locked by the current thread}
 var
  SpinEntry:PSpinEntry;
-begin 
+begin
  {}
  Result:=False;
- 
+
  {Check Spin}
  if Spin = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  SpinEntry:=PSpinEntry(Spin);
  if SpinEntry = nil then Exit;
  if SpinEntry.Signature <> SPIN_SIGNATURE then Exit;
- 
+
  {Check the Lock}
  if SpinEntry.State <> SPIN_STATE_LOCKED then Exit;
 
  {Check the Owner}
  if SpinEntry.Owner <> ThreadGetCurrent then Exit;
- 
+
  {Check the Handler}
  if Assigned(SpinCheckFIQHandler) then
   begin
@@ -5733,13 +5755,13 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Spin1}
  if Spin1 = INVALID_HANDLE_VALUE then Exit;
 
  {Check Spin2}
  if Spin2 = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check first Handle}
  SpinEntry1:=PSpinEntry(Spin1);
  if SpinEntry1 = nil then Exit;
@@ -5772,7 +5794,7 @@ begin
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
- 
+
 {==============================================================================}
 
 function SpinExchangeFIQ(Spin1,Spin2:TSpinHandle):LongWord;
@@ -5793,7 +5815,7 @@ begin
 
  {Check Spin2}
  if Spin2 = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check first Handle}
  SpinEntry1:=PSpinEntry(Spin1);
  if SpinEntry1 = nil then Exit;
@@ -5826,7 +5848,7 @@ begin
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
- 
+
 {==============================================================================}
 //Remove
 function SpinMaskExchange(Spin1,Spin2:TSpinHandle):LongWord;
@@ -5848,7 +5870,7 @@ begin
 
  {Check Spin2}
  if Spin2 = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check first Handle}
  SpinEntry1:=PSpinEntry(Spin1);
  if SpinEntry1 = nil then Exit;
@@ -5869,11 +5891,11 @@ begin
  if SpinEntry1.Owner <> ThreadGetCurrent then Exit;
  if SpinEntry2.Owner <> ThreadGetCurrent then Exit;
 
- {Exchange Masks} 
+ {Exchange Masks}
  SpinMask:=SpinEntry1.Mask;
  SpinEntry1.Mask:=SpinEntry2.Mask;
  SpinEntry2.Mask:=SpinMask;
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -5891,15 +5913,15 @@ begin
    while SpinEntry.State <> SPIN_STATE_UNLOCKED do
     begin
      {Spin while waiting}
-     
+
      {Check Signature}
      if SpinEntry.Signature <> SPIN_SIGNATURE then Exit;
-    end; 
+    end;
   end;
- 
+
  {Memory Barrier}
  DataMemoryBarrier;
- 
+
  {Set Owner}
  SpinEntry.Owner:=ThreadGetCurrent;
 
@@ -5920,31 +5942,31 @@ begin
    {$IFDEF SPIN_DEBUG}
    InterlockedIncrement(LongInt(SpinUnlockNoLock));
    {$ENDIF}
-   
+
    Result:=ERROR_NOT_LOCKED;
    Exit;
   end;
-  
+
  {Check the Owner}
  if SpinEntry.Owner <> ThreadGetCurrent then
   begin
    {$IFDEF SPIN_DEBUG}
    InterlockedIncrement(LongInt(SpinUnlockNoOwner));
    {$ENDIF}
-   
+
     Result:=ERROR_NOT_OWNER;
    Exit;
   end;
- 
+
  {Release Owner}
- SpinEntry.Owner:=INVALID_HANDLE_VALUE; 
- 
+ SpinEntry.Owner:=INVALID_HANDLE_VALUE;
+
  {Memory Barrier}
  DataMemoryBarrier;
- 
+
  {Release the Lock}
  SpinEntry.State:=SPIN_STATE_UNLOCKED;
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -5960,7 +5982,7 @@ begin
  {}
  {Save IRQ}
  Mask:=SaveIRQ;
- 
+
  {Acquire the Lock}
  while InterlockedExchange(LongInt(SpinEntry.State),SPIN_STATE_LOCKED) <> SPIN_STATE_UNLOCKED do
   begin
@@ -5969,21 +5991,21 @@ begin
    while SpinEntry.State <> SPIN_STATE_UNLOCKED do
     begin
      {Spin while waiting}
-    
+
      {Check Signature}
      if SpinEntry.Signature <> SPIN_SIGNATURE then Exit;
     end;
-    
+
    {Save IRQ}
    Mask:=SaveIRQ;
-  end;  
-  
+  end;
+
  {Memory Barrier}
  DataMemoryBarrier;
- 
+
  {Save the Mask}
  SpinEntry.Mask:=Mask;
- 
+
  {Set Owner}
  SpinEntry.Owner:=ThreadGetCurrent;
 
@@ -6006,32 +6028,32 @@ begin
    Result:=ERROR_NOT_LOCKED;
    Exit;
   end;
- 
+
  {Check the Owner}
  if SpinEntry.Owner <> ThreadGetCurrent then
   begin
    Result:=ERROR_NOT_OWNER;
    Exit;
   end;
- 
+
  {Release Owner}
  SpinEntry.Owner:=INVALID_HANDLE_VALUE;
- 
+
  {Get the Mask}
  Mask:=SpinEntry.Mask;
- 
+
  {Clear the Mask}
  SpinEntry.Mask:=0;
- 
+
  {Memory Barrier}
  DataMemoryBarrier;
- 
+
  {Release the Lock}
  SpinEntry.State:=SPIN_STATE_UNLOCKED;
- 
+
  {Restore IRQ}
- RestoreIRQ(Mask); 
- 
+ RestoreIRQ(Mask);
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -6047,7 +6069,7 @@ begin
  {}
  {Save FIQ}
  Mask:=SaveFIQ;
- 
+
  {Acquire the Lock}
  while InterlockedExchange(LongInt(SpinEntry.State),SPIN_STATE_LOCKED) <> SPIN_STATE_UNLOCKED do
   begin
@@ -6056,21 +6078,21 @@ begin
    while SpinEntry.State <> SPIN_STATE_UNLOCKED do
     begin
      {Spin while waiting}
-    
+
      {Check Signature}
      if SpinEntry.Signature <> SPIN_SIGNATURE then Exit;
     end;
-    
+
    {Save FIQ}
    Mask:=SaveFIQ;
-  end;  
-  
+  end;
+
  {Memory Barrier}
  DataMemoryBarrier;
- 
+
  {Save the Mask}
  SpinEntry.Mask:=Mask;
- 
+
  {Set Owner}
  SpinEntry.Owner:=ThreadGetCurrent;
 
@@ -6092,33 +6114,33 @@ begin
   begin
    Result:=ERROR_NOT_LOCKED;
    Exit;
-  end; 
- 
+  end;
+
  {Check the Owner}
  if SpinEntry.Owner <> ThreadGetCurrent then
   begin
    Result:=ERROR_NOT_OWNER;
    Exit;
-  end; 
- 
+  end;
+
  {Release Owner}
  SpinEntry.Owner:=INVALID_HANDLE_VALUE;
- 
+
  {Get the Mask}
  Mask:=SpinEntry.Mask;
- 
+
  {Clear the Mask}
  SpinEntry.Mask:=0;
- 
+
  {Memory Barrier}
  DataMemoryBarrier;
- 
+
  {Release the Lock}
  SpinEntry.State:=SPIN_STATE_UNLOCKED;
 
  {Restore FIQ}
- RestoreFIQ(Mask); 
- 
+ RestoreFIQ(Mask);
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -6134,7 +6156,7 @@ begin
  {}
  {Save IRQFIQ}
  Mask:=SaveIRQFIQ;
- 
+
  {Acquire the Lock}
  while InterlockedExchange(LongInt(SpinEntry.State),SPIN_STATE_LOCKED) <> SPIN_STATE_UNLOCKED do
   begin
@@ -6143,21 +6165,21 @@ begin
    while SpinEntry.State <> SPIN_STATE_UNLOCKED do
     begin
      {Spin while waiting}
-    
+
      {Check Signature}
      if SpinEntry.Signature <> SPIN_SIGNATURE then Exit;
     end;
-    
+
    {Save IRQFIQ}
    Mask:=SaveIRQFIQ;
-  end;  
-  
+  end;
+
  {Memory Barrier}
  DataMemoryBarrier;
- 
+
  {Save the Mask}
  SpinEntry.Mask:=Mask;
- 
+
  {Set Owner}
  SpinEntry.Owner:=ThreadGetCurrent;
 
@@ -6179,33 +6201,33 @@ begin
   begin
    Result:=ERROR_NOT_LOCKED;
    Exit;
-  end; 
- 
+  end;
+
  {Check the Owner}
  if SpinEntry.Owner <> ThreadGetCurrent then
   begin
    Result:=ERROR_NOT_OWNER;
    Exit;
-  end; 
- 
+  end;
+
  {Release Owner}
  SpinEntry.Owner:=INVALID_HANDLE_VALUE;
- 
+
  {Get the Mask}
  Mask:=SpinEntry.Mask;
- 
+
  {Clear the Mask}
  SpinEntry.Mask:=0;
- 
+
  {Memory Barrier}
  DataMemoryBarrier;
- 
+
  {Release the Lock}
  SpinEntry.State:=SPIN_STATE_UNLOCKED;
- 
+
  {Restore IRQFIQ}
  RestoreIRQFIQ(Mask);
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -6234,7 +6256,7 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Create Mutex entry}
  if MUTEX_SHARED_MEMORY then
   begin
@@ -6243,24 +6265,24 @@ begin
  else
   begin
    MutexEntry:=AllocMem(SizeOf(TMutexEntry));
-  end;  
+  end;
  if MutexEntry = nil then Exit;
- 
+
  {Setup Mutex entry}
  MutexEntry.Signature:=MUTEX_SIGNATURE;
  MutexEntry.State:=MUTEX_STATE_UNLOCKED;
- MutexEntry.Owner:=INVALID_HANDLE_VALUE;               
+ MutexEntry.Owner:=INVALID_HANDLE_VALUE;
  MutexEntry.Yield:=ThreadYield;
  MutexEntry.Count:=0;
  MutexEntry.Flags:=Flags;
  MutexEntry.SpinCount:=SpinCount;
- 
+
  {Setup Mutex entry}
  if InitialOwner then
   begin
    MutexEntry.State:=MUTEX_STATE_LOCKED;
    MutexEntry.Owner:=ThreadGetCurrent;
-   
+
    {Check Flags}
    if (MutexEntry.Flags and MUTEX_FLAG_RECURSIVE) <> 0 then
     begin
@@ -6271,7 +6293,7 @@ begin
   begin
    MutexEntry.SpinCount:=0;
   end;
- 
+
  {Insert Mutex entry}
  if SpinLock(MutexTableLock) = ERROR_SUCCESS then
   begin
@@ -6287,10 +6309,10 @@ begin
       MutexTable.Prev:=MutexEntry;
       MutexTable:=MutexEntry;
      end;
-    
+
     {Increment Mutex Count}
     Inc(MutexTableCount);
-    
+
     {Return Mutex entry}
     Result:=TMutexHandle(MutexEntry);
    finally
@@ -6301,7 +6323,7 @@ begin
   begin
    {Free Mutex Entry}
    FreeMem(MutexEntry);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -6317,26 +6339,26 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF MUTEX_DEBUG}
  InterlockedIncrement(LongInt(MutexDestroyCounter));
  {$ENDIF}
- 
+
  {Check Mutex}
  if Mutex = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  MutexEntry:=PMutexEntry(Mutex);
  if MutexEntry = nil then Exit;
  if MutexEntry.Signature <> MUTEX_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  Result:=MutexLock(Mutex);
  if Result <> ERROR_SUCCESS then Exit;
- 
+
  {Invalidate Mutex entry}
  MutexEntry.Signature:=0;
- 
+
  {Remove Mutex entry}
  if SpinLock(MutexTableLock) = ERROR_SUCCESS then
   begin
@@ -6350,7 +6372,7 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -6358,15 +6380,15 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=PrevEntry;
-       end;       
-     end;     
-    
+       end;
+     end;
+
     {Decrement Mutex Count}
     Dec(MutexTableCount);
-    
+
     {Free Mutex Entry}
     FreeMem(MutexEntry);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -6377,11 +6399,11 @@ begin
   begin
    {Restore Mutex entry}
    MutexEntry.Signature:=MUTEX_SIGNATURE;
-  
+
    {Release the Lock}
    Result:=MutexUnlock(Mutex);
    if Result <> ERROR_SUCCESS then Exit;
-   
+
    {Return Result}
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;
@@ -6398,15 +6420,15 @@ var
 begin
  {}
  Result:=LongWord(INVALID_HANDLE_VALUE);
- 
+
  {Check Mutex}
  if Mutex = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  MutexEntry:=PMutexEntry(Mutex);
  if MutexEntry = nil then Exit;
  if MutexEntry.Signature <> MUTEX_SIGNATURE then Exit;
- 
+
  {Get the Flags}
  Result:=MutexEntry.Flags;
 end;
@@ -6423,10 +6445,10 @@ var
 begin
  {}
  Result:=LongWord(INVALID_HANDLE_VALUE);
- 
+
  {Check Mutex}
  if Mutex = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  MutexEntry:=PMutexEntry(Mutex);
  if MutexEntry = nil then Exit;
@@ -6442,7 +6464,7 @@ begin
   begin
    {Get the Count}
    Result:=MutexEntry.Count;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -6456,15 +6478,15 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Mutex}
  if Mutex = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  MutexEntry:=PMutexEntry(Mutex);
  if MutexEntry = nil then Exit;
  if MutexEntry.Signature <> MUTEX_SIGNATURE then Exit;
- 
+
  {Get the Owner}
  Result:=MutexEntry.Owner;
 end;
@@ -6480,19 +6502,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF MUTEX_DEBUG}
  InterlockedIncrement(LongInt(MutexLockEntry));
  {$ENDIF}
- 
+
  {Check Mutex}
  if Mutex = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  MutexEntry:=PMutexEntry(Mutex);
  if MutexEntry = nil then Exit;
  if MutexEntry.Signature <> MUTEX_SIGNATURE then Exit;
- 
+
  {$IFDEF LOCK_DEBUG}
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -6503,11 +6525,11 @@ begin
   end
  else
   begin
-   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
     begin
      Inc(MutexDeadlockCounter);
     end;
-  end;  
+  end;
  if (MutexEntry.Owner = ThreadGetCurrent) and ((MutexEntry.Flags and MUTEX_FLAG_RECURSIVE) = 0) and (InitializationCompleted[CPUGetCurrent]) then
   begin
    Inc(MutexRecursionCounter);
@@ -6530,18 +6552,18 @@ begin
    Inc(MutexIdleThreadCounter);
   end;
  {$ENDIF}
- 
+
  {Check the Handler}
  if Assigned(MutexLockHandler) then
   begin
    {Call the Handler}
    Result:=MutexLockHandler(MutexEntry);
- 
+
    {$IFDEF MUTEX_DEBUG}
    InterlockedIncrement(LongInt(MutexLockCounter));
-   InterlockedIncrement(LongInt(MutexLockExit)); 
+   InterlockedIncrement(LongInt(MutexLockExit));
    {$ENDIF}
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -6555,19 +6577,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF MUTEX_DEBUG}
  InterlockedIncrement(LongInt(MutexUnlockEntry));
  {$ENDIF}
- 
+
  {Check Mutex}
  if Mutex = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  MutexEntry:=PMutexEntry(Mutex);
  if MutexEntry = nil then Exit;
  if MutexEntry.Signature <> MUTEX_SIGNATURE then Exit;
- 
+
  {Check the Handler}
  if Assigned(MutexUnlockHandler) then
   begin
@@ -6577,48 +6599,48 @@ begin
 
    {Call the Handler}
    Result:=MutexUnlockHandler(MutexEntry);
- 
+
    {$IFDEF MUTEX_DEBUG}
    InterlockedIncrement(LongInt(MutexUnlockExit));
    {$ENDIF}
-  end; 
+  end;
 end;
 
 {==============================================================================}
 
 function MutexTryLock(Mutex:TMutexHandle):LongWord; {$IFDEF MUTEX_INLINE}inline;{$ENDIF}
 {Try to lock an existing Mutex entry
- 
+
  If the Mutex is not locked then lock it and mark the owner as the current thread
- 
+
  If the Mutex is already locked then return immediately with an error and do not
  wait for it to be unlocked}
-{Mutex: Mutex to try to lock} 
+{Mutex: Mutex to try to lock}
 {Return: ERROR_SUCCESS if completed, ERROR_LOCKED if already locked or another error code on failure}
 var
  MutexEntry:PMutexEntry;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Mutex}
  if Mutex = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  MutexEntry:=PMutexEntry(Mutex);
  if MutexEntry = nil then Exit;
  if MutexEntry.Signature <> MUTEX_SIGNATURE then Exit;
- 
+
  {Check the Handler}
  if Assigned(MutexTryLockHandler) then
   begin
    {Call the Handler}
    Result:=MutexTryLockHandler(MutexEntry);
-  end; 
+  end;
 end;
- 
+
 {==============================================================================}
- 
+
 function MutexLockDefault(MutexEntry:PMutexEntry):LongWord;
 {Default version of MutexLock function used if no handler is registered}
 {Note: Not intended to be called directly by applications, use MutexLock instead}
@@ -6627,7 +6649,7 @@ var
 begin
  {}
  Count:=0;
- 
+
  {Check the Flags}
  if (MutexEntry.Flags and MUTEX_FLAG_RECURSIVE) = 0 then
   begin
@@ -6643,22 +6665,22 @@ begin
          Inc(Count);
         end
        else
-        begin         
+        begin
          {Yield while waiting}
          MutexEntry.Yield;
-        end; 
-       
+        end;
+
        {Check Signature}
        if MutexEntry.Signature <> MUTEX_SIGNATURE then Exit;
-      end; 
+      end;
     end;
-   
+
    {Memory Barrier}
    DataMemoryBarrier;
-   
+
    {Set Owner}
    MutexEntry.Owner:=ThreadGetCurrent;
- 
+
    {Return Result}
    Result:=ERROR_SUCCESS;
   end
@@ -6666,12 +6688,12 @@ begin
   begin
    {Check Owner}
    if MutexEntry.Owner = ThreadGetCurrent then
-    begin        
+    begin
      {Update Count}
      Inc(MutexEntry.Count);
     end
    else
-    begin        
+    begin
      {Acquire the Lock}
      while InterlockedExchange(LongInt(MutexEntry.State),MUTEX_STATE_LOCKED) <> MUTEX_STATE_UNLOCKED do
       begin
@@ -6684,31 +6706,31 @@ begin
            Inc(Count);
           end
          else
-          begin         
+          begin
            {Yield while waiting}
            MutexEntry.Yield;
-          end; 
-         
+          end;
+
          {Check Signature}
          if MutexEntry.Signature <> MUTEX_SIGNATURE then Exit;
-        end; 
+        end;
       end;
-     
+
      {Memory Barrier}
      DataMemoryBarrier;
-     
+
      {Set Count}
      MutexEntry.Count:=1;
-     
+
      {Set Owner}
      MutexEntry.Owner:=ThreadGetCurrent;
     end;
-    
+
    {Return Result}
    Result:=ERROR_SUCCESS;
-  end;    
+  end;
 end;
- 
+
 {==============================================================================}
 
 function MutexUnlockDefault(MutexEntry:PMutexEntry):LongWord;
@@ -6722,34 +6744,34 @@ begin
    {$IFDEF MUTEX_DEBUG}
    InterlockedIncrement(LongInt(MutexUnlockNoLock));
    {$ENDIF}
-   
+
    Result:=ERROR_NOT_LOCKED;
    Exit;
-  end; 
- 
+  end;
+
  {Check the Owner}
  if MutexEntry.Owner <> ThreadGetCurrent then
   begin
    {$IFDEF MUTEX_DEBUG}
    InterlockedIncrement(LongInt(MutexUnlockNoOwner));
    {$ENDIF}
-   
+
    Result:=ERROR_NOT_OWNER;
    Exit;
-  end; 
- 
+  end;
+
  {Check the Flags}
  if (MutexEntry.Flags and MUTEX_FLAG_RECURSIVE) = 0 then
   begin
    {Release Owner}
    MutexEntry.Owner:=INVALID_HANDLE_VALUE;
-   
+
    {Memory Barrier}
    DataMemoryBarrier;
-   
+
    {Release the Lock}
    MutexEntry.State:=MUTEX_STATE_UNLOCKED;
- 
+
    {Return Result}
    Result:=ERROR_SUCCESS;
   end
@@ -6760,27 +6782,27 @@ begin
     begin
      Result:=ERROR_INVALID_FUNCTION;
      Exit;
-    end; 
-  
+    end;
+
    {Update Count}
    Dec(MutexEntry.Count);
-  
+
    {Check Count}
    if MutexEntry.Count = 0 then
     begin
      {Release Owner}
      MutexEntry.Owner:=INVALID_HANDLE_VALUE;
-     
+
      {Memory Barrier}
      DataMemoryBarrier;
-     
+
      {Release the Lock}
      MutexEntry.State:=MUTEX_STATE_UNLOCKED;
     end;
-    
+
    {Return Result}
    Result:=ERROR_SUCCESS;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -6796,56 +6818,56 @@ begin
    {Check the Lock}
    Result:=ERROR_LOCKED;
    if MutexEntry.State = MUTEX_STATE_LOCKED then Exit;
-   
+
    {Acquire the Lock}
    if InterlockedExchange(LongInt(MutexEntry.State),MUTEX_STATE_LOCKED) = MUTEX_STATE_UNLOCKED then
     begin
      {Memory Barrier}
      DataMemoryBarrier;
-     
+
      {Set Owner}
      MutexEntry.Owner:=ThreadGetCurrent;
-     
+
      {Return Result}
      Result:=ERROR_SUCCESS;
-    end; 
+    end;
   end
  else
   begin
    {Check Owner}
    if MutexEntry.Owner = ThreadGetCurrent then
-    begin        
+    begin
      {Update Count}
      Inc(MutexEntry.Count);
-     
+
      {Return Result}
-     Result:=ERROR_SUCCESS; 
+     Result:=ERROR_SUCCESS;
     end
    else
     begin
      {Check the Lock}
      Result:=ERROR_LOCKED;
      if MutexEntry.State = MUTEX_STATE_LOCKED then Exit;
-     
+
      {Acquire the Lock}
      if InterlockedExchange(LongInt(MutexEntry.State),MUTEX_STATE_LOCKED) = MUTEX_STATE_UNLOCKED then
       begin
        {Memory Barrier}
        DataMemoryBarrier;
-       
+
        {Set Count}
        MutexEntry.Count:=1;
 
        {Set Owner}
        MutexEntry.Owner:=ThreadGetCurrent;
-       
+
        {Return Result}
        Result:=ERROR_SUCCESS;
-      end; 
+      end;
     end;
-  end;    
+  end;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Critical Section Functions}
@@ -6873,14 +6895,14 @@ begin
  {Create CriticalSection entry}
  if CRITICAL_SECTION_SHARED_MEMORY then
   begin
-   CriticalSectionEntry:=AllocSharedMem(SizeOf(TCriticalSectionEntry)); 
+   CriticalSectionEntry:=AllocSharedMem(SizeOf(TCriticalSectionEntry));
   end
  else
-  begin 
-   CriticalSectionEntry:=AllocMem(SizeOf(TCriticalSectionEntry)); 
-  end; 
+  begin
+   CriticalSectionEntry:=AllocMem(SizeOf(TCriticalSectionEntry));
+  end;
  if CriticalSectionEntry = nil then Exit;
- 
+
  {Setup CriticalSection entry}
  CriticalSectionEntry.Signature:=CRITICAL_SECTION_SIGNATURE;
  CriticalSectionEntry.State:=CRITICAL_SECTION_STATE_UNLOCKED;
@@ -6893,7 +6915,7 @@ begin
  CriticalSectionEntry.WaitEx:=ThreadWaitEx;
  CriticalSectionEntry.Release:=ThreadRelease;
  CriticalSectionEntry.Abandon:=ThreadAbandon;
- 
+
  {Setup CriticalSection entry}
  if InitialOwner then
   begin
@@ -6905,7 +6927,7 @@ begin
   begin
    CriticalSectionEntry.SpinCount:=0;
   end;
- 
+
  {Insert CriticalSection entry}
  if SpinLock(CriticalSectionTableLock) = ERROR_SUCCESS then
   begin
@@ -6921,10 +6943,10 @@ begin
       CriticalSectionTable.Prev:=CriticalSectionEntry;
       CriticalSectionTable:=CriticalSectionEntry;
      end;
-    
+
     {Increment CriticalSection Count}
     Inc(CriticalSectionTableCount);
-    
+
     {Return CriticalSection entry}
     Result:=TCriticalSectionHandle(CriticalSectionEntry);
    finally
@@ -6935,12 +6957,12 @@ begin
   begin
    {Free CriticalSection Lock}
    SpinDestroy(CriticalSectionEntry.Lock);
-   
+
    {Free CriticalSection Entry}
    FreeMem(CriticalSectionEntry);
-  end;  
+  end;
 end;
- 
+
 {==============================================================================}
 
 function CriticalSectionDestroy(CriticalSection:TCriticalSectionHandle):LongWord;
@@ -6954,10 +6976,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check CriticalSection}
  if CriticalSection = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  CriticalSectionEntry:=PCriticalSectionEntry(CriticalSection);
  if CriticalSectionEntry = nil then Exit;
@@ -6966,7 +6988,7 @@ begin
  {Acquire the CriticalSection}
  Result:=CriticalSectionLockEx(CriticalSection,INFINITE);
  if Result <> ERROR_SUCCESS then Exit;
- 
+
  {Remove CriticalSection entry}
  if SpinLock(CriticalSectionTableLock) = ERROR_SUCCESS then
   begin
@@ -6974,23 +6996,23 @@ begin
     {Acquire the Lock}
     Result:=SpinLock(CriticalSectionEntry.Lock);
     if Result <> ERROR_SUCCESS then Exit;
- 
+
     {Check Signature}
     if CriticalSectionEntry.Signature <> CRITICAL_SECTION_SIGNATURE then
      begin
       {Release the Lock}
       Result:=SpinUnlock(CriticalSectionEntry.Lock);
       if Result <> ERROR_SUCCESS then Exit;
-      
+
       {Release the CriticalSection}
       Result:=CriticalSectionUnlock(CriticalSection);
       if Result <> ERROR_SUCCESS then Exit;
-      
+
       {Return Result}
       Result:=ERROR_INVALID_PARAMETER;
       Exit;
-     end; 
- 
+     end;
+
     {Invalidate CriticalSection entry}
     CriticalSectionEntry.Signature:=0;
 
@@ -7000,7 +7022,7 @@ begin
       {Abandon waiting thread}
       CriticalSectionEntry.Abandon(CriticalSectionEntry.List);
      end;
-   
+
     {Unlink CriticalSection entry}
     PrevEntry:=CriticalSectionEntry.Prev;
     NextEntry:=CriticalSectionEntry.Next;
@@ -7010,7 +7032,7 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -7018,12 +7040,12 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=PrevEntry;
-       end;       
-     end;     
-    
+       end;
+     end;
+
     {Decrement CriticalSection Count}
     Dec(CriticalSectionTableCount);
-    
+
     {Release the Lock}
     Result:=SpinUnlock(CriticalSectionEntry.Lock);
     if Result <> ERROR_SUCCESS then Exit;
@@ -7033,13 +7055,13 @@ begin
      begin
       ListDestroy(CriticalSectionEntry.List);
      end;
-    
+
     {Free CriticalSection Lock}
     SpinDestroy(CriticalSectionEntry.Lock);
-    
+
     {Free CriticalSection Entry}
     FreeMem(CriticalSectionEntry);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -7051,14 +7073,14 @@ begin
    {Release the CriticalSection}
    Result:=CriticalSectionUnlock(CriticalSection);
    if Result <> ERROR_SUCCESS then Exit;
- 
+
    {Return Result}
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;
 end;
- 
+
 {==============================================================================}
- 
+
 function CriticalSectionCount(CriticalSection:TCriticalSectionHandle):LongWord;
 {Get the current lock count of an existing CriticalSection entry}
 {CriticalSection: CriticalSection to get count for}
@@ -7068,10 +7090,10 @@ var
 begin
  {}
  Result:=LongWord(INVALID_HANDLE_VALUE);
- 
+
  {Check CriticalSection}
  if CriticalSection = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  CriticalSectionEntry:=PCriticalSectionEntry(CriticalSection);
  if CriticalSectionEntry = nil then Exit;
@@ -7083,15 +7105,15 @@ begin
    try
     {Check Signature}
     if CriticalSectionEntry.Signature <> CRITICAL_SECTION_SIGNATURE then Exit;
-   
+
     {Get the Count}
     Result:=CriticalSectionEntry.Count;
    finally
     {Unlock the CriticalSection}
     SpinUnlock(CriticalSectionEntry.Lock);
    end;
-  end;    
-end;  
+  end;
+end;
 
 {==============================================================================}
 
@@ -7104,10 +7126,10 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check CriticalSection}
  if CriticalSection = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  CriticalSectionEntry:=PCriticalSectionEntry(CriticalSection);
  if CriticalSectionEntry = nil then Exit;
@@ -7126,8 +7148,8 @@ begin
     {Unlock the CriticalSection}
     SpinUnlock(CriticalSectionEntry.Lock);
    end;
-  end;    
-end; 
+  end;
+end;
 
 {==============================================================================}
 
@@ -7141,10 +7163,10 @@ var
 begin
  {}
  Result:=LongWord(INVALID_HANDLE_VALUE);
- 
+
  {Check CriticalSection}
  if CriticalSection = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  CriticalSectionEntry:=PCriticalSectionEntry(CriticalSection);
  if CriticalSectionEntry = nil then Exit;
@@ -7156,33 +7178,33 @@ begin
    try
     {Check Signature}
     if CriticalSectionEntry.Signature <> CRITICAL_SECTION_SIGNATURE then Exit;
-   
+
     {Get the Spin Count}
     Result:=CriticalSectionEntry.SpinCount;
-    
+
     {Set the Spin Count}
     CriticalSectionEntry.SpinCount:=SpinCount;
    finally
     {Unlock the CriticalSection}
     SpinUnlock(CriticalSectionEntry.Lock);
    end;
-  end;    
-end;  
+  end;
+end;
 
 {==============================================================================}
 
 function CriticalSectionLock(CriticalSection:TCriticalSectionHandle):LongWord;
 {Lock an existing CriticalSection entry
- 
+
  If the CriticalSection is not locked then lock it, set the count to one and
  mark the owner as the current thread
- 
+
  If the CriticalSection is already locked by the current thread then increment
  the count and return immediately
- 
+
  If the CriticalSection is already locked by another thread then wait until it
  is unlocked}
-{CriticalSection: CriticalSection to lock} 
+{CriticalSection: CriticalSection to lock}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  CriticalSectionEntry:PCriticalSectionEntry;
@@ -7195,12 +7217,12 @@ begin
 
    {Check CriticalSection}
    if CriticalSection = INVALID_HANDLE_VALUE then Exit;
- 
+
    {Check the Handle}
    CriticalSectionEntry:=PCriticalSectionEntry(CriticalSection);
    if CriticalSectionEntry = nil then Exit;
    if CriticalSectionEntry.Signature <> CRITICAL_SECTION_SIGNATURE then Exit;
-   
+
    {$IFDEF LOCK_DEBUG}
    if SCHEDULER_FIQ_ENABLED then
     begin
@@ -7211,13 +7233,13 @@ begin
     end
    else
     begin
-     if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+     if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
       begin
        Inc(CriticalSectionDeadlockCounter);
       end;
-    end;  
+    end;
    {$ENDIF}
-   
+
    {Use the Handler method}
    Result:=CriticalSectionLockHandler(CriticalSectionEntry);
   end
@@ -7225,23 +7247,23 @@ begin
   begin
    {Use the Default method}
    Result:=CriticalSectionLockEx(CriticalSection,INFINITE);
-  end; 
+  end;
 end;
 
 {==============================================================================}
 
 function CriticalSectionLockEx(CriticalSection:TCriticalSectionHandle;Timeout:LongWord):LongWord;
 {Lock an existing CriticalSection entry
- 
+
  If the CriticalSection is not locked then lock it, set the count to one and
  mark the owner as the current thread
- 
+
  If the CriticalSection is already locked by the current thread then increment
  the count and return immediately
- 
+
  If the CriticalSection is already locked by another thread then wait until it
  is unlocked}
-{CriticalSection: CriticalSection to lock} 
+{CriticalSection: CriticalSection to lock}
 {Timeout: Milliseconds to wait before timeout (0 equals do not wait, INFINITE equals wait forever)}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
@@ -7255,7 +7277,7 @@ begin
 
  {Check CriticalSection}
  if CriticalSection = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  CriticalSectionEntry:=PCriticalSectionEntry(CriticalSection);
  if CriticalSectionEntry = nil then Exit;
@@ -7271,13 +7293,13 @@ begin
   end
  else
   begin
-   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
     begin
      Inc(CriticalSectionDeadlockCounter);
     end;
-  end;  
+  end;
  {$ENDIF}
- 
+
  {Check the Handler}
  if Assigned(CriticalSectionLockExHandler) then
   begin
@@ -7291,10 +7313,10 @@ begin
    if (CriticalSectionEntry.State = CRITICAL_SECTION_STATE_LOCKED) and (CriticalSectionEntry.Owner = ThreadGetCurrent) then
     begin
      {Update Count}
-     Inc(CriticalSectionEntry.Count); 
-     
+     Inc(CriticalSectionEntry.Count);
+
      {Return Result}
-     Result:=ERROR_SUCCESS; 
+     Result:=ERROR_SUCCESS;
     end
    else
     begin
@@ -7305,24 +7327,24 @@ begin
        try
         {Check Signature}
         if CriticalSectionEntry.Signature <> CRITICAL_SECTION_SIGNATURE then Exit;
-  
+
         {Check Timeout}
         if Timeout = 0 then
          begin
           {Check State}
           Result:=ERROR_WAIT_TIMEOUT;
           if (CriticalSectionEntry.State <> CRITICAL_SECTION_STATE_UNLOCKED) and (CriticalSectionEntry.Owner <> ThreadGetCurrent) then Exit;
-         end; 
-        
+         end;
+
         {Check State}
         if CriticalSectionEntry.State = CRITICAL_SECTION_STATE_UNLOCKED then
          begin
           {Set State}
           CriticalSectionEntry.State:=CRITICAL_SECTION_STATE_LOCKED;
-          
+
           {Set Count}
           CriticalSectionEntry.Count:=1;
-          
+
           {Set Owner}
           CriticalSectionEntry.Owner:=ThreadGetCurrent;
          end
@@ -7330,65 +7352,65 @@ begin
          begin
           {Check Owner}
           if CriticalSectionEntry.Owner = ThreadGetCurrent then
-           begin        
+           begin
             {Update Count}
             Inc(CriticalSectionEntry.Count);
            end
           else
-           begin 
+           begin
             {Check Spin Count}
             if CriticalSectionEntry.SpinCount > 0 then
              begin
               Count:=0;
-              
+
               {Check Count and State}
               while (Count < CriticalSectionEntry.SpinCount) and (CriticalSectionEntry.State <> CRITICAL_SECTION_STATE_UNLOCKED) do
                begin
                 {Unlock the CriticalSection}
                 SpinUnlock(CriticalSectionEntry.Lock);
-               
+
                 {Increment Count}
                 Inc(Count);
-                
+
                 {Lock the CriticalSection}
                 if SpinLock(CriticalSectionEntry.Lock) <> ERROR_SUCCESS then Exit;
-                
+
                 {Check Signature}
                 if CriticalSectionEntry.Signature <> CRITICAL_SECTION_SIGNATURE then Exit;
                end;
-               
-              {Check State} 
+
+              {Check State}
               if CriticalSectionEntry.State = CRITICAL_SECTION_STATE_UNLOCKED then
                begin
                 {Set State}
                 CriticalSectionEntry.State:=CRITICAL_SECTION_STATE_LOCKED;
-                
+
                 {Set Count}
                 CriticalSectionEntry.Count:=1;
-                
+
                 {Set Owner}
                 CriticalSectionEntry.Owner:=ThreadGetCurrent;
-               
+
                 {Return Result}
-                Result:=ERROR_SUCCESS; 
+                Result:=ERROR_SUCCESS;
                 Exit;
                end;
              end;
-            
+
             {Check List}
             if CriticalSectionEntry.List = INVALID_HANDLE_VALUE then
              begin
               {Create List}
               CriticalSectionEntry.List:=ListCreateEx(LIST_TYPE_WAIT_SECTION,SchedulerGetListFlags(LIST_TYPE_WAIT_SECTION));
-             end; 
-  
+             end;
+
             {Check Timeout}
             if Timeout = INFINITE then
              begin
               {Wait on CriticalSection}
               CriticalSectionEntry.Wait(CriticalSectionEntry.List,CriticalSectionEntry.Lock,LOCK_FLAG_NONE);
               Unlock:=False;
-              
+
               {Check Result}
               WaitResult:=ThreadGetWaitResult;
               if WaitResult = WAIT_TIMEOUT then
@@ -7396,7 +7418,7 @@ begin
                 Result:=ERROR_WAIT_TIMEOUT;
                 Exit;
                end
-              else if WaitResult = WAIT_ABANDONED then 
+              else if WaitResult = WAIT_ABANDONED then
                begin
                 Result:=ERROR_WAIT_ABANDONED;
                 Exit;
@@ -7405,18 +7427,18 @@ begin
                begin
                 Result:=WaitResult;
                 Exit;
-               end;         
-              
+               end;
+
               {Lock CriticalSection (Infinite Wait)}
               Result:=CriticalSectionLockEx(CriticalSection,INFINITE);
               Exit;
              end
             else
              begin
-              {Wait on CriticalSection with Timeout} 
+              {Wait on CriticalSection with Timeout}
               CriticalSectionEntry.WaitEx(CriticalSectionEntry.List,CriticalSectionEntry.Lock,LOCK_FLAG_NONE,Timeout);
               Unlock:=False;
-              
+
               {Check Result}
               WaitResult:=ThreadGetWaitResult;
               if WaitResult = WAIT_TIMEOUT then
@@ -7424,7 +7446,7 @@ begin
                 Result:=ERROR_WAIT_TIMEOUT;
                 Exit;
                end
-              else if WaitResult = WAIT_ABANDONED then 
+              else if WaitResult = WAIT_ABANDONED then
                begin
                 Result:=ERROR_WAIT_ABANDONED;
                 Exit;
@@ -7433,17 +7455,17 @@ begin
                begin
                 Result:=WaitResult;
                 Exit;
-               end;         
-               
+               end;
+
               {Lock CriticalSection (No Wait)}
               Result:=CriticalSectionLockEx(CriticalSection,0);
               Exit;
-             end; 
-           end; 
-         end;       
-        
+             end;
+           end;
+         end;
+
         {Return Result}
-        Result:=ERROR_SUCCESS; 
+        Result:=ERROR_SUCCESS;
        finally
         {Unlock the CriticalSection}
         if Unlock then SpinUnlock(CriticalSectionEntry.Lock);
@@ -7452,27 +7474,27 @@ begin
      else
       begin
        Result:=ERROR_CAN_NOT_COMPLETE;
-      end;    
+      end;
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
 
 function CriticalSectionUnlock(CriticalSection:TCriticalSectionHandle):LongWord;
 {Unlock an existing CriticalSection entry
- 
+
  If the CriticalSection is locked by the current thread then decrement the count
- 
+
  If the count is greater than zero then return immediately
 
  If the count reaches zero then unlock the CriticalSection and release the first
  thread waiting for it to be unlocked
- 
+
  If the CriticalSection is locked by another thread then return an error
- 
+
  If the CriticalSection is not locked then return an error}
-{CriticalSection: CriticalSection to unlock} 
+{CriticalSection: CriticalSection to unlock}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  CriticalSectionEntry:PCriticalSectionEntry;
@@ -7482,7 +7504,7 @@ begin
 
  {Check CriticalSection}
  if CriticalSection = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  CriticalSectionEntry:=PCriticalSectionEntry(CriticalSection);
  if CriticalSectionEntry = nil then Exit;
@@ -7495,7 +7517,7 @@ begin
  {Check the Owner}
  Result:=ERROR_NOT_OWNER;
  if CriticalSectionEntry.Owner <> ThreadGetCurrent then Exit;
- 
+
  {Check the Handler}
  if Assigned(CriticalSectionUnlockHandler) then
   begin
@@ -7510,9 +7532,9 @@ begin
     begin
      {Update Count}
      Dec(CriticalSectionEntry.Count);
-     
+
      {Return Result}
-     Result:=ERROR_SUCCESS; 
+     Result:=ERROR_SUCCESS;
     end
    else
     begin
@@ -7523,23 +7545,23 @@ begin
         {Check Signature}
         Result:=ERROR_INVALID_PARAMETER;
         if CriticalSectionEntry.Signature <> CRITICAL_SECTION_SIGNATURE then Exit;
-  
+
         {Check Count}
         Result:=ERROR_INVALID_FUNCTION;
         if CriticalSectionEntry.Count = 0 then Exit;
-        
+
         {Update Count}
         Dec(CriticalSectionEntry.Count);
-        
+
         {Check Count}
         if CriticalSectionEntry.Count = 0 then
          begin
           {Set State}
           CriticalSectionEntry.State:=CRITICAL_SECTION_STATE_UNLOCKED;
-          
+
           {Set Owner}
           CriticalSectionEntry.Owner:=INVALID_HANDLE_VALUE;
-          
+
           {Check List}
           while ListNotEmpty(CriticalSectionEntry.List) do
            begin
@@ -7547,12 +7569,12 @@ begin
             if CriticalSectionEntry.Release(CriticalSectionEntry.List) = ERROR_SUCCESS then
              begin
               Break;
-             end; 
+             end;
            end;
          end;
-        
+
         {Return Result}
-        Result:=ERROR_SUCCESS; 
+        Result:=ERROR_SUCCESS;
        finally
         {Unlock the CriticalSection}
         SpinUnlock(CriticalSectionEntry.Lock);
@@ -7561,25 +7583,25 @@ begin
      else
       begin
        Result:=ERROR_CAN_NOT_COMPLETE;
-      end;    
+      end;
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
 
 function CriticalSectionTryLock(CriticalSection:TCriticalSectionHandle):LongWord;
 {Try to lock an existing CriticalSection entry
- 
+
  If the CriticalSection is not locked then lock it, set the count to one and
  mark the owner as the current thread
- 
+
  If the CriticalSection is already locked by the current thread then increment
  the count and return immediately
- 
+
  If the CriticalSection is already locked by another thread then return immediately
  with an error and do not wait for it to be unlocked}
-{CriticalSection: CriticalSection to try to lock} 
+{CriticalSection: CriticalSection to try to lock}
 {Return: ERROR_SUCCESS if completed, ERROR_LOCKED if locked by another thread or another error code on failure}
 var
  CriticalSectionEntry:PCriticalSectionEntry;
@@ -7589,7 +7611,7 @@ begin
 
  {Check CriticalSection}
  if CriticalSection = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  CriticalSectionEntry:=PCriticalSectionEntry(CriticalSection);
  if CriticalSectionEntry = nil then Exit;
@@ -7608,10 +7630,10 @@ begin
    if (CriticalSectionEntry.State = CRITICAL_SECTION_STATE_LOCKED) and (CriticalSectionEntry.Owner = ThreadGetCurrent) then
     begin
      {Update Count}
-     Inc(CriticalSectionEntry.Count); 
-     
+     Inc(CriticalSectionEntry.Count);
+
      {Return Result}
-     Result:=ERROR_SUCCESS; 
+     Result:=ERROR_SUCCESS;
     end
    else
     begin
@@ -7621,16 +7643,16 @@ begin
        try
         {Check Signature}
         if CriticalSectionEntry.Signature <> CRITICAL_SECTION_SIGNATURE then Exit;
-        
+
         {Check State}
         if CriticalSectionEntry.State = CRITICAL_SECTION_STATE_UNLOCKED then
          begin
           {Set State}
           CriticalSectionEntry.State:=CRITICAL_SECTION_STATE_LOCKED;
-          
+
           {Set Count}
           CriticalSectionEntry.Count:=1;
-          
+
           {Set Owner}
           CriticalSectionEntry.Owner:=ThreadGetCurrent;
          end
@@ -7638,7 +7660,7 @@ begin
          begin
           {Check Owner}
           if CriticalSectionEntry.Owner = ThreadGetCurrent then
-           begin        
+           begin
             {Update Count}
             Inc(CriticalSectionEntry.Count);
            end
@@ -7646,11 +7668,11 @@ begin
            begin
             Result:=ERROR_LOCKED;
             Exit;
-           end;         
-         end;  
-  
+           end;
+         end;
+
         {Return Result}
-        Result:=ERROR_SUCCESS; 
+        Result:=ERROR_SUCCESS;
        finally
         {Unlock the CriticalSection}
         SpinUnlock(CriticalSectionEntry.Lock);
@@ -7659,9 +7681,9 @@ begin
      else
       begin
        Result:=ERROR_CAN_NOT_COMPLETE;
-      end;    
-    end;  
-  end; 
+      end;
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -7689,25 +7711,25 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Count}
  {if Count < 0 then Exit;}
  if Count > Maximum then Exit;
- 
+
  {Check Maximum}
  if Maximum < 1 then Exit;
- 
+
  {Create Semaphore entry}
  if SEMAPHORE_SHARED_MEMORY then
   begin
-   SemaphoreEntry:=AllocSharedMem(SizeOf(TSemaphoreEntry)); 
+   SemaphoreEntry:=AllocSharedMem(SizeOf(TSemaphoreEntry));
   end
  else
   begin
-   SemaphoreEntry:=AllocMem(SizeOf(TSemaphoreEntry)); 
+   SemaphoreEntry:=AllocMem(SizeOf(TSemaphoreEntry));
   end;
  if SemaphoreEntry = nil then Exit;
- 
+
  {Setup Semaphore entry}
  SemaphoreEntry.Signature:=SEMAPHORE_SIGNATURE;
  SemaphoreEntry.Count:=Count;
@@ -7719,14 +7741,14 @@ begin
  SemaphoreEntry.WaitEx:=ThreadWaitEx;
  SemaphoreEntry.Release:=ThreadRelease;
  SemaphoreEntry.Abandon:=ThreadAbandon;
- 
+
  {Check Semaphore flags}
  if (Flags and (SEMAPHORE_FLAG_IRQ or SEMAPHORE_FLAG_FIQ or SEMAPHORE_FLAG_IRQFIQ)) <> 0 then
   begin
    {Create Semaphore List}
    SemaphoreEntry.List:=ListCreateEx(LIST_TYPE_WAIT_SEMAPHORE,SchedulerGetListFlags(LIST_TYPE_WAIT_SEMAPHORE));
   end;
- 
+
  {Insert Semaphore entry}
  if SpinLock(SemaphoreTableLock) = ERROR_SUCCESS then
   begin
@@ -7742,10 +7764,10 @@ begin
       SemaphoreTable.Prev:=SemaphoreEntry;
       SemaphoreTable:=SemaphoreEntry;
      end;
-    
+
     {Increment Semaphore Count}
     Inc(SemaphoreTableCount);
-    
+
     {Return Semaphore entry}
     Result:=TSemaphoreHandle(SemaphoreEntry);
    finally
@@ -7762,10 +7784,10 @@ begin
 
    {Free Semaphore Lock}
    SpinDestroy(SemaphoreEntry.Lock);
-   
+
    {Free Semaphore Entry}
    FreeMem(SemaphoreEntry);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -7781,10 +7803,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Semaphore}
  if Semaphore = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  SemaphoreEntry:=PSemaphoreEntry(Semaphore);
  if SemaphoreEntry = nil then Exit;
@@ -7810,9 +7832,9 @@ begin
     else
      begin
       Result:=SpinLock(SemaphoreEntry.Lock);
-     end;    
+     end;
     if Result <> ERROR_SUCCESS then Exit;
-   
+
     {Check Signature}
     if SemaphoreEntry.Signature <> SEMAPHORE_SIGNATURE then
      begin
@@ -7834,22 +7856,22 @@ begin
         Result:=SpinUnlock(SemaphoreEntry.Lock);
        end;
       if Result <> ERROR_SUCCESS then Exit;
-     
+
       {Return Result}
       Result:=ERROR_INVALID_PARAMETER;
       Exit;
-     end; 
-    
+     end;
+
     {Invalidate Semaphore entry}
     SemaphoreEntry.Signature:=0;
-    
+
     {Check Waiting Threads}
     while ListNotEmpty(SemaphoreEntry.List) do
      begin
       {Abandon waiting thread}
       SemaphoreEntry.Abandon(SemaphoreEntry.List);
      end;
-    
+
     {Unlink Semaphore entry}
     PrevEntry:=SemaphoreEntry.Prev;
     NextEntry:=SemaphoreEntry.Next;
@@ -7859,7 +7881,7 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -7867,12 +7889,12 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=PrevEntry;
-       end;       
-     end;     
+       end;
+     end;
 
     {Decrement Semaphore Count}
     Dec(SemaphoreTableCount);
-    
+
     {Release the Lock}
     if (SemaphoreEntry.Flags and SEMAPHORE_FLAG_IRQFIQ) <> 0 then
      begin
@@ -7891,19 +7913,19 @@ begin
       Result:=SpinUnlock(SemaphoreEntry.Lock);
      end;
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Free Semaphore List}
     if SemaphoreEntry.List <> INVALID_HANDLE_VALUE then
      begin
       ListDestroy(SemaphoreEntry.List);
      end;
-    
+
     {Free Semaphore Lock}
     SpinDestroy(SemaphoreEntry.Lock);
-    
+
     {Free Semaphore Entry}
     FreeMem(SemaphoreEntry);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -7916,9 +7938,9 @@ begin
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;
 end;
-  
+
 {==============================================================================}
-  
+
 function SemaphoreCount(Semaphore:TSemaphoreHandle):LongWord;
 {Get the current count of an existing Semaphore entry}
 {Semaphore: Semaphore to get count for}
@@ -7929,10 +7951,10 @@ var
 begin
  {}
  Result:=LongWord(INVALID_HANDLE_VALUE);
- 
+
  {Check Semaphore}
  if Semaphore = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  SemaphoreEntry:=PSemaphoreEntry(Semaphore);
  if SemaphoreEntry = nil then Exit;
@@ -7954,14 +7976,14 @@ begin
  else
   begin
    ResultCode:=SpinLock(SemaphoreEntry.Lock);
-  end;    
+  end;
  {Check Lock Result}
  if ResultCode = ERROR_SUCCESS then
   begin
    try
     {Check Signature}
     if SemaphoreEntry.Signature <> SEMAPHORE_SIGNATURE then Exit;
-    
+
     {Get the Count}
     Result:=SemaphoreEntry.Count;
    finally
@@ -7983,21 +8005,21 @@ begin
       SpinUnlock(SemaphoreEntry.Lock);
      end;
    end;
-  end;    
-end;  
- 
+  end;
+end;
+
 {==============================================================================}
 
 function SemaphoreWait(Semaphore:TSemaphoreHandle):LongWord;
 {Wait on an existing Semaphore entry
- 
+
  If the Semaphore count is greater than zero it will be decremented
  and this function will return immediately
- 
+
  If the Semaphore count is zero the current thread will be put on a wait queue
  until the Semaphore is signalled by another thread calling SemaphoreSignal()
  or SemaphoreSignalEx()}
-{Semaphore: Semaphore to wait on} 
+{Semaphore: Semaphore to wait on}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  SemaphoreEntry:PSemaphoreEntry;
@@ -8007,37 +8029,37 @@ begin
  if Assigned(SemaphoreWaitHandler) then
   begin
    Result:=ERROR_INVALID_PARAMETER;
- 
+
    {Check Semaphore}
    if Semaphore = INVALID_HANDLE_VALUE then Exit;
- 
+
    {Check the Handle}
    SemaphoreEntry:=PSemaphoreEntry(Semaphore);
    if SemaphoreEntry = nil then Exit;
    if SemaphoreEntry.Signature <> SEMAPHORE_SIGNATURE then Exit;
-   
+
    {Use the Handler method}
    Result:=SemaphoreWaitHandler(SemaphoreEntry);
   end
  else
-  begin 
+  begin
    {Use the Default method}
    Result:=SemaphoreWaitEx(Semaphore,INFINITE);
-  end; 
+  end;
 end;
- 
+
 {==============================================================================}
 
-function SemaphoreWaitEx(Semaphore:TSemaphoreHandle;Timeout:LongWord):LongWord;  
+function SemaphoreWaitEx(Semaphore:TSemaphoreHandle;Timeout:LongWord):LongWord;
 {Wait on an existing Semaphore entry
- 
+
  If the Semaphore count is greater than zero it will be decremented
  and this function will return immediately
- 
+
  If the Semaphore count is zero the current thread will be put on a wait queue
  until the Semaphore is signalled by another thread calling SemaphoreSignal()
  or SemaphoreSignalEx()}
-{Semaphore: Semaphore to wait on} 
+{Semaphore: Semaphore to wait on}
 {Timeout: Milliseconds to wait before timeout (0 equals do not wait, INFINITE equals wait forever)}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
@@ -8048,15 +8070,15 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Semaphore}
  if Semaphore = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  SemaphoreEntry:=PSemaphoreEntry(Semaphore);
  if SemaphoreEntry = nil then Exit;
  if SemaphoreEntry.Signature <> SEMAPHORE_SIGNATURE then Exit;
- 
+
  {Check the Handler}
  if Assigned(SemaphoreWaitExHandler) then
   begin
@@ -8091,15 +8113,15 @@ begin
       end
      else
       begin
-       if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+       if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
         begin
          Inc(SemaphoreDeadlockCounter);
         end;
-      end;  
+      end;
      {$ENDIF}
-    
+
      ResultCode:=SpinLock(SemaphoreEntry.Lock);
-    end;    
+    end;
    {Check Lock Result}
    if ResultCode = ERROR_SUCCESS then
     begin
@@ -8114,8 +8136,8 @@ begin
         {Check Count}
         Result:=ERROR_WAIT_TIMEOUT;
         if SemaphoreEntry.Count = 0 then Exit;
-       end; 
-       
+       end;
+
       {Check Count}
       if SemaphoreEntry.Count > 0 then
        begin
@@ -8129,15 +8151,15 @@ begin
          begin
           {Create List}
           SemaphoreEntry.List:=ListCreateEx(LIST_TYPE_WAIT_SEMAPHORE,SchedulerGetListFlags(LIST_TYPE_WAIT_SEMAPHORE));
-         end; 
-        
+         end;
+
         {Check Timeout}
         if Timeout = INFINITE then
          begin
           {Wait on Semaphore}
           SemaphoreEntry.Wait(SemaphoreEntry.List,SemaphoreEntry.Lock,SemaphoreEntry.Flags);
           Unlock:=False;
-          
+
           {Check Result}
           WaitResult:=ThreadGetWaitResult;
           if WaitResult = WAIT_TIMEOUT then
@@ -8145,7 +8167,7 @@ begin
             Result:=ERROR_WAIT_TIMEOUT;
             Exit;
            end
-          else if WaitResult = WAIT_ABANDONED then 
+          else if WaitResult = WAIT_ABANDONED then
            begin
             Result:=ERROR_WAIT_ABANDONED;
             Exit;
@@ -8154,11 +8176,11 @@ begin
            begin
             Result:=WaitResult;
             Exit;
-           end;         
+           end;
          end
         else
          begin
-          {Wait on Semaphore with Timeout} 
+          {Wait on Semaphore with Timeout}
           SemaphoreEntry.WaitEx(SemaphoreEntry.List,SemaphoreEntry.Lock,SemaphoreEntry.Flags,Timeout);
           Unlock:=False;
 
@@ -8169,7 +8191,7 @@ begin
             Result:=ERROR_WAIT_TIMEOUT;
             Exit;
            end
-          else if WaitResult = WAIT_ABANDONED then 
+          else if WaitResult = WAIT_ABANDONED then
            begin
             Result:=ERROR_WAIT_ABANDONED;
             Exit;
@@ -8178,12 +8200,12 @@ begin
            begin
             Result:=WaitResult;
             Exit;
-           end;         
-         end; 
-       end;    
-    
+           end;
+         end;
+       end;
+
       {Return Result}
-      Result:=ERROR_SUCCESS; 
+      Result:=ERROR_SUCCESS;
      finally
       {Unlock the Semaphore}
       if Unlock then
@@ -8204,26 +8226,26 @@ begin
          begin
           SpinUnlock(SemaphoreEntry.Lock);
          end;
-       end;  
+       end;
      end;
     end
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;    
-  end; 
+    end;
+  end;
 end;
- 
+
 {==============================================================================}
 
 function SemaphoreSignal(Semaphore:TSemaphoreHandle):LongWord;
 {Signal an existing Semaphore entry
- 
+
  If any threads are waiting on the Semaphore then one thread will be woken up and
  placed on the ready queue
- 
+
  If no threads are waiting then the Semaphore count will be incremented by one}
-{Semaphore: Semaphore to signal} 
+{Semaphore: Semaphore to signal}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
@@ -8237,10 +8259,10 @@ function SemaphoreSignalEx(Semaphore:TSemaphoreHandle;Count:LongWord;Previous:PL
 
  If any threads are waiting on the Semaphore then one thread will be woken up and
  placed on the ready queue for each iteration of the count passed
- 
+
  If no threads are waiting then the Semaphore count will be incremented once for each
  iteration of the count passed}
-{Semaphore: Semaphore to signal} 
+{Semaphore: Semaphore to signal}
 {Count: The number is times to signal the Semaphore, must be greater than zero}
 {Previous: A pointer to a value that receives the previous count of the Semaphore
            Can be nil if the previous count is not required}
@@ -8255,10 +8277,10 @@ begin
 
  {Check Count}
  if Count < 1 then Exit;
- 
+
  {Check Semaphore}
  if Semaphore = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  SemaphoreEntry:=PSemaphoreEntry(Semaphore);
  if SemaphoreEntry = nil then Exit;
@@ -8274,14 +8296,14 @@ begin
     begin
      SemaphoreSignalHandler(SemaphoreEntry);
      Dec(Count);
-    end; 
-    
+    end;
+
    {Return Previous}
    if Previous <> nil then
     begin
      Previous^:=Current;
-    end;    
-   
+    end;
+
    {Return Result}
    Result:=ERROR_SUCCESS;
   end
@@ -8313,22 +8335,22 @@ begin
       end
      else
       begin
-       if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+       if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
         begin
          Inc(SemaphoreDeadlockCounter);
         end;
-      end;  
+      end;
      {$ENDIF}
-    
+
      ResultCode:=SpinLock(SemaphoreEntry.Lock);
-    end;    
+    end;
    {Check Lock Result}
    if ResultCode = ERROR_SUCCESS then
     begin
      try
       {Check Signature}
       if SemaphoreEntry.Signature <> SEMAPHORE_SIGNATURE then Exit;
-    
+
       {Get Current Count}
       Current:=SemaphoreEntry.Count;
       while Count > 0 do
@@ -8355,15 +8377,15 @@ begin
            end;
          end;
        end;
- 
+
       {Return Previous}
       if Previous <> nil then
        begin
         Previous^:=Current;
-       end;    
- 
+       end;
+
       {Return Result}
-      Result:=ERROR_SUCCESS; 
+      Result:=ERROR_SUCCESS;
      finally
       {Unlock the Semaphore}
       if (SemaphoreEntry.Flags and SEMAPHORE_FLAG_IRQFIQ) <> 0 then
@@ -8387,8 +8409,8 @@ begin
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;    
-  end; 
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -8418,14 +8440,14 @@ begin
  {Create Synchronizer entry}
  if SYNCHRONIZER_SHARED_MEMORY then
   begin
-   SynchronizerEntry:=AllocSharedMem(SizeOf(TSynchronizerEntry)); 
+   SynchronizerEntry:=AllocSharedMem(SizeOf(TSynchronizerEntry));
   end
  else
-  begin 
-   SynchronizerEntry:=AllocMem(SizeOf(TSynchronizerEntry)); 
-  end; 
+  begin
+   SynchronizerEntry:=AllocMem(SizeOf(TSynchronizerEntry));
+  end;
  if SynchronizerEntry = nil then Exit;
- 
+
  {Setup Synchronizer entry}
  SynchronizerEntry.Signature:=SYNCHRONIZER_SIGNATURE;
  SynchronizerEntry.State:=SYNCHRONIZER_STATE_UNLOCKED;
@@ -8440,7 +8462,7 @@ begin
  SynchronizerEntry.WaitEx:=ThreadWaitEx;
  SynchronizerEntry.Release:=ThreadRelease;
  SynchronizerEntry.Abandon:=ThreadAbandon;
- 
+
  {Setup Synchronizer entry}
  if InitialWriter then
   begin
@@ -8448,7 +8470,7 @@ begin
    SynchronizerEntry.WriterCount:=1;
    SynchronizerEntry.WriterOwner:=ThreadGetCurrent;
   end
- else 
+ else
   begin
    if InitialReader then
     begin
@@ -8456,8 +8478,8 @@ begin
      SynchronizerEntry.ReaderCount:=1;
      SynchronizerEntry.ReaderLast:=ThreadGetCurrent;
     end;
-  end;  
- 
+  end;
+
  {Insert Synchronizer entry}
  if SpinLock(SynchronizerTableLock) = ERROR_SUCCESS then
   begin
@@ -8473,10 +8495,10 @@ begin
       SynchronizerTable.Prev:=SynchronizerEntry;
       SynchronizerTable:=SynchronizerEntry;
      end;
-    
+
     {Increment Synchronizer Count}
     Inc(SynchronizerTableCount);
-    
+
     {Return Synchronizer entry}
     Result:=TSynchronizerHandle(SynchronizerEntry);
    finally
@@ -8487,10 +8509,10 @@ begin
   begin
    {Free Synchronizer Lock}
    SpinDestroy(SynchronizerEntry.Lock);
-   
+
    {Free Synchronizer Entry}
    FreeMem(SynchronizerEntry);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -8506,10 +8528,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Synchronizer}
  if Synchronizer = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  SynchronizerEntry:=PSynchronizerEntry(Synchronizer);
  if SynchronizerEntry = nil then Exit;
@@ -8518,7 +8540,7 @@ begin
  {Acquire the Synchronizer}
  Result:=SynchronizerWriterLockEx(Synchronizer,INFINITE);
  if Result <> ERROR_SUCCESS then Exit;
- 
+
  {Remove Synchronizer entry}
  if SpinLock(SynchronizerTableLock) = ERROR_SUCCESS then
   begin
@@ -8526,23 +8548,23 @@ begin
     {Acquire the Lock}
     Result:=SpinLock(SynchronizerEntry.Lock);
     if Result <> ERROR_SUCCESS then Exit;
- 
+
     {Check Signature}
     if SynchronizerEntry.Signature <> SYNCHRONIZER_SIGNATURE then
      begin
       {Release the Lock}
       Result:=SpinUnlock(SynchronizerEntry.Lock);
       if Result <> ERROR_SUCCESS then Exit;
-     
+
       {Release the Synchronizer}
       Result:=SynchronizerWriterUnlock(Synchronizer);
       if Result <> ERROR_SUCCESS then Exit;
-     
+
       {Return Result}
       Result:=ERROR_INVALID_PARAMETER;
       Exit;
-     end; 
-    
+     end;
+
     {Invalidate Synchronizer entry}
     SynchronizerEntry.Signature:=0;
 
@@ -8552,14 +8574,14 @@ begin
       {Abandon waiting thread}
       SynchronizerEntry.Abandon(SynchronizerEntry.WriterList);
      end;
-    
+
     {Check Waiting Reader Threads}
     while ListNotEmpty(SynchronizerEntry.ReaderList) do
      begin
       {Abandon waiting thread}
       SynchronizerEntry.Abandon(SynchronizerEntry.ReaderList);
      end;
-   
+
     {Unlink Synchronizer entry}
     PrevEntry:=SynchronizerEntry.Prev;
     NextEntry:=SynchronizerEntry.Next;
@@ -8569,7 +8591,7 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -8577,16 +8599,16 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=PrevEntry;
-       end;       
-     end;     
-    
+       end;
+     end;
+
     {Decrement Synchronizer Count}
     Dec(SynchronizerTableCount);
-     
+
     {Release the Lock}
     Result:=SpinUnlock(SynchronizerEntry.Lock);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Free Synchronizer Writer List}
     if SynchronizerEntry.WriterList <> INVALID_HANDLE_VALUE then
      begin
@@ -8598,13 +8620,13 @@ begin
      begin
       ListDestroy(SynchronizerEntry.ReaderList);
      end;
-    
+
     {Free Synchronizer Lock}
     SpinDestroy(SynchronizerEntry.Lock);
-    
+
     {Free Synchronizer Entry}
     FreeMem(SynchronizerEntry);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -8616,7 +8638,7 @@ begin
    {Release the Synchronizer}
    Result:=SynchronizerWriterUnlock(Synchronizer);
    if Result <> ERROR_SUCCESS then Exit;
-   
+
    {Return Result}
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;
@@ -8636,7 +8658,7 @@ begin
 
  {Check Synchronizer}
  if Synchronizer = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  SynchronizerEntry:=PSynchronizerEntry(Synchronizer);
  if SynchronizerEntry = nil then Exit;
@@ -8655,11 +8677,11 @@ begin
     {Unlock the Synchronizer}
     SpinUnlock(SynchronizerEntry.Lock);
    end;
-  end;    
+  end;
 end;
- 
+
 {==============================================================================}
- 
+
 function SynchronizerReaderLast(Synchronizer:TSynchronizerHandle):TThreadHandle;
 {Get the last reader thread of an existing Synchronizer entry}
 {Synchronizer: Synchronizer to last reader for}
@@ -8672,7 +8694,7 @@ begin
 
  {Check Synchronizer}
  if Synchronizer = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  SynchronizerEntry:=PSynchronizerEntry(Synchronizer);
  if SynchronizerEntry = nil then Exit;
@@ -8691,21 +8713,21 @@ begin
     {Unlock the Synchronizer}
     SpinUnlock(SynchronizerEntry.Lock);
    end;
-  end;    
+  end;
 end;
- 
+
 {==============================================================================}
 
 function SynchronizerReaderLock(Synchronizer:TSynchronizerHandle):LongWord;
 {Lock an existing Synchronizer entry for reading
- 
+
  If the Synchronizer is not locked then lock it and set the reader count to one
- 
+
  If the Synchronizer is already locked for reading then increment the reader count
  and return immediately
- 
+
  If the Synchronizer is already locked for writing then wait until it is unlocked}
-{Synchronizer: Synchronizer to lock} 
+{Synchronizer: Synchronizer to lock}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  SynchronizerEntry:PSynchronizerEntry;
@@ -8718,12 +8740,12 @@ begin
 
    {Check Synchronizer}
    if Synchronizer = INVALID_HANDLE_VALUE then Exit;
- 
+
    {Check the Handle}
    SynchronizerEntry:=PSynchronizerEntry(Synchronizer);
    if SynchronizerEntry = nil then Exit;
    if SynchronizerEntry.Signature <> SYNCHRONIZER_SIGNATURE then Exit;
-   
+
    {$IFDEF LOCK_DEBUG}
    if SCHEDULER_FIQ_ENABLED then
     begin
@@ -8734,17 +8756,17 @@ begin
     end
    else
     begin
-     if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+     if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
       begin
        Inc(SynchronizerDeadlockCounter);
       end;
-    end;  
+    end;
    if (SynchronizerEntry.WriterOwner = ThreadGetCurrent) and (InitializationCompleted[CPUGetCurrent]) then
     begin
      Inc(SynchronizerRecursionCounter);
     end;
    {$ENDIF}
-   
+
    {Use the Handler method}
    Result:=SynchronizerReaderLockHandler(SynchronizerEntry);
   end
@@ -8752,21 +8774,21 @@ begin
   begin
    {Use the Default method}
    Result:=SynchronizerReaderLockEx(Synchronizer,INFINITE);
-  end; 
+  end;
 end;
 
 {==============================================================================}
 
 function SynchronizerReaderLockEx(Synchronizer:TSynchronizerHandle;Timeout:LongWord):LongWord;
 {Lock an existing Synchronizer entry for reading
- 
+
  If the Synchronizer is not locked then lock it and set the reader count to one
- 
+
  If the Synchronizer is already locked for reading then increment the reader count
  and return immediately
- 
+
  If the Synchronizer is already locked for writing then wait until it is unlocked}
-{Synchronizer: Synchronizer to lock} 
+{Synchronizer: Synchronizer to lock}
 {Timeout: Milliseconds to wait before timeout (0 equals do not wait, INFINITE equals wait forever)}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
@@ -8779,12 +8801,12 @@ begin
 
  {Check Synchronizer}
  if Synchronizer = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  SynchronizerEntry:=PSynchronizerEntry(Synchronizer);
  if SynchronizerEntry = nil then Exit;
  if SynchronizerEntry.Signature <> SYNCHRONIZER_SIGNATURE then Exit;
- 
+
  {$IFDEF LOCK_DEBUG}
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -8795,17 +8817,17 @@ begin
   end
  else
   begin
-   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
     begin
      Inc(SynchronizerDeadlockCounter);
     end;
-  end;  
+  end;
  if (SynchronizerEntry.WriterOwner = ThreadGetCurrent) and (InitializationCompleted[CPUGetCurrent]) then
   begin
    Inc(SynchronizerRecursionCounter);
   end;
  {$ENDIF}
- 
+
  {Check the Handler}
  if Assigned(SynchronizerReaderLockExHandler) then
   begin
@@ -8823,7 +8845,7 @@ begin
      try
       {Check Signature}
       if SynchronizerEntry.Signature <> SYNCHRONIZER_SIGNATURE then Exit;
-      
+
       {Check Timeout}
       if Timeout = 0 then
        begin
@@ -8831,17 +8853,17 @@ begin
         Result:=ERROR_WAIT_TIMEOUT;
         if SynchronizerEntry.WriterCount <> 0 then Exit;
         if SynchronizerEntry.WriterOwner <> INVALID_HANDLE_VALUE then Exit;
-       end; 
-       
+       end;
+
       {Check State}
       if SynchronizerEntry.State = SYNCHRONIZER_STATE_UNLOCKED then
        begin
         {Set State}
         SynchronizerEntry.State:=SYNCHRONIZER_STATE_READER_LOCKED;
-        
+
         {Set Reader Count}
         SynchronizerEntry.ReaderCount:=1;
-        
+
         {Set Reader Last}
         SynchronizerEntry.ReaderLast:=ThreadGetCurrent;
        end
@@ -8849,21 +8871,21 @@ begin
        begin
         {Check Writer Owner}
         if SynchronizerEntry.WriterOwner = INVALID_HANDLE_VALUE then
-         begin        
+         begin
           {Update Reader Count}
           Inc(SynchronizerEntry.ReaderCount);
-          
+
           {Update Reader Last}
           SynchronizerEntry.ReaderLast:=ThreadGetCurrent;
          end
         else
-         begin        
+         begin
           {Check Reader List}
           if SynchronizerEntry.ReaderList = INVALID_HANDLE_VALUE then
            begin
             {Create Reader List}
             SynchronizerEntry.ReaderList:=ListCreateEx(LIST_TYPE_WAIT_SYNCHRONIZER,SchedulerGetListFlags(LIST_TYPE_WAIT_SYNCHRONIZER));
-           end; 
+           end;
 
           {Check Timeout}
           if Timeout = INFINITE then
@@ -8871,7 +8893,7 @@ begin
             {Wait on Synchronizer}
             SynchronizerEntry.Wait(SynchronizerEntry.ReaderList,SynchronizerEntry.Lock,LOCK_FLAG_NONE);
             Unlock:=False;
-            
+
             {Check Result}
             WaitResult:=ThreadGetWaitResult;
             if WaitResult = WAIT_TIMEOUT then
@@ -8879,7 +8901,7 @@ begin
               Result:=ERROR_WAIT_TIMEOUT;
               Exit;
              end
-            else if WaitResult = WAIT_ABANDONED then 
+            else if WaitResult = WAIT_ABANDONED then
              begin
               Result:=ERROR_WAIT_ABANDONED;
               Exit;
@@ -8888,18 +8910,18 @@ begin
              begin
               Result:=WaitResult;
               Exit;
-             end;         
-            
+             end;
+
             {Lock Synchronizer (Infinite Wait)}
             Result:=SynchronizerReaderLockEx(Synchronizer,INFINITE);
             Exit;
            end
           else
            begin
-            {Wait on Synchronizer with Timeout} 
+            {Wait on Synchronizer with Timeout}
             SynchronizerEntry.WaitEx(SynchronizerEntry.ReaderList,SynchronizerEntry.Lock,LOCK_FLAG_NONE,Timeout);
             Unlock:=False;
-            
+
             {Check Result}
             WaitResult:=ThreadGetWaitResult;
             if WaitResult = WAIT_TIMEOUT then
@@ -8907,7 +8929,7 @@ begin
               Result:=ERROR_WAIT_TIMEOUT;
               Exit;
              end
-            else if WaitResult = WAIT_ABANDONED then 
+            else if WaitResult = WAIT_ABANDONED then
              begin
               Result:=ERROR_WAIT_ABANDONED;
               Exit;
@@ -8916,17 +8938,17 @@ begin
              begin
               Result:=WaitResult;
               Exit;
-             end;         
-             
+             end;
+
             {Lock Synchronizer (No Wait)}
             Result:=SynchronizerReaderLockEx(Synchronizer,0);
             Exit;
-           end; 
-         end; 
-       end;       
-      
+           end;
+         end;
+       end;
+
       {Return Result}
-      Result:=ERROR_SUCCESS; 
+      Result:=ERROR_SUCCESS;
      finally
       {Unlock the Synchronizer}
       if Unlock then SpinUnlock(SynchronizerEntry.Lock);
@@ -8935,26 +8957,26 @@ begin
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;    
-  end; 
+    end;
+  end;
 end;
 
 {==============================================================================}
 
 function SynchronizerReaderUnlock(Synchronizer:TSynchronizerHandle):LongWord;
 {Unlock an existing Synchronizer entry
- 
+
  If the Synchronizer is locked for reading then decrement the count
- 
+
  If the count is greater than zero then return immediately
 
  If the count reaches zero then unlock the Synchronizer and release the first
  writer thread waiting for it to be unlocked
- 
+
  If the Synchronizer is locked for writing then return an error
- 
+
  If the Synchronizer is not locked then return an error}
-{Synchronizer: Synchronizer to unlock} 
+{Synchronizer: Synchronizer to unlock}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  SynchronizerEntry:PSynchronizerEntry;
@@ -8964,7 +8986,7 @@ begin
 
  {Check Synchronizer}
  if Synchronizer = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  SynchronizerEntry:=PSynchronizerEntry(Synchronizer);
  if SynchronizerEntry = nil then Exit;
@@ -8973,7 +8995,7 @@ begin
  {Check the State}
  Result:=ERROR_NOT_LOCKED;
  if SynchronizerEntry.State <> SYNCHRONIZER_STATE_READER_LOCKED then Exit;
- 
+
  {Check the Handler}
  if Assigned(SynchronizerReaderUnlockHandler) then
   begin
@@ -8995,19 +9017,19 @@ begin
       {Check Reader Count}
       Result:=ERROR_INVALID_FUNCTION;
       if SynchronizerEntry.ReaderCount = 0 then Exit;
-      
+
       {Update Reader Count}
       Dec(SynchronizerEntry.ReaderCount);
-      
+
       {Update Reader Last}
       SynchronizerEntry.ReaderLast:=INVALID_HANDLE_VALUE;
-      
+
       {Check Reader Count}
       if SynchronizerEntry.ReaderCount = 0 then
        begin
         {Set State}
         SynchronizerEntry.State:=SYNCHRONIZER_STATE_UNLOCKED;
-        
+
         {Check Writer List}
         while ListNotEmpty(SynchronizerEntry.WriterList) do
          begin
@@ -9018,9 +9040,9 @@ begin
            end;
          end;
        end;
-      
+
       {Return Result}
-      Result:=ERROR_SUCCESS; 
+      Result:=ERROR_SUCCESS;
      finally
       {Unlock the Synchronizer}
       SpinUnlock(SynchronizerEntry.Lock);
@@ -9029,8 +9051,8 @@ begin
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;    
-  end; 
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -9039,12 +9061,12 @@ function SynchronizerReaderConvert(Synchronizer:TSynchronizerHandle):LongWord;
 {Convert a reader lock on an existing Synchronizer entry to a writer lock
 
  If the Synchronizer is locked for reading then decrement the count
- 
+
  If the count is greater than zero then wait to acquire the writer lock
- 
+
  If the count reaches zero then convert to writer lock with the current
  thread as the owner
- 
+
  If the Synchronizer is locked for writing then return an error
 
  If the Synchronizer is not locked then return an error}
@@ -9064,16 +9086,16 @@ begin
 
    {Check Synchronizer}
    if Synchronizer = INVALID_HANDLE_VALUE then Exit;
- 
+
    {Check the Handle}
    SynchronizerEntry:=PSynchronizerEntry(Synchronizer);
    if SynchronizerEntry = nil then Exit;
    if SynchronizerEntry.Signature <> SYNCHRONIZER_SIGNATURE then Exit;
-   
+
    {Check the State}
    Result:=ERROR_NOT_LOCKED;
    if SynchronizerEntry.State <> SYNCHRONIZER_STATE_READER_LOCKED then Exit;
-   
+
    {Use the Handler method}
    Result:=SynchronizerReaderConvertHandler(SynchronizerEntry);
   end
@@ -9081,21 +9103,21 @@ begin
   begin
    {Use the Default method}
    Result:=SynchronizerReaderConvertEx(Synchronizer,INFINITE);
-  end; 
+  end;
 end;
 
 {==============================================================================}
 
-function SynchronizerReaderConvertEx(Synchronizer:TSynchronizerHandle;Timeout:LongWord):LongWord; 
+function SynchronizerReaderConvertEx(Synchronizer:TSynchronizerHandle;Timeout:LongWord):LongWord;
 {Convert a reader lock on an existing Synchronizer entry to a writer lock
 
  If the Synchronizer is locked for reading then decrement the count
- 
+
  If the count is greater than zero then wait to acquire the writer lock
- 
+
  If the count reaches zero then convert to writer lock with the current
  thread as the owner
- 
+
  If the Synchronizer is locked for writing then return an error
 
  If the Synchronizer is not locked then return an error}
@@ -9115,7 +9137,7 @@ begin
 
  {Check Synchronizer}
  if Synchronizer = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  SynchronizerEntry:=PSynchronizerEntry(Synchronizer);
  if SynchronizerEntry = nil then Exit;
@@ -9142,14 +9164,14 @@ begin
       {Check Signature}
       Result:=ERROR_INVALID_PARAMETER;
       if SynchronizerEntry.Signature <> SYNCHRONIZER_SIGNATURE then Exit;
-      
+
       {Check Timeout}
       if Timeout = 0 then
        begin
         {Check Reader State}
         Result:=ERROR_WAIT_TIMEOUT;
         if SynchronizerEntry.ReaderCount <> 1 then Exit;
-       end; 
+       end;
 
       {Check Reader Count}
       Result:=ERROR_INVALID_FUNCTION;
@@ -9157,19 +9179,19 @@ begin
 
       {Update Reader Count}
       Dec(SynchronizerEntry.ReaderCount);
-      
+
       {Update Reader Last}
       SynchronizerEntry.ReaderLast:=INVALID_HANDLE_VALUE;
-      
+
       {Check Reader Count}
       if SynchronizerEntry.ReaderCount = 0 then
        begin
         {Set State}
         SynchronizerEntry.State:=SYNCHRONIZER_STATE_WRITER_LOCKED;
-        
+
         {Set Writer Count}
         SynchronizerEntry.WriterCount:=1;
-        
+
         {Set Writer Owner}
         SynchronizerEntry.WriterOwner:=ThreadGetCurrent;
        end
@@ -9180,15 +9202,15 @@ begin
          begin
           {Create Writer List}
           SynchronizerEntry.WriterList:=ListCreateEx(LIST_TYPE_WAIT_SYNCHRONIZER,SchedulerGetListFlags(LIST_TYPE_WAIT_SYNCHRONIZER));
-         end; 
- 
+         end;
+
         {Check Timeout}
         if Timeout = INFINITE then
          begin
           {Wait on Synchronizer}
           SynchronizerEntry.Wait(SynchronizerEntry.WriterList,SynchronizerEntry.Lock,LOCK_FLAG_NONE);
           Unlock:=False;
-            
+
           {Check Result}
           WaitResult:=ThreadGetWaitResult;
           if WaitResult = WAIT_TIMEOUT then
@@ -9196,7 +9218,7 @@ begin
             Result:=ERROR_WAIT_TIMEOUT;
             Exit;
            end
-          else if WaitResult = WAIT_ABANDONED then 
+          else if WaitResult = WAIT_ABANDONED then
            begin
             Result:=ERROR_WAIT_ABANDONED;
             Exit;
@@ -9205,18 +9227,18 @@ begin
            begin
             Result:=WaitResult;
             Exit;
-           end;         
-            
+           end;
+
           {Lock Synchronizer (Infinite Wait)}
           Result:=SynchronizerWriterLockEx(Synchronizer,INFINITE);
           Exit;
          end
         else
          begin
-          {Wait on Synchronizer with Timeout} 
+          {Wait on Synchronizer with Timeout}
           SynchronizerEntry.WaitEx(SynchronizerEntry.WriterList,SynchronizerEntry.Lock,LOCK_FLAG_NONE,Timeout);
           Unlock:=False;
-            
+
           {Check Result}
           WaitResult:=ThreadGetWaitResult;
           if WaitResult = WAIT_TIMEOUT then
@@ -9224,7 +9246,7 @@ begin
             Result:=ERROR_WAIT_TIMEOUT;
             Exit;
            end
-          else if WaitResult = WAIT_ABANDONED then 
+          else if WaitResult = WAIT_ABANDONED then
            begin
             Result:=ERROR_WAIT_ABANDONED;
             Exit;
@@ -9233,16 +9255,16 @@ begin
            begin
             Result:=WaitResult;
             Exit;
-           end;         
-             
+           end;
+
           {Lock Synchronizer (No Wait)}
           Result:=SynchronizerWriterLockEx(Synchronizer,0);
           Exit;
-         end; 
-       end; 
-      
+         end;
+       end;
+
       {Return Result}
-      Result:=ERROR_SUCCESS; 
+      Result:=ERROR_SUCCESS;
      finally
       {Unlock the Synchronizer}
       if Unlock then SpinUnlock(SynchronizerEntry.Lock);
@@ -9251,8 +9273,8 @@ begin
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;    
-  end; 
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -9269,26 +9291,26 @@ begin
 
  {Check Synchronizer}
  if Synchronizer = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  SynchronizerEntry:=PSynchronizerEntry(Synchronizer);
  if SynchronizerEntry = nil then Exit;
  if SynchronizerEntry.Signature <> SYNCHRONIZER_SIGNATURE then Exit;
- 
+
  {Lock the Synchronizer}
  if SpinLock(SynchronizerEntry.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Signature}
     if SynchronizerEntry.Signature <> SYNCHRONIZER_SIGNATURE then Exit;
-    
+
     {Get Writer Count}
     Result:=SynchronizerEntry.WriterCount;
    finally
     {Unlock the Synchronizer}
     SpinUnlock(SynchronizerEntry.Lock);
    end;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -9305,7 +9327,7 @@ begin
 
  {Check Synchronizer}
  if Synchronizer = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  SynchronizerEntry:=PSynchronizerEntry(Synchronizer);
  if SynchronizerEntry = nil then Exit;
@@ -9324,22 +9346,22 @@ begin
     {Unlock the Synchronizer}
     SpinUnlock(SynchronizerEntry.Lock);
    end;
-  end;    
+  end;
 end;
- 
+
 {==============================================================================}
 
 function SynchronizerWriterLock(Synchronizer:TSynchronizerHandle):LongWord;
 {Lock an existing Synchronizer entry for writing
- 
+
  If the Synchronizer is not locked then lock it, set the writer count to one
  and mark the owner as the current thread
- 
+
  If the Synchronizer is already locked by the current thread then increment
  the writer count and return immediately
- 
+
  If the Synchronizer is already locked for reading then wait until it is unlocked}
-{Synchronizer: Synchronizer to lock} 
+{Synchronizer: Synchronizer to lock}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  SynchronizerEntry:PSynchronizerEntry;
@@ -9352,12 +9374,12 @@ begin
 
    {Check Synchronizer}
    if Synchronizer = INVALID_HANDLE_VALUE then Exit;
- 
+
    {Check the Handle}
    SynchronizerEntry:=PSynchronizerEntry(Synchronizer);
    if SynchronizerEntry = nil then Exit;
    if SynchronizerEntry.Signature <> SYNCHRONIZER_SIGNATURE then Exit;
-   
+
    {$IFDEF LOCK_DEBUG}
    if SCHEDULER_FIQ_ENABLED then
     begin
@@ -9368,17 +9390,17 @@ begin
     end
    else
     begin
-     if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+     if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
       begin
        Inc(SynchronizerDeadlockCounter);
       end;
-    end;  
+    end;
    if (SynchronizerEntry.ReaderLast = ThreadGetCurrent) and (InitializationCompleted[CPUGetCurrent]) then
     begin
      Inc(SynchronizerRecursionCounter);
     end;
    {$ENDIF}
-   
+
    {Use the Handler method}
    Result:=SynchronizerWriterLockHandler(SynchronizerEntry);
   end
@@ -9386,22 +9408,22 @@ begin
   begin
    {Use the Default method}
    Result:=SynchronizerWriterLockEx(Synchronizer,INFINITE);
-  end; 
+  end;
 end;
 
 {==============================================================================}
 
 function SynchronizerWriterLockEx(Synchronizer:TSynchronizerHandle;Timeout:LongWord):LongWord;
 {Lock an existing Synchronizer entry for writing
- 
+
  If the Synchronizer is not locked then lock it, set the writer count to one
  and mark the owner as the current thread
- 
+
  If the Synchronizer is already locked by the current thread then increment
  the writer count and return immediately
- 
+
  If the Synchronizer is already locked for reading then wait until it is unlocked}
-{Synchronizer: Synchronizer to lock} 
+{Synchronizer: Synchronizer to lock}
 {Timeout: Milliseconds to wait before timeout (0 equals do not wait, INFINITE equals wait forever)}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
@@ -9414,12 +9436,12 @@ begin
 
  {Check Synchronizer}
  if Synchronizer = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  SynchronizerEntry:=PSynchronizerEntry(Synchronizer);
  if SynchronizerEntry = nil then Exit;
  if SynchronizerEntry.Signature <> SYNCHRONIZER_SIGNATURE then Exit;
- 
+
  {$IFDEF LOCK_DEBUG}
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -9430,17 +9452,17 @@ begin
   end
  else
   begin
-   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
     begin
      Inc(SynchronizerDeadlockCounter);
     end;
-  end;  
+  end;
  if (SynchronizerEntry.ReaderLast = ThreadGetCurrent) and (InitializationCompleted[CPUGetCurrent]) then
   begin
    Inc(SynchronizerRecursionCounter);
   end;
  {$ENDIF}
- 
+
  {Check the Handler}
  if Assigned(SynchronizerWriterLockExHandler) then
   begin
@@ -9455,12 +9477,12 @@ begin
     begin
      {Update Writer Count}
      Inc(SynchronizerEntry.WriterCount);
-     
+
      {Return Result}
      Result:=ERROR_SUCCESS;
     end
    else
-    begin   
+    begin
      {Lock the Synchronizer}
      if SpinLock(SynchronizerEntry.Lock) = ERROR_SUCCESS then
       begin
@@ -9468,7 +9490,7 @@ begin
        try
         {Check Signature}
         if SynchronizerEntry.Signature <> SYNCHRONIZER_SIGNATURE then Exit;
-  
+
         {Check Timeout}
         if Timeout = 0 then
          begin
@@ -9477,17 +9499,17 @@ begin
           if SynchronizerEntry.ReaderCount <> 0 then Exit;
           if SynchronizerEntry.WriterCount <> 0 then Exit;
           if SynchronizerEntry.WriterOwner <> INVALID_HANDLE_VALUE then Exit;
-         end; 
-         
+         end;
+
         {Check State}
         if SynchronizerEntry.State = SYNCHRONIZER_STATE_UNLOCKED then
          begin
           {Set State}
           SynchronizerEntry.State:=SYNCHRONIZER_STATE_WRITER_LOCKED;
-          
+
           {Set Writer Count}
           SynchronizerEntry.WriterCount:=1;
-          
+
           {Set Writer Owner}
           SynchronizerEntry.WriterOwner:=ThreadGetCurrent;
          end
@@ -9495,26 +9517,26 @@ begin
          begin
           {Check Writer Owner}
           if SynchronizerEntry.WriterOwner = ThreadGetCurrent then
-           begin        
+           begin
             {Update Writer Count}
             Inc(SynchronizerEntry.WriterCount);
            end
           else
-           begin        
+           begin
             {Check Writer List}
             if SynchronizerEntry.WriterList = INVALID_HANDLE_VALUE then
              begin
               {Create Writer List}
               SynchronizerEntry.WriterList:=ListCreateEx(LIST_TYPE_WAIT_SYNCHRONIZER,SchedulerGetListFlags(LIST_TYPE_WAIT_SYNCHRONIZER));
-             end; 
-  
+             end;
+
             {Check Timeout}
             if Timeout = INFINITE then
              begin
               {Wait on Synchronizer}
               SynchronizerEntry.Wait(SynchronizerEntry.WriterList,SynchronizerEntry.Lock,LOCK_FLAG_NONE);
               Unlock:=False;
-              
+
               {Check Result}
               WaitResult:=ThreadGetWaitResult;
               if WaitResult = WAIT_TIMEOUT then
@@ -9522,7 +9544,7 @@ begin
                 Result:=ERROR_WAIT_TIMEOUT;
                 Exit;
                end
-              else if WaitResult = WAIT_ABANDONED then 
+              else if WaitResult = WAIT_ABANDONED then
                begin
                 Result:=ERROR_WAIT_ABANDONED;
                 Exit;
@@ -9531,18 +9553,18 @@ begin
                begin
                 Result:=WaitResult;
                 Exit;
-               end;         
-              
+               end;
+
               {Lock Synchronizer (Infinite Wait)}
               Result:=SynchronizerWriterLockEx(Synchronizer,INFINITE);
               Exit;
              end
             else
              begin
-              {Wait on Synchronizer with Timeout} 
+              {Wait on Synchronizer with Timeout}
               SynchronizerEntry.WaitEx(SynchronizerEntry.WriterList,SynchronizerEntry.Lock,LOCK_FLAG_NONE,Timeout);
               Unlock:=False;
-              
+
               {Check Result}
               WaitResult:=ThreadGetWaitResult;
               if WaitResult = WAIT_TIMEOUT then
@@ -9550,7 +9572,7 @@ begin
                 Result:=ERROR_WAIT_TIMEOUT;
                 Exit;
                end
-              else if WaitResult = WAIT_ABANDONED then 
+              else if WaitResult = WAIT_ABANDONED then
                begin
                 Result:=ERROR_WAIT_ABANDONED;
                 Exit;
@@ -9559,17 +9581,17 @@ begin
                begin
                 Result:=WaitResult;
                 Exit;
-               end;         
-               
+               end;
+
               {Lock Synchronizer (No Wait)}
               Result:=SynchronizerWriterLockEx(Synchronizer,0);
               Exit;
-             end; 
-           end; 
-         end;       
-        
+             end;
+           end;
+         end;
+
         {Return Result}
-        Result:=ERROR_SUCCESS; 
+        Result:=ERROR_SUCCESS;
        finally
         {Unlock the Synchronizer}
         if Unlock then SpinUnlock(SynchronizerEntry.Lock);
@@ -9578,29 +9600,29 @@ begin
      else
       begin
        Result:=ERROR_CAN_NOT_COMPLETE;
-      end;    
+      end;
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
 
 function SynchronizerWriterUnlock(Synchronizer:TSynchronizerHandle):LongWord;
 {Unlock an existing Synchronizer entry
- 
+
  If the Synchronizer is locked for writing by the current thread then decrement the count
- 
+
  If the count is greater than zero then return immediately
 
  If the count reaches zero then unlock the Synchronizer and release all reader threads
  waiting for it to be unlocked or the first writer thread waiting for it to be unlocked
- 
+
  If the Synchronizer is locked for reading then return an error
- 
+
  If the Synchronizer is locked for writing by another thread then return an error
- 
+
  If the Synchronizer is not locked then return an error}
-{Synchronizer: Synchronizer to unlock} 
+{Synchronizer: Synchronizer to unlock}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  SynchronizerEntry:PSynchronizerEntry;
@@ -9610,7 +9632,7 @@ begin
 
  {Check Synchronizer}
  if Synchronizer = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  SynchronizerEntry:=PSynchronizerEntry(Synchronizer);
  if SynchronizerEntry = nil then Exit;
@@ -9623,7 +9645,7 @@ begin
  {Check Writer Owner}
  Result:=ERROR_NOT_OWNER;
  if SynchronizerEntry.WriterOwner <> ThreadGetCurrent then Exit;
- 
+
  {Check the Handler}
  if Assigned(SynchronizerWriterUnlockHandler) then
   begin
@@ -9638,9 +9660,9 @@ begin
     begin
      {Update Writer Count}
      Dec(SynchronizerEntry.WriterCount);
-     
+
      {Return Result}
-     Result:=ERROR_SUCCESS; 
+     Result:=ERROR_SUCCESS;
     end
    else
     begin
@@ -9651,23 +9673,23 @@ begin
         {Check Signature}
         Result:=ERROR_INVALID_PARAMETER;
         if SynchronizerEntry.Signature <> SYNCHRONIZER_SIGNATURE then Exit;
-  
+
         {Check Writer Count}
         Result:=ERROR_INVALID_FUNCTION;
         if SynchronizerEntry.WriterCount = 0 then Exit;
-        
+
         {Update Writer Count}
         Dec(SynchronizerEntry.WriterCount);
-        
+
         {Check Writer Count}
         if SynchronizerEntry.WriterCount = 0 then
          begin
           {Set State}
           SynchronizerEntry.State:=SYNCHRONIZER_STATE_UNLOCKED;
-          
+
           {Set Writer Owner}
           SynchronizerEntry.WriterOwner:=INVALID_HANDLE_VALUE;
-          
+
           {Check Reader List}
           if ListNotEmpty(SynchronizerEntry.ReaderList) then
            begin
@@ -9689,11 +9711,11 @@ begin
                 Break;
                end;
              end;
-           end;         
+           end;
          end;
-        
+
         {Return Result}
-        Result:=ERROR_SUCCESS; 
+        Result:=ERROR_SUCCESS;
        finally
         {Unlock the Synchronizer}
         SpinUnlock(SynchronizerEntry.Lock);
@@ -9702,9 +9724,9 @@ begin
      else
       begin
        Result:=ERROR_CAN_NOT_COMPLETE;
-      end;    
+      end;
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -9712,14 +9734,14 @@ end;
 function SynchronizerWriterConvert(Synchronizer:TSynchronizerHandle):LongWord;
 {Convert a writer lock on an existing Synchronizer entry to a reader lock
 
- If the Synchronizer is locked for writing by the current thread and the count 
+ If the Synchronizer is locked for writing by the current thread and the count
  is one then decrement the count
- 
+
  If the count is greater than one then return an error
- 
+
  If the count reaches zero then convert to reader lock and release all waiting
  reader threads
- 
+
  If the Synchronizer is locked for reading then return an error
 
  If the Synchronizer is not locked then return an error}
@@ -9736,7 +9758,7 @@ begin
 
  {Check Synchronizer}
  if Synchronizer = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  SynchronizerEntry:=PSynchronizerEntry(Synchronizer);
  if SynchronizerEntry = nil then Exit;
@@ -9770,25 +9792,25 @@ begin
       {Check Writer Count}
       Result:=ERROR_INVALID_FUNCTION;
       if SynchronizerEntry.WriterCount <> 1 then Exit;
- 
+
       {Update Writer Count}
       Dec(SynchronizerEntry.WriterCount);
-      
+
       {Check Writer Count}
       if SynchronizerEntry.WriterCount = 0 then
        begin
         {Set State}
         SynchronizerEntry.State:=SYNCHRONIZER_STATE_READER_LOCKED;
-        
+
         {Set Reader Count}
         SynchronizerEntry.ReaderCount:=1;
-        
+
         {Set Reader Last}
         SynchronizerEntry.ReaderLast:=ThreadGetCurrent;
-        
+
         {Set Writer Owner}
         SynchronizerEntry.WriterOwner:=INVALID_HANDLE_VALUE;
- 
+
         {Release all reader threads waiting on Synchronizer}
         while ListNotEmpty(SynchronizerEntry.ReaderList) do
          begin
@@ -9797,7 +9819,7 @@ begin
          end;
 
         {Return Result}
-        Result:=ERROR_SUCCESS; 
+        Result:=ERROR_SUCCESS;
        end;
      finally
       {Unlock the Synchronizer}
@@ -9807,8 +9829,8 @@ begin
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;    
-  end; 
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -9826,14 +9848,14 @@ begin
  {Create Condition entry}
  if CONDITION_SHARED_MEMORY then
   begin
-   ConditionEntry:=AllocSharedMem(SizeOf(TConditionEntry)); 
+   ConditionEntry:=AllocSharedMem(SizeOf(TConditionEntry));
   end
  else
-  begin 
-   ConditionEntry:=AllocMem(SizeOf(TConditionEntry)); 
-  end; 
+  begin
+   ConditionEntry:=AllocMem(SizeOf(TConditionEntry));
+  end;
  if ConditionEntry = nil then Exit;
- 
+
  {Setup Condition entry}
  ConditionEntry.Signature:=CONDITION_SIGNATURE;
  ConditionEntry.Flags:=CONDITION_FLAG_NONE;
@@ -9843,7 +9865,7 @@ begin
  ConditionEntry.WaitEx:=ThreadWaitEx;
  ConditionEntry.Release:=ThreadRelease;
  ConditionEntry.Abandon:=ThreadAbandon;
- 
+
  {Insert Condition entry}
  if SpinLock(ConditionTableLock) = ERROR_SUCCESS then
   begin
@@ -9859,10 +9881,10 @@ begin
       ConditionTable.Prev:=ConditionEntry;
       ConditionTable:=ConditionEntry;
      end;
-    
+
     {Increment Condition Count}
     Inc(ConditionTableCount);
-    
+
     {Return Condition entry}
     Result:=TConditionHandle(ConditionEntry);
    finally
@@ -9873,10 +9895,10 @@ begin
   begin
    {Free Condition Lock}
    SpinDestroy(ConditionEntry.Lock);
-   
+
    {Free Condition Entry}
    FreeMem(ConditionEntry);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -9892,15 +9914,15 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Condition}
  if Condition = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ConditionEntry:=PConditionEntry(Condition);
  if ConditionEntry = nil then Exit;
  if ConditionEntry.Signature <> CONDITION_SIGNATURE then Exit;
- 
+
  {Remove Condition entry}
  if SpinLock(ConditionTableLock) = ERROR_SUCCESS then
   begin
@@ -9908,29 +9930,29 @@ begin
     {Acquire the Lock}
     Result:=SpinLock(ConditionEntry.Lock);
     if Result <> ERROR_SUCCESS then Exit;
- 
+
     {Check Signature}
     if ConditionEntry.Signature <> CONDITION_SIGNATURE then
      begin
       {Release the Lock}
       Result:=SpinUnlock(ConditionEntry.Lock);
       if Result <> ERROR_SUCCESS then Exit;
-      
+
       {Return Result}
       Result:=ERROR_INVALID_PARAMETER;
       Exit;
      end;
-    
+
     {Invalidate Condition entry}
     ConditionEntry.Signature:=0;
- 
+
     {Check Waiting Threads}
     while ListNotEmpty(ConditionEntry.List) do
      begin
       {Abandon waiting thread}
       ConditionEntry.Abandon(ConditionEntry.List);
      end;
-   
+
     {Unlink Condition entry}
     PrevEntry:=ConditionEntry.Prev;
     NextEntry:=ConditionEntry.Next;
@@ -9940,7 +9962,7 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -9948,28 +9970,28 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=PrevEntry;
-       end;       
-     end;     
-    
+       end;
+     end;
+
     {Decrement Condition Count}
     Dec(ConditionTableCount);
-    
+
     {Release the Lock}
     Result:=SpinUnlock(ConditionEntry.Lock);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Free Condition List}
     if ConditionEntry.List <> INVALID_HANDLE_VALUE then
      begin
       ListDestroy(ConditionEntry.List);
      end;
-    
+
     {Free Condition Lock}
     SpinDestroy(ConditionEntry.Lock);
-    
+
     {Free Condition Entry}
     FreeMem(ConditionEntry);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -9985,9 +10007,9 @@ end;
 
 {==============================================================================}
 
-function ConditionWait(Condition:TConditionHandle;Timeout:LongWord):LongWord; 
+function ConditionWait(Condition:TConditionHandle;Timeout:LongWord):LongWord;
 {Wait on an existing Condition}
-{Condition: Condition to wait on} 
+{Condition: Condition to wait on}
 {Timeout: Time in milliseconds to wait to be woken
           0 = No Wait
           INFINITE = Wait Indefinitely}
@@ -9999,10 +10021,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Condition}
  if Condition = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ConditionEntry:=PConditionEntry(Condition);
  if ConditionEntry = nil then Exit;
@@ -10018,13 +10040,13 @@ begin
   end
  else
   begin
-   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
     begin
      Inc(ConditionDeadlockCounter);
     end;
-  end;  
+  end;
  {$ENDIF}
- 
+
  {Check the Handler}
  if Assigned(ConditionWaitHandler) then
   begin
@@ -10041,7 +10063,7 @@ begin
      try
       {Check Signature}
       if ConditionEntry.Signature <> CONDITION_SIGNATURE then Exit;
-      
+
       {Check Timeout}
       if Timeout = 0 then
        begin
@@ -10055,15 +10077,15 @@ begin
          begin
           {Create List}
           ConditionEntry.List:=ListCreateEx(LIST_TYPE_WAIT_CONDITION,SchedulerGetListFlags(LIST_TYPE_WAIT_CONDITION));
-         end; 
- 
+         end;
+
         {Check Timeout}
         if Timeout = INFINITE then
          begin
           {Wait on Condition}
           ConditionEntry.Wait(ConditionEntry.List,ConditionEntry.Lock,LOCK_FLAG_NONE);
           Unlock:=False;
-          
+
           {Check Result}
           WaitResult:=ThreadGetWaitResult;
           if WaitResult = WAIT_TIMEOUT then
@@ -10071,7 +10093,7 @@ begin
             Result:=ERROR_WAIT_TIMEOUT;
             Exit;
            end
-          else if WaitResult = WAIT_ABANDONED then 
+          else if WaitResult = WAIT_ABANDONED then
            begin
             Result:=ERROR_WAIT_ABANDONED;
             Exit;
@@ -10080,11 +10102,11 @@ begin
            begin
             Result:=WaitResult;
             Exit;
-           end;         
+           end;
          end
         else
          begin
-          {Wait on Condition with Timeout} 
+          {Wait on Condition with Timeout}
           ConditionEntry.WaitEx(ConditionEntry.List,ConditionEntry.Lock,LOCK_FLAG_NONE,Timeout);
           Unlock:=False;
 
@@ -10095,7 +10117,7 @@ begin
             Result:=ERROR_WAIT_TIMEOUT;
             Exit;
            end
-          else if WaitResult = WAIT_ABANDONED then 
+          else if WaitResult = WAIT_ABANDONED then
            begin
             Result:=ERROR_WAIT_ABANDONED;
             Exit;
@@ -10104,12 +10126,12 @@ begin
            begin
             Result:=WaitResult;
             Exit;
-           end;         
-         end; 
-        
+           end;
+         end;
+
         {Return Result}
-        Result:=ERROR_SUCCESS; 
-       end; 
+        Result:=ERROR_SUCCESS;
+       end;
      finally
       {Unlock the Condition}
       if Unlock then SpinUnlock(ConditionEntry.Lock);
@@ -10118,15 +10140,15 @@ begin
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;    
-  end; 
+    end;
+  end;
 end;
 
 {==============================================================================}
 
 function ConditionWaitMutex(Condition:TConditionHandle;Mutex:TMutexHandle;Timeout:LongWord):LongWord;
 {Release a Mutex and Wait on an existing Condition in an atomic operation}
-{Condition: Condition to wait on} 
+{Condition: Condition to wait on}
 {Mutex: Mutex to release}
 {Timeout: Time in milliseconds to wait to be woken
           0 = No Wait
@@ -10142,10 +10164,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Condition}
  if Condition = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ConditionEntry:=PConditionEntry(Condition);
  if ConditionEntry = nil then Exit;
@@ -10161,13 +10183,13 @@ begin
   end
  else
   begin
-   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
     begin
      Inc(ConditionDeadlockCounter);
     end;
-  end;  
+  end;
  {$ENDIF}
- 
+
  {Check the Handler}
  if Assigned(ConditionWaitMutexHandler) then
   begin
@@ -10184,15 +10206,15 @@ begin
      try
       {Check Signature}
       if ConditionEntry.Signature <> CONDITION_SIGNATURE then Exit;
-    
+
       Result:=ERROR_OPERATION_FAILED;
-      
+
       {Check Timeout}
       if Timeout = 0 then
        begin
         {Check Mutex}
         if MutexOwner(Mutex) <> ThreadGetCurrent then Exit;
-        
+
         {Return Error}
         Result:=ERROR_WAIT_TIMEOUT;
        end
@@ -10200,21 +10222,21 @@ begin
        begin
         {Release the Mutex}
         if MutexUnlock(Mutex) <> ERROR_SUCCESS then Exit;
- 
+
         {Check List}
         if ConditionEntry.List = INVALID_HANDLE_VALUE then
          begin
           {Create List}
           ConditionEntry.List:=ListCreateEx(LIST_TYPE_WAIT_CONDITION,SchedulerGetListFlags(LIST_TYPE_WAIT_CONDITION));
-         end; 
- 
+         end;
+
         {Check Timeout}
         if Timeout = INFINITE then
          begin
           {Wait on Condition}
           ConditionEntry.Wait(ConditionEntry.List,ConditionEntry.Lock,LOCK_FLAG_NONE);
           Unlock:=False;
-          
+
           {Check Result}
           WaitResult:=ThreadGetWaitResult;
           if WaitResult = WAIT_TIMEOUT then
@@ -10222,7 +10244,7 @@ begin
             Result:=ERROR_WAIT_TIMEOUT;
             Exit;
            end
-          else if WaitResult = WAIT_ABANDONED then 
+          else if WaitResult = WAIT_ABANDONED then
            begin
             Result:=ERROR_WAIT_ABANDONED;
             Exit;
@@ -10231,11 +10253,11 @@ begin
            begin
             Result:=WaitResult;
             Exit;
-           end;         
+           end;
          end
         else
          begin
-          {Wait on Condition with Timeout} 
+          {Wait on Condition with Timeout}
           ConditionEntry.WaitEx(ConditionEntry.List,ConditionEntry.Lock,LOCK_FLAG_NONE,Timeout);
           Unlock:=False;
 
@@ -10246,7 +10268,7 @@ begin
             Result:=ERROR_WAIT_TIMEOUT;
             Exit;
            end
-          else if WaitResult = WAIT_ABANDONED then 
+          else if WaitResult = WAIT_ABANDONED then
            begin
             Result:=ERROR_WAIT_ABANDONED;
             Exit;
@@ -10255,15 +10277,15 @@ begin
            begin
             Result:=WaitResult;
             Exit;
-           end;         
-         end; 
-        
+           end;
+         end;
+
         {Acquire the Mutex}
         if MutexLock(Mutex) <> ERROR_SUCCESS then Exit;
-        
+
         {Return Result}
-        Result:=ERROR_SUCCESS; 
-       end; 
+        Result:=ERROR_SUCCESS;
+       end;
      finally
       {Unlock the Condition}
       if Unlock then SpinUnlock(ConditionEntry.Lock);
@@ -10272,15 +10294,15 @@ begin
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;    
-  end; 
+    end;
+  end;
 end;
 
 {==============================================================================}
 
 function ConditionWaitSynchronizer(Condition:TConditionHandle;Synchronizer:TSynchronizerHandle;Flags:LongWord;Timeout:LongWord):LongWord;
 {Release a Synchronizer and Wait on an existing Condition in an atomic operation}
-{Condition: Condition to wait on} 
+{Condition: Condition to wait on}
 {Synchronizer: Synchronizer to release}
 {Flags: Flags to indicate reader or writer lock for the Synchronizer (eg CONDITION_LOCK_FLAG_WRITER)}
 {Timeout: Time in milliseconds to wait to be woken
@@ -10299,10 +10321,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Condition}
  if Condition = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ConditionEntry:=PConditionEntry(Condition);
  if ConditionEntry = nil then Exit;
@@ -10318,13 +10340,13 @@ begin
   end
  else
   begin
-   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
     begin
      Inc(ConditionDeadlockCounter);
     end;
-  end;  
+  end;
  {$ENDIF}
- 
+
  {Check the Handler}
  if Assigned(ConditionWaitSynchronizerHandler) then
   begin
@@ -10341,9 +10363,9 @@ begin
      try
       {Check Signature}
       if ConditionEntry.Signature <> CONDITION_SIGNATURE then Exit;
-    
+
       Result:=ERROR_OPERATION_FAILED;
-    
+
       {Check Timeout}
       if Timeout = 0 then
        begin
@@ -10356,12 +10378,12 @@ begin
          begin
           if SynchronizerReaderCount(Synchronizer) = 0 then Exit;
          end;
-        
+
         {Return Error}
         Result:=ERROR_WAIT_TIMEOUT;
        end
       else
-       begin      
+       begin
         {Release the Synchronizer}
         if (Flags and CONDITION_LOCK_FLAG_WRITER) <> 0 then
          begin
@@ -10370,22 +10392,22 @@ begin
         else
          begin
           if SynchronizerReaderUnlock(Synchronizer) <> ERROR_SUCCESS then Exit;
-         end;         
- 
+         end;
+
         {Check List}
         if ConditionEntry.List = INVALID_HANDLE_VALUE then
          begin
           {Create List}
           ConditionEntry.List:=ListCreateEx(LIST_TYPE_WAIT_CONDITION,SchedulerGetListFlags(LIST_TYPE_WAIT_CONDITION));
-         end; 
- 
+         end;
+
         {Check Timeout}
         if Timeout = INFINITE then
          begin
           {Wait on Condition}
           ConditionEntry.Wait(ConditionEntry.List,ConditionEntry.Lock,LOCK_FLAG_NONE);
           Unlock:=False;
-          
+
           {Check Result}
           WaitResult:=ThreadGetWaitResult;
           if WaitResult = WAIT_TIMEOUT then
@@ -10393,7 +10415,7 @@ begin
             Result:=ERROR_WAIT_TIMEOUT;
             Exit;
            end
-          else if WaitResult = WAIT_ABANDONED then 
+          else if WaitResult = WAIT_ABANDONED then
            begin
             Result:=ERROR_WAIT_ABANDONED;
             Exit;
@@ -10402,11 +10424,11 @@ begin
            begin
             Result:=WaitResult;
             Exit;
-           end;         
+           end;
          end
         else
          begin
-          {Wait on Condition with Timeout} 
+          {Wait on Condition with Timeout}
           ConditionEntry.WaitEx(ConditionEntry.List,ConditionEntry.Lock,LOCK_FLAG_NONE,Timeout);
           Unlock:=False;
 
@@ -10417,7 +10439,7 @@ begin
             Result:=ERROR_WAIT_TIMEOUT;
             Exit;
            end
-          else if WaitResult = WAIT_ABANDONED then 
+          else if WaitResult = WAIT_ABANDONED then
            begin
             Result:=ERROR_WAIT_ABANDONED;
             Exit;
@@ -10426,9 +10448,9 @@ begin
            begin
             Result:=WaitResult;
             Exit;
-           end;         
-         end; 
-        
+           end;
+         end;
+
         {Acquire the Synchronizer}
         if (Flags and CONDITION_LOCK_FLAG_WRITER) <> 0 then
          begin
@@ -10437,11 +10459,11 @@ begin
         else
          begin
           if SynchronizerReaderLock(Synchronizer) <> ERROR_SUCCESS then Exit;
-         end;         
-      
+         end;
+
         {Return Result}
-        Result:=ERROR_SUCCESS; 
-       end; 
+        Result:=ERROR_SUCCESS;
+       end;
      finally
       {Unlock the Condition}
       if Unlock then SpinUnlock(ConditionEntry.Lock);
@@ -10450,15 +10472,15 @@ begin
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;    
-  end; 
+    end;
+  end;
 end;
 
 {==============================================================================}
 
 function ConditionWaitCriticalSection(Condition:TConditionHandle;CriticalSection:TCriticalSectionHandle;Timeout:LongWord):LongWord;
 {Release a Critical Section and Wait on an existing Condition in an atomic operation}
-{Condition: Condition to wait on} 
+{Condition: Condition to wait on}
 {CriticalSection: Critical Section to release}
 {Timeout: Time in milliseconds to wait to be woken
           0 = No Wait
@@ -10475,10 +10497,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Condition}
  if Condition = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ConditionEntry:=PConditionEntry(Condition);
  if ConditionEntry = nil then Exit;
@@ -10494,13 +10516,13 @@ begin
   end
  else
   begin
-   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
     begin
      Inc(ConditionDeadlockCounter);
     end;
-  end;  
+  end;
  {$ENDIF}
- 
+
  {Check the Handler}
  if Assigned(ConditionWaitCriticalSectionHandler) then
   begin
@@ -10517,37 +10539,37 @@ begin
      try
       {Check Signature}
       if ConditionEntry.Signature <> CONDITION_SIGNATURE then Exit;
-    
+
       Result:=ERROR_OPERATION_FAILED;
-    
+
       {Check Timeout}
       if Timeout = 0 then
        begin
         {Check Critical Section}
         if CriticalSectionOwner(CriticalSection) <> ThreadGetCurrent then Exit;
-        
+
         {Return Error}
         Result:=ERROR_WAIT_TIMEOUT;
        end
       else
-       begin      
+       begin
         {Release the Critical Section}
         if CriticalSectionUnlock(CriticalSection) <> ERROR_SUCCESS then Exit;
- 
+
         {Check List}
         if ConditionEntry.List = INVALID_HANDLE_VALUE then
          begin
           {Create List}
           ConditionEntry.List:=ListCreateEx(LIST_TYPE_WAIT_CONDITION,SchedulerGetListFlags(LIST_TYPE_WAIT_CONDITION));
-         end; 
- 
+         end;
+
         {Check Timeout}
         if Timeout = INFINITE then
          begin
           {Wait on Condition}
           ConditionEntry.Wait(ConditionEntry.List,ConditionEntry.Lock,LOCK_FLAG_NONE);
           Unlock:=False;
-          
+
           {Check Result}
           WaitResult:=ThreadGetWaitResult;
           if WaitResult = WAIT_TIMEOUT then
@@ -10555,7 +10577,7 @@ begin
             Result:=ERROR_WAIT_TIMEOUT;
             Exit;
            end
-          else if WaitResult = WAIT_ABANDONED then 
+          else if WaitResult = WAIT_ABANDONED then
            begin
             Result:=ERROR_WAIT_ABANDONED;
             Exit;
@@ -10564,11 +10586,11 @@ begin
            begin
             Result:=WaitResult;
             Exit;
-           end;         
+           end;
          end
         else
          begin
-          {Wait on Condition with Timeout} 
+          {Wait on Condition with Timeout}
           ConditionEntry.WaitEx(ConditionEntry.List,ConditionEntry.Lock,LOCK_FLAG_NONE,Timeout);
           Unlock:=False;
 
@@ -10579,7 +10601,7 @@ begin
             Result:=ERROR_WAIT_TIMEOUT;
             Exit;
            end
-          else if WaitResult = WAIT_ABANDONED then 
+          else if WaitResult = WAIT_ABANDONED then
            begin
             Result:=ERROR_WAIT_ABANDONED;
             Exit;
@@ -10588,15 +10610,15 @@ begin
            begin
             Result:=WaitResult;
             Exit;
-           end;         
-         end; 
-        
+           end;
+         end;
+
         {Acquire the Critical Section}
         if CriticalSectionLock(CriticalSection) <> ERROR_SUCCESS then Exit;
-      
+
         {Return Result}
-        Result:=ERROR_SUCCESS; 
-       end; 
+        Result:=ERROR_SUCCESS;
+       end;
      finally
       {Unlock the Condition}
       if Unlock then SpinUnlock(ConditionEntry.Lock);
@@ -10605,30 +10627,30 @@ begin
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;    
-  end; 
+    end;
+  end;
 end;
 
 {==============================================================================}
 
 function ConditionWake(Condition:TConditionHandle):LongWord;
 {Wake one thread waiting on an existing Condition}
-{Condition: Condition to wake} 
+{Condition: Condition to wake}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  ConditionEntry:PConditionEntry;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Condition}
  if Condition = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ConditionEntry:=PConditionEntry(Condition);
  if ConditionEntry = nil then Exit;
  if ConditionEntry.Signature <> CONDITION_SIGNATURE then Exit;
- 
+
  {$IFDEF LOCK_DEBUG}
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -10639,13 +10661,13 @@ begin
   end
  else
   begin
-   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
     begin
      Inc(ConditionDeadlockCounter);
     end;
-  end;  
+  end;
  {$ENDIF}
- 
+
  {Check the Handler}
  if Assigned(ConditionWakeHandler) then
   begin
@@ -10661,7 +10683,7 @@ begin
      try
       {Check Signature}
       if ConditionEntry.Signature <> CONDITION_SIGNATURE then Exit;
- 
+
       {Check List}
       while ListNotEmpty(ConditionEntry.List) do
        begin
@@ -10670,10 +10692,10 @@ begin
          begin
           Break;
          end;
-       end; 
- 
+       end;
+
       {Return Result}
-      Result:=ERROR_SUCCESS; 
+      Result:=ERROR_SUCCESS;
      finally
       {Unlock the Condition}
       SpinUnlock(ConditionEntry.Lock);
@@ -10682,30 +10704,30 @@ begin
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;    
-  end; 
+    end;
+  end;
 end;
 
 {==============================================================================}
 
 function ConditionWakeAll(Condition:TConditionHandle):LongWord;
 {Wake all threads waiting on an existing Condition}
-{Condition: Condition to wake} 
+{Condition: Condition to wake}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  ConditionEntry:PConditionEntry;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Condition}
  if Condition = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ConditionEntry:=PConditionEntry(Condition);
  if ConditionEntry = nil then Exit;
  if ConditionEntry.Signature <> CONDITION_SIGNATURE then Exit;
- 
+
  {$IFDEF LOCK_DEBUG}
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -10716,13 +10738,13 @@ begin
   end
  else
   begin
-   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
     begin
      Inc(ConditionDeadlockCounter);
     end;
-  end;  
+  end;
  {$ENDIF}
- 
+
  {Check the Handler}
  if Assigned(ConditionWakeAllHandler) then
   begin
@@ -10738,16 +10760,16 @@ begin
      try
       {Check Signature}
       if ConditionEntry.Signature <> CONDITION_SIGNATURE then Exit;
- 
+
       {Check List}
       while ListNotEmpty(ConditionEntry.List) do
        begin
         {Release all threads waiting on Condition}
         ConditionEntry.Release(ConditionEntry.List);
        end;
- 
+
       {Return Result}
-      Result:=ERROR_SUCCESS; 
+      Result:=ERROR_SUCCESS;
      finally
       {Unlock the Condition}
       SpinUnlock(ConditionEntry.Lock);
@@ -10756,8 +10778,8 @@ begin
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;    
-  end; 
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -10771,10 +10793,10 @@ function CompletionLock(Completion:PCompletionEntry):LongWord; {$IFDEF COMPLETIO
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Completion}
  if Completion = nil then Exit;
- 
+
  {Acquire the Lock}
  if (Completion.Flags and COMPLETION_FLAG_IRQFIQ) <> 0 then
   begin
@@ -10791,7 +10813,7 @@ begin
  else
   begin
    Result:=SpinLock(Completion.Lock);
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -10804,10 +10826,10 @@ function CompletionUnlock(Completion:PCompletionEntry):LongWord; {$IFDEF COMPLET
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Completion}
  if Completion = nil then Exit;
- 
+
  {Release the Lock}
  if (Completion.Flags and COMPLETION_FLAG_IRQFIQ) <> 0 then
   begin
@@ -10838,18 +10860,18 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Create Completion entry}
  if COMPLETION_SHARED_MEMORY then
   begin
-   CompletionEntry:=AllocSharedMem(SizeOf(TCompletionEntry)); 
+   CompletionEntry:=AllocSharedMem(SizeOf(TCompletionEntry));
   end
  else
   begin
-   CompletionEntry:=AllocMem(SizeOf(TCompletionEntry)); 
+   CompletionEntry:=AllocMem(SizeOf(TCompletionEntry));
   end;
  if CompletionEntry = nil then Exit;
- 
+
  {Setup Completion entry}
  CompletionEntry.Signature:=COMPLETION_SIGNATURE;
  CompletionEntry.State:=COMPLETION_STATE_RESET;
@@ -10861,14 +10883,14 @@ begin
  CompletionEntry.WaitEx:=ThreadWaitEx;
  CompletionEntry.Release:=ThreadRelease;
  CompletionEntry.Abandon:=ThreadAbandon;
- 
+
  {Check Completion flags}
  if (Flags and (COMPLETION_FLAG_IRQ or COMPLETION_FLAG_FIQ or COMPLETION_FLAG_IRQFIQ)) <> 0 then
   begin
    {Create Completion List}
    CompletionEntry.List:=ListCreateEx(LIST_TYPE_WAIT_COMPLETION,SchedulerGetListFlags(LIST_TYPE_WAIT_COMPLETION));
   end;
- 
+
  {Insert Completion entry}
  if SpinLock(CompletionTableLock) = ERROR_SUCCESS then
   begin
@@ -10884,10 +10906,10 @@ begin
       CompletionTable.Prev:=CompletionEntry;
       CompletionTable:=CompletionEntry;
      end;
-    
+
     {Increment Completion Count}
     Inc(CompletionTableCount);
-    
+
     {Return Completion entry}
     Result:=TCompletionHandle(CompletionEntry);
    finally
@@ -10904,10 +10926,10 @@ begin
 
    {Free Completion Lock}
    SpinDestroy(CompletionEntry.Lock);
-   
+
    {Free Completion Entry}
    FreeMem(CompletionEntry);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -10923,15 +10945,15 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Completion}
  if Completion = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  CompletionEntry:=PCompletionEntry(Completion);
  if CompletionEntry = nil then Exit;
  if CompletionEntry.Signature <> COMPLETION_SIGNATURE then Exit;
- 
+
  {Remove Completion entry}
  if SpinLock(CompletionTableLock) = ERROR_SUCCESS then
   begin
@@ -10939,29 +10961,29 @@ begin
     {Acquire the Lock}
     Result:=CompletionLock(CompletionEntry);
     if Result <> ERROR_SUCCESS then Exit;
-   
+
     {Check Signature}
     if CompletionEntry.Signature <> COMPLETION_SIGNATURE then
      begin
       {Release the Lock}
       Result:=CompletionUnlock(CompletionEntry);
       if Result <> ERROR_SUCCESS then Exit;
-     
+
       {Return Result}
       Result:=ERROR_INVALID_PARAMETER;
       Exit;
-     end; 
-    
+     end;
+
     {Invalidate Completion entry}
     CompletionEntry.Signature:=0;
-    
+
     {Check Waiting Threads}
     while ListNotEmpty(CompletionEntry.List) do
      begin
       {Abandon waiting thread}
       CompletionEntry.Abandon(CompletionEntry.List);
      end;
-    
+
     {Unlink Completion entry}
     PrevEntry:=CompletionEntry.Prev;
     NextEntry:=CompletionEntry.Next;
@@ -10971,7 +10993,7 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -10979,28 +11001,28 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=PrevEntry;
-       end;       
-     end;     
+       end;
+     end;
 
     {Decrement Completion Count}
     Dec(CompletionTableCount);
-    
+
     {Release the Lock}
     Result:=CompletionUnlock(CompletionEntry);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Free Completion List}
     if CompletionEntry.List <> INVALID_HANDLE_VALUE then
      begin
       ListDestroy(CompletionEntry.List);
      end;
-    
+
     {Free Completion Lock}
     SpinDestroy(CompletionEntry.Lock);
-    
+
     {Free Completion Entry}
     FreeMem(CompletionEntry);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -11028,7 +11050,7 @@ begin
 
  {Check Completion}
  if Completion = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  CompletionEntry:=PCompletionEntry(Completion);
  if CompletionEntry = nil then Exit;
@@ -11040,29 +11062,29 @@ begin
    try
     {Check Signature}
     if CompletionEntry.Signature <> COMPLETION_SIGNATURE then Exit;
-    
+
     {Get the State}
     Result:=CompletionEntry.State;
    finally
     {Unlock the Completion}
     CompletionUnlock(CompletionEntry);
    end;
-  end;    
+  end;
 end;
- 
+
 {==============================================================================}
 
-function CompletionWait(Completion:TCompletionHandle;Timeout:LongWord):LongWord; 
+function CompletionWait(Completion:TCompletionHandle;Timeout:LongWord):LongWord;
 {Wait on an existing Completion
 
  If the completion is set (complete) then return immediately with success
- 
+
  If the completion is not set then wait for it to be completed before
  returning
- 
+
  For counted completions, decrement the count if it is not 0 or -1 after
  testing if the completion is set}
-{Completion: Completion to wait on} 
+{Completion: Completion to wait on}
 {Timeout: Time in milliseconds to wait to be woken
           0 = No Wait
           INFINITE = Wait Indefinitely}
@@ -11077,12 +11099,12 @@ begin
 
  {Check Completion}
  if Completion = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  CompletionEntry:=PCompletionEntry(Completion);
  if CompletionEntry = nil then Exit;
  if CompletionEntry.Signature <> COMPLETION_SIGNATURE then Exit;
- 
+
  {Check the Handler}
  if Assigned(CompletionWaitHandler) then
   begin
@@ -11104,14 +11126,14 @@ begin
       end
      else
       begin
-       if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+       if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
         begin
          Inc(CompletionDeadlockCounter);
         end;
-      end;  
-    end;  
+      end;
+    end;
    {$ENDIF}
-   
+
    {Lock the Completion}
    if CompletionLock(CompletionEntry) = ERROR_SUCCESS then
     begin
@@ -11126,7 +11148,7 @@ begin
         {Check State}
         Result:=ERROR_WAIT_TIMEOUT;
         if CompletionEntry.State = COMPLETION_STATE_RESET then Exit;
-       end; 
+       end;
 
       {Check State}
       if CompletionEntry.State = COMPLETION_STATE_COMPLETE then
@@ -11137,17 +11159,17 @@ begin
           {Check Count}
           if CompletionEntry.Count = 0 then
            begin
-            Result:=ERROR_INVALID_FUNCTION; 
+            Result:=ERROR_INVALID_FUNCTION;
             Exit;
            end;
-           
+
           {Check Count}
           if CompletionEntry.Count <> LongWord(-1) then
            begin
             {Decrement Count}
             Dec(CompletionEntry.Count);
            end;
-           
+
           {Check Count}
           if CompletionEntry.Count = 0 then
            begin
@@ -11163,15 +11185,15 @@ begin
          begin
           {Create List}
           CompletionEntry.List:=ListCreateEx(LIST_TYPE_WAIT_COMPLETION,SchedulerGetListFlags(LIST_TYPE_WAIT_COMPLETION));
-         end; 
-       
+         end;
+
         {Check Timeout}
         if Timeout = INFINITE then
          begin
           {Wait on Completion}
           CompletionEntry.Wait(CompletionEntry.List,CompletionEntry.Lock,CompletionEntry.Flags);
           Unlock:=False;
-          
+
           {Check Result}
           WaitResult:=ThreadGetWaitResult;
           if WaitResult = WAIT_TIMEOUT then
@@ -11179,7 +11201,7 @@ begin
             Result:=ERROR_WAIT_TIMEOUT;
             Exit;
            end
-          else if WaitResult = WAIT_ABANDONED then 
+          else if WaitResult = WAIT_ABANDONED then
            begin
             Result:=ERROR_WAIT_ABANDONED;
             Exit;
@@ -11188,11 +11210,11 @@ begin
            begin
             Result:=WaitResult;
             Exit;
-           end;         
+           end;
          end
         else
          begin
-          {Wait on Completion with Timeout} 
+          {Wait on Completion with Timeout}
           CompletionEntry.WaitEx(CompletionEntry.List,CompletionEntry.Lock,CompletionEntry.Flags,Timeout);
           Unlock:=False;
 
@@ -11203,7 +11225,7 @@ begin
             Result:=ERROR_WAIT_TIMEOUT;
             Exit;
            end
-          else if WaitResult = WAIT_ABANDONED then 
+          else if WaitResult = WAIT_ABANDONED then
            begin
             Result:=ERROR_WAIT_ABANDONED;
             Exit;
@@ -11212,12 +11234,12 @@ begin
            begin
             Result:=WaitResult;
             Exit;
-           end;         
-         end; 
-       end;    
-    
+           end;
+         end;
+       end;
+
       {Return Result}
-      Result:=ERROR_SUCCESS; 
+      Result:=ERROR_SUCCESS;
      finally
       {Unlock the Completion}
       if Unlock then CompletionUnlock(CompletionEntry);
@@ -11226,18 +11248,18 @@ begin
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;    
-  end; 
+    end;
+  end;
 end;
 
 {==============================================================================}
 
-function CompletionTryWait(Completion:TCompletionHandle):LongWord; 
+function CompletionTryWait(Completion:TCompletionHandle):LongWord;
 {Try an existing Completion to see if it is completed
- 
+
  If the completion is not set (complete) then return immediately with an error
  and do not wait for it to be completed}
-{Completion: Completion to try} 
+{Completion: Completion to try}
 {Return: ERROR_SUCCESS if completed, ERROR_NOT_READY if not completed or another error code on failure}
 begin
  {}
@@ -11246,14 +11268,14 @@ begin
 end;
 
 {==============================================================================}
- 
-function CompletionReset(Completion:TCompletionHandle):LongWord; 
+
+function CompletionReset(Completion:TCompletionHandle):LongWord;
 {Reset (uncomplete) the state of an existing Completion entry
 
  If the completion is not set then return with no action
- 
+
  If the completion is set then change the state to not set
- 
+
  For counted completions, reset the counter to 0}
 {Completion: Completion to reset the state for}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
@@ -11265,12 +11287,12 @@ begin
 
  {Check Completion}
  if Completion = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  CompletionEntry:=PCompletionEntry(Completion);
  if CompletionEntry = nil then Exit;
  if CompletionEntry.Signature <> COMPLETION_SIGNATURE then Exit;
- 
+
  {Check the Handler}
  if Assigned(CompletionResetHandler) then
   begin
@@ -11292,33 +11314,33 @@ begin
       end
      else
       begin
-       if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+       if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
         begin
          Inc(CompletionDeadlockCounter);
         end;
-      end;  
-    end;  
+      end;
+    end;
    {$ENDIF}
-   
+
    {Lock the Completion}
    if CompletionLock(CompletionEntry) = ERROR_SUCCESS then
     begin
      try
       {Check Signature}
       if CompletionEntry.Signature <> COMPLETION_SIGNATURE then Exit;
- 
+
       {Check State}
       if CompletionEntry.State = COMPLETION_STATE_COMPLETE then
        begin
         {Reset State}
         CompletionEntry.State:=COMPLETION_STATE_RESET;
-        
+
         {Reset Count}
         CompletionEntry.Count:=0;
-       end; 
-      
+       end;
+
       {Return Result}
-      Result:=ERROR_SUCCESS; 
+      Result:=ERROR_SUCCESS;
      finally
       {Unlock the Completion}
       CompletionUnlock(CompletionEntry);
@@ -11327,20 +11349,20 @@ begin
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;    
-  end; 
+    end;
+  end;
 end;
 
 {==============================================================================}
 
-function CompletionComplete(Completion:TCompletionHandle):LongWord; 
+function CompletionComplete(Completion:TCompletionHandle):LongWord;
 {Set (complete) the state of an existing Completion entry
 
  If the completion is already set then return with no action
- 
+
  If the completion is not set then release one waiting thread (if any)
  and return
- 
+
  For counted completions, release one waiting thread, if there are no
  waiting threads increment the count if it is not -1 and return}
 {Completion: Completion to set the state for}
@@ -11353,12 +11375,12 @@ begin
 
  {Check Completion}
  if Completion = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  CompletionEntry:=PCompletionEntry(Completion);
  if CompletionEntry = nil then Exit;
  if CompletionEntry.Signature <> COMPLETION_SIGNATURE then Exit;
- 
+
  {Check the Handler}
  if Assigned(CompletionCompleteHandler) then
   begin
@@ -11380,21 +11402,21 @@ begin
       end
      else
       begin
-       if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+       if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
         begin
          Inc(CompletionDeadlockCounter);
         end;
-      end;  
-    end;  
+      end;
+    end;
    {$ENDIF}
-   
+
    {Lock the Completion}
    if CompletionLock(CompletionEntry) = ERROR_SUCCESS then
     begin
      try
       {Check Signature}
       if CompletionEntry.Signature <> COMPLETION_SIGNATURE then Exit;
- 
+
       {Check Counted}
       if (CompletionEntry.Flags and COMPLETION_FLAG_COUNTED) <> 0 then
        begin
@@ -11406,13 +11428,13 @@ begin
            begin
             {Set State}
             CompletionEntry.State:=COMPLETION_STATE_COMPLETE;
-            
+
             {Increment Count}
             Inc(CompletionEntry.Count);
-           end;  
+           end;
          end
         else
-         begin        
+         begin
           {Check List}
           while ListNotEmpty(CompletionEntry.List) do
            begin
@@ -11422,7 +11444,7 @@ begin
               Break;
              end;
            end;
-         end; 
+         end;
        end
       else
        begin
@@ -11437,12 +11459,12 @@ begin
              begin
               Break;
              end;
-           end; 
-         end; 
-       end;       
-      
+           end;
+         end;
+       end;
+
       {Return Result}
-      Result:=ERROR_SUCCESS; 
+      Result:=ERROR_SUCCESS;
      finally
       {Unlock the Completion}
       CompletionUnlock(CompletionEntry);
@@ -11451,20 +11473,20 @@ begin
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;    
-  end; 
+    end;
+  end;
 end;
 
 {==============================================================================}
 
-function CompletionCompleteAll(Completion:TCompletionHandle):LongWord; 
+function CompletionCompleteAll(Completion:TCompletionHandle):LongWord;
 {Set (complete) the state of an existing Completion entry
 
  If the completion is already set then return with no action
- 
+
  If the completion is not set then release all waiting threads (if any)
  and return
- 
+
  For counted completions, set the count to -1, release all waiting threads
  (if any) and return}
 {Completion: Completion to set the state for}
@@ -11477,12 +11499,12 @@ begin
 
  {Check Completion}
  if Completion = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  CompletionEntry:=PCompletionEntry(Completion);
  if CompletionEntry = nil then Exit;
  if CompletionEntry.Signature <> COMPLETION_SIGNATURE then Exit;
- 
+
  {Check the Handler}
  if Assigned(CompletionCompleteAllHandler) then
   begin
@@ -11504,40 +11526,40 @@ begin
       end
      else
       begin
-       if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+       if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
         begin
          Inc(CompletionDeadlockCounter);
         end;
-      end;  
-    end;  
+      end;
+    end;
    {$ENDIF}
-   
+
    {Lock the Completion}
    if CompletionLock(CompletionEntry) = ERROR_SUCCESS then
     begin
      try
       {Check Signature}
       if CompletionEntry.Signature <> COMPLETION_SIGNATURE then Exit;
- 
+
       {Check State}
       if CompletionEntry.State = COMPLETION_STATE_RESET then
        begin
         {Set State}
         CompletionEntry.State:=COMPLETION_STATE_COMPLETE;
-        
+
         {Set Count}
         CompletionEntry.Count:=LongWord(-1);
-        
+
         {Check List}
         while ListNotEmpty(CompletionEntry.List) do
          begin
           {Release all threads waiting on Completion}
           CompletionEntry.Release(CompletionEntry.List);
          end;
-       end; 
-      
+       end;
+
       {Return Result}
-      Result:=ERROR_SUCCESS; 
+      Result:=ERROR_SUCCESS;
      finally
       {Unlock the Completion}
       CompletionUnlock(CompletionEntry);
@@ -11546,8 +11568,8 @@ begin
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;    
-  end; 
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -11584,7 +11606,7 @@ begin
  ListEntry.Count:=0;
  ListEntry.Flags:=Flags;
  ListEntry.Lock:=SpinCreate;
- 
+
  {Insert List entry}
  if SpinLock(ListTableLock) = ERROR_SUCCESS then
   begin
@@ -11600,10 +11622,10 @@ begin
       ListTable.Prev:=ListEntry;
       ListTable:=ListEntry;
      end;
-    
+
     {Increment List Count}
     Inc(ListTableCount);
-    
+
     {Return List entry}
     Result:=TListHandle(ListEntry);
    finally
@@ -11617,7 +11639,7 @@ begin
 
    {Free List Entry}
    FreeMem(ListEntry);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -11634,10 +11656,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check List}
  if List = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ListEntry:=PListEntry(List);
  if ListEntry = nil then Exit;
@@ -11648,7 +11670,7 @@ begin
   begin
    try
     {Acquire the Lock (Done locally due to invalidate below)}
-    if (ListEntry.Flags and LIST_FLAG_IRQFIQ) <> 0 then                            
+    if (ListEntry.Flags and LIST_FLAG_IRQFIQ) <> 0 then
      begin
       Result:=SpinLockIRQFIQ(ListEntry.Lock);
      end
@@ -11663,14 +11685,14 @@ begin
     else
      begin
       Result:=SpinLock(ListEntry.Lock);
-     end;    
+     end;
     if Result <> ERROR_SUCCESS then Exit;
- 
+
     {Check Signature}
     if ListEntry.Signature <> LIST_SIGNATURE then
      begin
       {Release the Lock (Done locally due to invalidate below)}
-      if (ListEntry.Flags and LIST_FLAG_IRQFIQ) <> 0 then                           
+      if (ListEntry.Flags and LIST_FLAG_IRQFIQ) <> 0 then
        begin
         Result:=SpinUnlockIRQFIQ(ListEntry.Lock);
        end
@@ -11687,15 +11709,15 @@ begin
         Result:=SpinUnlock(ListEntry.Lock);
        end;
       if Result <> ERROR_SUCCESS then Exit;
-     
+
       {Return Result}
       Result:=ERROR_INVALID_PARAMETER;
       Exit;
      end;
-     
+
     {Invalidate List entry}
     ListEntry.Signature:=0;
-   
+
     {Unlink List entry}
     PrevEntry:=ListEntry.Prev;
     NextEntry:=ListEntry.Next;
@@ -11705,7 +11727,7 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -11713,14 +11735,14 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=PrevEntry;
-       end;       
-     end;     
-   
+       end;
+     end;
+
     {Decrement List Count}
     Dec(ListTableCount);
-   
+
     {Release the Lock (Done locally due to invalidate above)}
-    if (ListEntry.Flags and LIST_FLAG_IRQFIQ) <> 0 then                           
+    if (ListEntry.Flags and LIST_FLAG_IRQFIQ) <> 0 then
      begin
       Result:=SpinUnlockIRQFIQ(ListEntry.Lock);
      end
@@ -11737,17 +11759,17 @@ begin
       Result:=SpinUnlock(ListEntry.Lock);
      end;
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Free List Lock}
     SpinDestroy(ListEntry.Lock);
-    
+
     {Free List Entry}
     FreeMem(ListEntry);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
-    SpinUnlock(ListTableLock); 
+    SpinUnlock(ListTableLock);
    end;
   end
  else
@@ -11768,15 +11790,15 @@ var
 begin
  {}
  Result:=LongWord(INVALID_HANDLE_VALUE);
- 
+
  {Check List}
  if List = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ListEntry:=PListEntry(List);
  if ListEntry = nil then Exit;
  if ListEntry.Signature <> LIST_SIGNATURE then Exit;
- 
+
  {Get Count}
  Result:=ListEntry.Count;
 end;
@@ -11794,13 +11816,13 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check the Element}
  if Element = nil then Exit;
- 
+
  {Check List}
  if List = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ListEntry:=PListEntry(List);
  if ListEntry = nil then Exit;
@@ -11814,7 +11836,7 @@ begin
     if ListEntry.Signature <> LIST_SIGNATURE then Exit;
 
     {Check First}
-    if ListEntry.First = nil then 
+    if ListEntry.First = nil then
      begin
       Element.Next:=nil;
       Element.Prev:=nil;
@@ -11827,16 +11849,16 @@ begin
       Element.Prev:=nil;
       ListEntry.First.Prev:=Element;
       ListEntry.First:=Element;
-     end; 
+     end;
 
     {Increment Count}
     Inc(ListEntry.Count);
- 
-    Result:=ERROR_SUCCESS;  
+
+    Result:=ERROR_SUCCESS;
    finally
     {Unlock the List}
     ListUnlock(List);
-   end;   
+   end;
   end
  else
   begin
@@ -11857,13 +11879,13 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check the Element}
  if Element = nil then Exit;
- 
+
  {Check List}
  if List = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ListEntry:=PListEntry(List);
  if ListEntry = nil then Exit;
@@ -11890,16 +11912,16 @@ begin
       Element.Prev:=ListEntry.Last;
       ListEntry.Last.Next:=Element;
       ListEntry.Last:=Element;
-     end;  
+     end;
 
     {Increment Count}
     Inc(ListEntry.Count);
-  
-    Result:=ERROR_SUCCESS;  
+
+    Result:=ERROR_SUCCESS;
    finally
     {Unlock the List}
     ListUnlock(List);
-   end;   
+   end;
   end
  else
   begin
@@ -11921,13 +11943,13 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check the Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check List}
  if List = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ListEntry:=PListEntry(List);
  if ListEntry = nil then Exit;
@@ -11954,7 +11976,7 @@ begin
    finally
     {Unlock the List}
     ListUnlock(List);
-   end;   
+   end;
   end
  else
   begin
@@ -11991,12 +12013,12 @@ begin
 
  {Check List}
  if List = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ListEntry:=PListEntry(List);
  if ListEntry = nil then Exit;
  if ListEntry.Signature <> LIST_SIGNATURE then Exit;
- 
+
  {Lock the List}
  if ListLock(List) = ERROR_SUCCESS then
   begin
@@ -12006,13 +12028,13 @@ begin
 
     {Get First Element}
     Result:=ListEntry.First;
-    
+
     {Check Remove}
     if (Result <> nil) and Remove then
      begin
       {Get Next}
       NextElement:=Result.Next;
-      
+
       ListEntry.First:=NextElement;
       {Check Next}
       if NextElement = nil then
@@ -12022,15 +12044,15 @@ begin
       else
        begin
         NextElement.Prev:=nil;
-       end;    
-      
+       end;
+
       {Decrement Count}
       Dec(ListEntry.Count);
      end;
    finally
     {Unlock the List}
     ListUnlock(List);
-   end;   
+   end;
   end
  else
   begin
@@ -12067,12 +12089,12 @@ begin
 
  {Check List}
  if List = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ListEntry:=PListEntry(List);
  if ListEntry = nil then Exit;
  if ListEntry.Signature <> LIST_SIGNATURE then Exit;
- 
+
  {Lock the List}
  if ListLock(List) = ERROR_SUCCESS then
   begin
@@ -12082,13 +12104,13 @@ begin
 
     {Get Last Element}
     Result:=ListEntry.Last;
-    
+
     {Check Remove}
     if (Result <> nil) and Remove then
      begin
       {Get Prev}
       PrevElement:=Result.Prev;
-      
+
       ListEntry.Last:=PrevElement;
       {Check Prev}
       if PrevElement = nil then
@@ -12106,7 +12128,7 @@ begin
    finally
     {Unlock the List}
     ListUnlock(List);
-   end;   
+   end;
   end
  else
   begin
@@ -12138,18 +12160,18 @@ begin
  else
   begin
    Result:=ERROR_INVALID_PARAMETER;
-   
+
    {Check the Element}
    if Element = nil then Exit;
- 
+
    {Check List}
    if List = INVALID_HANDLE_VALUE then Exit;
- 
+
    {Check the Handle}
    ListEntry:=PListEntry(List);
    if ListEntry = nil then Exit;
    if ListEntry.Signature <> LIST_SIGNATURE then Exit;
- 
+
    {Lock the List}
    if ListLock(List) = ERROR_SUCCESS then
     begin
@@ -12174,7 +12196,7 @@ begin
         else
          begin
           NextElement.Prev:=Element;
-         end;      
+         end;
        end
       else
        begin
@@ -12187,24 +12209,24 @@ begin
         else
          begin
           NextElement.Prev:=Element;
-         end;      
-       end;    
-      
+         end;
+       end;
+
       {Increment Count}
       Inc(ListEntry.Count);
-   
+
       {Return Result}
-      Result:=ERROR_SUCCESS;  
+      Result:=ERROR_SUCCESS;
      finally
       {Unlock the List}
       ListUnlock(List);
-     end;   
+     end;
     end
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
     end;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -12225,15 +12247,15 @@ begin
 
  {Check the Element}
  if Element = nil then Exit;
- 
+
  {Check List}
  if List = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ListEntry:=PListEntry(List);
  if ListEntry = nil then Exit;
  if ListEntry.Signature <> LIST_SIGNATURE then Exit;
- 
+
  {Lock the List}
  if ListLock(List) = ERROR_SUCCESS then
   begin
@@ -12256,7 +12278,7 @@ begin
       else
        begin
         NextElement.Prev:=nil;
-       end;    
+       end;
      end
     else
      begin
@@ -12270,17 +12292,17 @@ begin
        begin
         NextElement.Prev:=PrevElement;
        end;
-     end;  
+     end;
 
     {Decrement Count}
     Dec(ListEntry.Count);
-  
+
     {Return Result}
-    Result:=ERROR_SUCCESS;  
+    Result:=ERROR_SUCCESS;
    finally
     {Unlock the List}
     ListUnlock(List);
-   end;   
+   end;
   end
  else
   begin
@@ -12300,15 +12322,15 @@ var
 begin
  {}
  Result:=True; {Default to True}
- 
+
  {Check List}
  if List = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ListEntry:=PListEntry(List);
  if ListEntry = nil then Exit;
  if ListEntry.Signature <> LIST_SIGNATURE then Exit;
- 
+
  {Lock the List}
  if ListLock(List) = ERROR_SUCCESS then
   begin
@@ -12318,12 +12340,12 @@ begin
 
     {Check Empty}
     if ListEntry.First = nil then Exit;
- 
+
     Result:=False;
    finally
     {Unlock the List}
     ListUnlock(List);
-   end;   
+   end;
   end
  else
   begin
@@ -12343,15 +12365,15 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check List}
  if List = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ListEntry:=PListEntry(List);
  if ListEntry = nil then Exit;
  if ListEntry.Signature <> LIST_SIGNATURE then Exit;
- 
+
  {Lock the List}
  if ListLock(List) = ERROR_SUCCESS then
   begin
@@ -12361,12 +12383,12 @@ begin
 
     {Check Empty}
     if ListEntry.First = nil then Exit;
- 
+
     Result:=True;
    finally
     {Unlock the List}
     ListUnlock(List);
-   end;   
+   end;
   end
  else
   begin
@@ -12385,10 +12407,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check List}
  if List = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ListEntry:=PListEntry(List);
  if ListEntry = nil then Exit;
@@ -12410,7 +12432,7 @@ begin
  else
   begin
    Result:=SpinLock(ListEntry.Lock);
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -12424,10 +12446,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check List}
  if List = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ListEntry:=PListEntry(List);
  if ListEntry = nil then Exit;
@@ -12486,7 +12508,7 @@ begin
  QueueEntry.Count:=0;
  QueueEntry.Flags:=Flags;
  QueueEntry.Lock:=SpinCreate;
-  
+
  {Insert Queue entry}
  if SpinLock(QueueTableLock) = ERROR_SUCCESS then
   begin
@@ -12502,10 +12524,10 @@ begin
       QueueTable.Prev:=QueueEntry;
       QueueTable:=QueueEntry;
      end;
-    
+
     {Increment Queue Count}
     Inc(QueueTableCount);
-    
+
     {Return Queue entry}
     Result:=TQueueHandle(QueueEntry);
    finally
@@ -12516,10 +12538,10 @@ begin
   begin
    {Free Queue Lock}
    SpinDestroy(QueueEntry.Lock);
-   
+
    {Free Queue Entry}
    FreeMem(QueueEntry);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -12535,21 +12557,21 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Queue}
  if Queue = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  QueueEntry:=PQueueEntry(Queue);
  if QueueEntry = nil then Exit;
  if QueueEntry.Signature <> QUEUE_SIGNATURE then Exit;
- 
+
  {Remove Queue entry}
  if SpinLock(QueueTableLock) = ERROR_SUCCESS then
   begin
    try
     {Acquire the Lock (Done locally due to invalidate below)}
-    if (QueueEntry.Flags and QUEUE_FLAG_IRQFIQ) <> 0 then                          
+    if (QueueEntry.Flags and QUEUE_FLAG_IRQFIQ) <> 0 then
      begin
       Result:=SpinLockIRQFIQ(QueueEntry.Lock);
      end
@@ -12564,14 +12586,14 @@ begin
     else
      begin
       Result:=SpinLock(QueueEntry.Lock);
-     end;    
+     end;
     if Result <> ERROR_SUCCESS then Exit;
- 
+
     {Check Signature}
     if QueueEntry.Signature <> QUEUE_SIGNATURE then
      begin
       {Release the Lock (Done locally due to invalidate below)}
-      if (QueueEntry.Flags and QUEUE_FLAG_IRQFIQ) <> 0 then                       
+      if (QueueEntry.Flags and QUEUE_FLAG_IRQFIQ) <> 0 then
        begin
         Result:=SpinUnlockIRQFIQ(QueueEntry.Lock);
        end
@@ -12588,15 +12610,15 @@ begin
         Result:=SpinUnlock(QueueEntry.Lock);
        end;
       if Result <> ERROR_SUCCESS then Exit;
-     
+
       {Return Result}
       Result:=ERROR_INVALID_PARAMETER;
       Exit;
-     end; 
-    
+     end;
+
     {Invalidate Queue entry}
     QueueEntry.Signature:=0;
-   
+
     {Unlink Queue entry}
     PrevEntry:=QueueEntry.Prev;
     NextEntry:=QueueEntry.Next;
@@ -12606,7 +12628,7 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -12614,14 +12636,14 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=PrevEntry;
-       end;       
-     end;     
-    
+       end;
+     end;
+
     {Decrement Queue Count}
     Dec(QueueTableCount);
-    
-    {Release the Lock (Done locally due to invalidate above)} 
-    if (QueueEntry.Flags and QUEUE_FLAG_IRQFIQ) <> 0 then                          
+
+    {Release the Lock (Done locally due to invalidate above)}
+    if (QueueEntry.Flags and QUEUE_FLAG_IRQFIQ) <> 0 then
      begin
       Result:=SpinUnlockIRQFIQ(QueueEntry.Lock);
      end
@@ -12638,13 +12660,13 @@ begin
       Result:=SpinUnlock(QueueEntry.Lock);
      end;
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Free Queue Lock}
     SpinDestroy(QueueEntry.Lock);
-    
+
     {Free Queue Entry}
     FreeMem(QueueEntry);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -12672,7 +12694,7 @@ begin
 
  {Check Queue}
  if Queue = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  QueueEntry:=PQueueEntry(Queue);
  if QueueEntry = nil then Exit;
@@ -12700,22 +12722,22 @@ begin
 
  {Check Queue}
  if Queue = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  QueueEntry:=PQueueEntry(Queue);
  if QueueEntry = nil then Exit;
  if QueueEntry.Signature <> QUEUE_SIGNATURE then Exit;
- 
+
  {Lock the Queue}
  if QueueLock(Queue) = ERROR_SUCCESS then
   begin
    try
     {Check Signature}
     if QueueEntry.Signature <> QUEUE_SIGNATURE then Exit;
-    
+
     {Get Element}
     case QueueEntry.QueueType of
      QUEUE_TYPE_NOT_SPECIFIED:begin
@@ -12732,8 +12754,8 @@ begin
 
        {Use Thread Element}
        QueueElement:=@ThreadEntry.QueueElement;
-       QueueElement.Key:=0;   
-       
+       QueueElement.Key:=0;
+
        {Set ScheduleQueue}
        ThreadEntry.ScheduleQueue:=Queue;
       end;
@@ -12746,19 +12768,19 @@ begin
 
        {Use Thread Element}
        QueueElement:=@ThreadEntry.QueueElement;
-       QueueElement.Key:=0;   
-       
+       QueueElement.Key:=0;
+
        {Set ScheduleQueue}
        ThreadEntry.ScheduleQueue:=Queue;
-       
+
        {Increment Thread Count}
        InterlockedIncrement(LongInt(SchedulerThreadCount[ThreadEntry.CurrentCPU]));
-       
+
        {Update Priority Mask}
        if QueueEntry.Count = 0 then InterlockedOr(LongInt(SchedulerPriorityMask[ThreadEntry.CurrentCPU]),SCHEDULER_MASKS[ThreadEntry.Priority]);
       end;
     end;
-    
+
     {Check Last}
     if QueueEntry.Last = nil then
      begin
@@ -12773,17 +12795,17 @@ begin
       QueueElement.Prev:=QueueEntry.Last;
       QueueEntry.Last.Next:=QueueElement;
       QueueEntry.Last:=QueueElement;
-     end;  
+     end;
 
     {Increment Count}
     Inc(QueueEntry.Count);
-    
+
     {Return Result}
-    Result:=ERROR_SUCCESS;  
+    Result:=ERROR_SUCCESS;
    finally
     {Unlock the Queue}
     QueueUnlock(Queue);
-   end;   
+   end;
   end
  else
   begin
@@ -12821,12 +12843,12 @@ begin
 
  {Check Queue}
  if Queue = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  QueueEntry:=PQueueEntry(Queue);
  if QueueEntry = nil then Exit;
  if QueueEntry.Signature <> QUEUE_SIGNATURE then Exit;
- 
+
  {Lock the Queue}
  if not(Lock) or (QueueLock(Queue) = ERROR_SUCCESS) then
   begin
@@ -12840,7 +12862,7 @@ begin
      begin
       {Remove First}
       QueueEntry.First:=QueueElement.Next;
-      
+
       {Check Next}
       if QueueElement.Next = nil then
        begin
@@ -12850,7 +12872,7 @@ begin
        begin
         QueueElement.Next.Prev:=nil;
        end;
-     
+
       {Check Flags}
       if (QueueEntry.Flags and QUEUE_FLAG_DELTA) <> 0 then
        begin
@@ -12863,14 +12885,14 @@ begin
             Inc(QueueEntry.First.Key,QueueElement.Key);
            end;
          end;
-       end;  
-      
+       end;
+
       {Decrement Count}
       Dec(QueueEntry.Count);
-      
+
       {Return Result}
       Result:=QueueElement.Thread;
-      
+
       {Release Element}
       case QueueEntry.QueueType of
        QUEUE_TYPE_NOT_SPECIFIED:begin
@@ -12881,12 +12903,12 @@ begin
          {Note: No lock held on the thread but it can only be in one scheduler queue at a time}
          {Check Thread}
          if Result = INVALID_HANDLE_VALUE then Exit;
-         
+
          {Check the Handle}
          ThreadEntry:=PThreadEntry(Result);
          if ThreadEntry = nil then Exit;
          if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
-         
+
          {Set ScheduleQueue}
          ThreadEntry.ScheduleQueue:=INVALID_HANDLE_VALUE;
         end;
@@ -12895,27 +12917,27 @@ begin
          {Note: No lock held on the thread but it can only be in one scheduler queue at a time}
          {Check Thread}
          if Result = INVALID_HANDLE_VALUE then Exit;
-         
+
          {Check the Handle}
          ThreadEntry:=PThreadEntry(Result);
          if ThreadEntry = nil then Exit;
          if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
-         
+
          {Set ScheduleQueue}
          ThreadEntry.ScheduleQueue:=INVALID_HANDLE_VALUE;
-         
+
          {Decrement Thread Count}
          InterlockedDecrement(LongInt(SchedulerThreadCount[ThreadEntry.CurrentCPU]));
-         
+
          {Update Priority Mask}
          if QueueEntry.Count = 0 then InterlockedAnd(LongInt(SchedulerPriorityMask[ThreadEntry.CurrentCPU]),not(SCHEDULER_MASKS[ThreadEntry.Priority]));
         end;
-      end;  
+      end;
      end;
    finally
     {Unlock the Queue}
     if Unlock then QueueUnlock(Queue);
-   end;   
+   end;
   end;
 end;
 
@@ -12948,12 +12970,12 @@ begin
 
  {Check Queue}
  if Queue = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  QueueEntry:=PQueueEntry(Queue);
  if QueueEntry = nil then Exit;
  if QueueEntry.Signature <> QUEUE_SIGNATURE then Exit;
- 
+
  {Lock the Queue}
  if not(Lock) or (QueueLock(Queue) = ERROR_SUCCESS) then
   begin
@@ -12971,7 +12993,7 @@ begin
    finally
     {Unlock the Queue}
     if Unlock then QueueUnlock(Queue);
-   end;   
+   end;
   end;
 end;
 
@@ -13004,12 +13026,12 @@ begin
 
  {Check Queue}
  if Queue = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  QueueEntry:=PQueueEntry(Queue);
  if QueueEntry = nil then Exit;
  if QueueEntry.Signature <> QUEUE_SIGNATURE then Exit;
- 
+
  {Lock the Queue}
  if not(Lock) or (QueueLock(Queue) = ERROR_SUCCESS) then
   begin
@@ -13027,7 +13049,7 @@ begin
    finally
     {Unlock the Queue}
     if Unlock then QueueUnlock(Queue);
-   end;   
+   end;
   end;
 end;
 
@@ -13054,15 +13076,15 @@ begin
 
  {Check Queue}
  if Queue = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  QueueEntry:=PQueueEntry(Queue);
  if QueueEntry = nil then Exit;
  if QueueEntry.Signature <> QUEUE_SIGNATURE then Exit;
- 
+
  {Lock the Queue}
  if QueueLock(Queue) = ERROR_SUCCESS then
   begin
@@ -13083,11 +13105,11 @@ begin
        ThreadEntry:=PThreadEntry(Thread);
        if ThreadEntry = nil then Exit;
        if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
-       
+
        {Use Thread Element}
        QueueElement:=@ThreadEntry.QueueElement;
-       QueueElement.Key:=0;   
-       
+       QueueElement.Key:=0;
+
        {Set ScheduleQueue}
        ThreadEntry.ScheduleQueue:=Queue;
       end;
@@ -13097,22 +13119,22 @@ begin
        ThreadEntry:=PThreadEntry(Thread);
        if ThreadEntry = nil then Exit;
        if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
-       
+
        {Use Thread Element}
        QueueElement:=@ThreadEntry.QueueElement;
-       QueueElement.Key:=0;   
-       
+       QueueElement.Key:=0;
+
        {Set ScheduleQueue}
        ThreadEntry.ScheduleQueue:=Queue;
-       
+
        {Increment Thread Count}
        InterlockedIncrement(LongInt(SchedulerThreadCount[ThreadEntry.CurrentCPU]));
-       
+
        {Update Priority Mask}
        if QueueEntry.Count = 0 then InterlockedOr(LongInt(SchedulerPriorityMask[ThreadEntry.CurrentCPU]),SCHEDULER_MASKS[ThreadEntry.Priority]);
       end;
     end;
-    
+
     {Find Element}
     Delta:=((QueueEntry.Flags and QUEUE_FLAG_DELTA) <> 0);
     Offset:=0;
@@ -13134,15 +13156,15 @@ begin
            end;
          end
         else
-         begin        
+         begin
           {Descending}
           if Key > NextElement.Key then
            begin
             Break;
            end;
-         end;  
+         end;
         PrevElement:=NextElement;
-        NextElement:=NextElement.Next; 
+        NextElement:=NextElement.Next;
        end;
      end
     else
@@ -13155,25 +13177,25 @@ begin
           if Key < (Offset + NextElement.Key) then
            begin
             Dec(NextElement.Key,(Key - Offset));
-            Break; 
+            Break;
            end;
-          Inc(Offset,NextElement.Key);  
+          Inc(Offset,NextElement.Key);
          end
         else
-         begin        
+         begin
           {Ascending}
           if Key < NextElement.Key then
            begin
             Break;
            end;
-         end;  
+         end;
         PrevElement:=NextElement;
-        NextElement:=NextElement.Next; 
+        NextElement:=NextElement.Next;
        end;
      end;
-    
+
     {Insert Element}
-    QueueElement.Key:=(Key - Offset); 
+    QueueElement.Key:=(Key - Offset);
     {Get Prev/Next}
     QueueElement.Prev:=PrevElement;
     QueueElement.Next:=NextElement;
@@ -13189,7 +13211,7 @@ begin
       else
        begin
         NextElement.Prev:=QueueElement;
-       end;      
+       end;
      end
     else
      begin
@@ -13202,18 +13224,18 @@ begin
       else
        begin
         NextElement.Prev:=QueueElement;
-       end;      
+       end;
      end;
-    
+
     {Increment Count}
     Inc(QueueEntry.Count);
-    
-    {Return Result} 
-    Result:=ERROR_SUCCESS;       
+
+    {Return Result}
+    Result:=ERROR_SUCCESS;
    finally
     {Unlock the Queue}
     QueueUnlock(Queue);
-   end;   
+   end;
   end
  else
   begin
@@ -13241,15 +13263,15 @@ begin
 
  {Check Queue}
  if Queue = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  QueueEntry:=PQueueEntry(Queue);
  if QueueEntry = nil then Exit;
  if QueueEntry.Signature <> QUEUE_SIGNATURE then Exit;
- 
+
  {Lock the Queue}
  if QueueLock(Queue) = ERROR_SUCCESS then
   begin
@@ -13267,7 +13289,7 @@ begin
        end;
       QueueElement:=QueueElement.Next;
      end;
-    
+
     {Check Element}
     if QueueElement <> nil then
      begin
@@ -13287,7 +13309,7 @@ begin
         else
          begin
           NextElement.Prev:=nil;
-         end;    
+         end;
        end
       else
        begin
@@ -13301,8 +13323,8 @@ begin
          begin
           NextElement.Prev:=PrevElement;
          end;
-       end;  
-      
+       end;
+
       {Check Flags}
       if (QueueEntry.Flags and QUEUE_FLAG_DELTA) <> 0 then
        begin
@@ -13317,7 +13339,7 @@ begin
            end;
          end
         else
-         begin        
+         begin
           {Check Next}
           if NextElement <> nil then
            begin
@@ -13327,9 +13349,9 @@ begin
          end;
        end;
 
-      {Decrement Count} 
+      {Decrement Count}
       Dec(QueueEntry.Count);
-       
+
       {Release Element}
       case QueueEntry.QueueType of
        QUEUE_TYPE_NOT_SPECIFIED:begin
@@ -13341,7 +13363,7 @@ begin
          ThreadEntry:=PThreadEntry(Thread);
          if ThreadEntry = nil then Exit;
          if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
-         
+
          {Set ScheduleQueue}
          ThreadEntry.ScheduleQueue:=INVALID_HANDLE_VALUE;
         end;
@@ -13351,25 +13373,25 @@ begin
          ThreadEntry:=PThreadEntry(Thread);
          if ThreadEntry = nil then Exit;
          if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
-         
+
          {Set ScheduleQueue}
          ThreadEntry.ScheduleQueue:=INVALID_HANDLE_VALUE;
-         
+
          {Decrement Thread Count}
          InterlockedDecrement(LongInt(SchedulerThreadCount[ThreadEntry.CurrentCPU]));
-         
+
          {Update Priority Mask}
          if QueueEntry.Count = 0 then InterlockedAnd(LongInt(SchedulerPriorityMask[ThreadEntry.CurrentCPU]),not(SCHEDULER_MASKS[ThreadEntry.Priority]));
         end;
-      end;  
-     
-      {Return Result} 
-      Result:=ERROR_SUCCESS;       
+      end;
+
+      {Return Result}
+      Result:=ERROR_SUCCESS;
      end;
    finally
     {Unlock the Queue}
     QueueUnlock(Queue);
-   end;   
+   end;
   end
  else
   begin
@@ -13392,12 +13414,12 @@ begin
 
  {Check Queue}
  if Queue = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  QueueEntry:=PQueueEntry(Queue);
  if QueueEntry = nil then Exit;
  if QueueEntry.Signature <> QUEUE_SIGNATURE then Exit;
- 
+
  {Lock the Queue}
  if QueueLock(Queue) = ERROR_SUCCESS then
   begin
@@ -13414,14 +13436,14 @@ begin
        begin
         Inc(QueueElement.Key);
        end;
-      
+
       {Return Result}
       Result:=QueueElement.Key;
      end;
    finally
     {Unlock the Queue}
     QueueUnlock(Queue);
-   end;   
+   end;
   end
  else
   begin
@@ -13444,12 +13466,12 @@ begin
 
  {Check Queue}
  if Queue = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  QueueEntry:=PQueueEntry(Queue);
  if QueueEntry = nil then Exit;
  if QueueEntry.Signature <> QUEUE_SIGNATURE then Exit;
- 
+
  {Lock the Queue}
  if QueueLock(Queue) = ERROR_SUCCESS then
   begin
@@ -13466,14 +13488,14 @@ begin
        begin
         Dec(QueueElement.Key);
        end;
-      
+
       {Return Result}
       Result:=QueueElement.Key;
      end;
    finally
     {Unlock the Queue}
     QueueUnlock(Queue);
-   end;   
+   end;
   end
  else
   begin
@@ -13492,15 +13514,15 @@ var
 begin
  {}
  Result:=True; {Default to True}
- 
+
  {Check Queue}
  if Queue = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  QueueEntry:=PQueueEntry(Queue);
  if QueueEntry = nil then Exit;
  if QueueEntry.Signature <> QUEUE_SIGNATURE then Exit;
- 
+
  {Lock the Queue}
  if QueueLock(Queue) = ERROR_SUCCESS then
   begin
@@ -13510,12 +13532,12 @@ begin
 
     {Check Empty}
     if QueueEntry.First = nil then Exit;
-  
+
     Result:=False;
    finally
     {Unlock the Queue}
     QueueUnlock(Queue);
-   end;   
+   end;
   end
  else
   begin
@@ -13534,15 +13556,15 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Queue}
  if Queue = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  QueueEntry:=PQueueEntry(Queue);
  if QueueEntry = nil then Exit;
  if QueueEntry.Signature <> QUEUE_SIGNATURE then Exit;
- 
+
  {Lock the Queue}
  if QueueLock(Queue) = ERROR_SUCCESS then
   begin
@@ -13552,12 +13574,12 @@ begin
 
     {Check Empty}
     if QueueEntry.First = nil then Exit;
-  
+
     Result:=True;
    finally
     {Unlock the Queue}
     QueueUnlock(Queue);
-   end;   
+   end;
   end
  else
   begin
@@ -13576,10 +13598,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Queue}
  if Queue = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  QueueEntry:=PQueueEntry(Queue);
  if QueueEntry = nil then Exit;
@@ -13601,7 +13623,7 @@ begin
  else
   begin
    Result:=SpinLock(QueueEntry.Lock);
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -13615,10 +13637,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Queue}
  if Queue = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  QueueEntry:=PQueueEntry(Queue);
  if QueueEntry = nil then Exit;
@@ -13660,15 +13682,15 @@ function ThreadCreate(StartProc:TThreadStart;StackSize,Priority:LongWord;Name:PC
 {Note: Calls ThreadCreateEx with:
          Affinity = SCHEDULER_CPU_MASK (Run on any available CPU)
          CPU = SchedulerThreadNext (Assign to next CPU in round robin)}
-         
+
 {WARNING: ThreadCreate and ThreadCreateEx are only used internally by SysBeginThread and SysBeginThreadEx
-          
+
           These functions do not handle setting up certain RTL functionality such as thread variables,
           exceptions and standard input/output handles.
-          
+
           If you need to create a standard thread use either BeginThread (or BeginThreadEx) or use the
           TThread class and its descendants. Only use ThreadCreate and ThreadCreateEx if you need to modify
-          the thread creation behaviour and understand that you also need to handle the additional RTL setup}         
+          the thread creation behaviour and understand that you also need to handle the additional RTL setup}
 begin
  {}
  Result:=ThreadCreateEx(StartProc,StackSize,Priority,SCHEDULER_CPU_MASK,SchedulerThreadNext,Name,Parameter);
@@ -13691,13 +13713,13 @@ function ThreadCreateEx(StartProc:TThreadStart;StackSize,Priority,Affinity,CPU:L
 {Return: Handle of new thread or INVALID_HANDLE_VALUE if a new thread could not be created}
 
 {WARNING: ThreadCreate and ThreadCreateEx are only used internally by SysBeginThread and SysBeginThreadEx
-          
+
           These functions do not handle setting up certain RTL functionality such as thread variables,
           exceptions and standard input/output handles.
-          
+
           If you need to create a standard thread use either BeginThread (or BeginThreadEx) or use the
           TThread class or its descendants. Only use ThreadCreate and ThreadCreateEx if you need to modify
-          the thread creation behaviour and understand that you also need to handle the additional RTL setup}         
+          the thread creation behaviour and understand that you also need to handle the additional RTL setup}
 var
  Count:LongWord;
  StackBase:Pointer;
@@ -13706,11 +13728,11 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Create Ex (StackSize=' + IntToStr(StackSize) + ' Priority=' + IntToStr(Priority) + ' Affinity=' + IntToHex(Affinity,8) + ' CPU=' + IntToStr(CPU) + ' Name=' + Name + ')');
  {$ENDIF}
- 
+
  {Check Stack Size}
  if StackSize < THREAD_STACK_MINIMUM_SIZE then
   begin
@@ -13720,7 +13742,7 @@ begin
   begin
    StackSize:=THREAD_STACK_MAXIMUM_SIZE;
   end;
- 
+
  {Check Priority}
  if (Priority < THREAD_PRIORITY_MINIMUM) or (Priority > THREAD_PRIORITY_MAXIMUM) then
   begin
@@ -13732,21 +13754,21 @@ begin
   begin
    Affinity:=SCHEDULER_CPU_MASK;
   end;
- 
+
  {Check CPU}
  if CPU > (SCHEDULER_CPU_COUNT - 1) then
   begin
    CPU:=SchedulerThreadNext;
   end;
- 
+
  {Allocate Thread Stack}
  StackBase:=ThreadAllocateStack(StackSize);
  if StackBase = nil then
   begin
    if THREAD_LOG_ENABLED then ThreadLogError('ThreadCreateEx: Failed to allocate stack (StackSize=' + IntToStr(StackSize) + ')');
-   
+
    Exit;
-  end; 
+  end;
 
  {Create Thread entry}
  if THREAD_SHARED_MEMORY then
@@ -13756,19 +13778,19 @@ begin
  else
   begin
    ThreadEntry:=AllocMem(SizeOf(TThreadEntry));
-  end; 
+  end;
  if ThreadEntry = nil then
   begin
    if THREAD_LOG_ENABLED then ThreadLogError('ThreadCreateEx: Failed to allocate thread entry');
-   
+
    {Release Thread Stack}
    ThreadReleaseStack(StackBase,StackSize);
-   
+
    Exit;
-  end; 
+  end;
 
  {Setup Thread entry}
- {Thread Properties} 
+ {Thread Properties}
  ThreadEntry.Signature:=THREAD_SIGNATURE;
  ThreadEntry.State:=THREAD_STATE_SUSPENDED;
  ThreadEntry.Flags:=THREAD_FLAG_NONE;
@@ -13785,8 +13807,8 @@ begin
  ThreadEntry.ExitCode:=ERROR_SUCCESS;
  ThreadEntry.LastError:=ERROR_SUCCESS;
  ThreadEntry.Locale:=LOCALE_DEFAULT;
- {Internal Properties}    
- ThreadEntry.CurrentCPU:=CPU;            
+ {Internal Properties}
+ ThreadEntry.CurrentCPU:=CPU;
  ThreadEntry.StackPointer:=nil;                                                                       {Set by ThreadSetupStack below}
  ThreadEntry.TargetCPU:=CPU;
  ThreadEntry.TargetPriority:=Priority;
@@ -13796,44 +13818,44 @@ begin
  ThreadEntry.WaitResult:=ERROR_SUCCESS;
  ThreadEntry.ReceiveResult:=ERROR_SUCCESS;
  ThreadEntry.ScheduleQueue:=INVALID_HANDLE_VALUE;
- ThreadEntry.ListElement.Thread:=TThreadHandle(ThreadEntry); 
- ThreadEntry.QueueElement.Thread:=TThreadHandle(ThreadEntry); 
+ ThreadEntry.ListElement.Thread:=TThreadHandle(ThreadEntry);
+ ThreadEntry.QueueElement.Thread:=TThreadHandle(ThreadEntry);
  {Statistics Properties}
  ThreadEntry.CreateTime:=ClockGetTime;
  ThreadEntry.ExitTime:=TIME_TICKS_TO_1899;
  ThreadEntry.KernelTime:=TIME_TICKS_TO_1899;
  ThreadEntry.SwitchCount:=0;
- 
+
  {Setup Thread Stack}
  ThreadEntry.StackPointer:=ThreadSetupStack(StackBase,StartProc,ThreadEnd,Parameter);
  if ThreadEntry.StackPointer = nil then
   begin
    if THREAD_LOG_ENABLED then ThreadLogError('ThreadCreateEx: Failed to setup stack');
-   
+
    {Release Thread Stack}
    ThreadReleaseStack(StackBase,StackSize);
-   
+
    {Free Message List}
    FreeMem(ThreadEntry.Messages.List);
-   
+
    {Free RTL Thread Vars}
    FreeMem(ThreadEntry.TlsPointer);
-   
+
    {Free Thread List}
    ListDestroy(ThreadEntry.List);
-   
+
    {Free Thread Lock}
-   SpinDestroy(ThreadEntry.Lock); 
-   
+   SpinDestroy(ThreadEntry.Lock);
+
    {Free Thread Entry}
    FreeMem(ThreadEntry);
-   
+
    Exit;
   end;
-  
+
  {Insert Thread entry}
  if SpinLock(ThreadTableLock) = ERROR_SUCCESS then
-  begin                                                    
+  begin
    try
     {Set TLS Thread Var Flags}
     FirstEntry:=ThreadTable;
@@ -13844,8 +13866,8 @@ begin
         {ThreadEntry.TlsTable[Count]:=nil;} {Cleared by AllocMem}
         ThreadEntry.TlsFlags[Count]:=FirstEntry.TlsFlags[Count];
        end;
-     end; 
-    
+     end;
+
     {Link Thread entry}
     if ThreadTable = nil then
      begin
@@ -13857,43 +13879,43 @@ begin
       ThreadTable.Prev:=ThreadEntry;
       ThreadTable:=ThreadEntry;
      end;
-    
+
     {Increment Thread Count}
     Inc(ThreadTableCount);
-    
+
     {Increment Thread Next}
     SchedulerThreadNext:=(SchedulerThreadNext + 1) mod SCHEDULER_CPU_COUNT;
     while SchedulerThreadAllocation[SchedulerThreadNext] = SCHEDULER_ALLOCATION_DISABLED do
      begin
       SchedulerThreadNext:=(SchedulerThreadNext + 1) mod SCHEDULER_CPU_COUNT;
      end;
-    
+
     {Return Thread entry}
     Result:=TThreadHandle(ThreadEntry);
    finally
-    SpinUnlock(ThreadTableLock); 
-   end;                                              
+    SpinUnlock(ThreadTableLock);
+   end;
   end
  else
   begin
    {Release Thread Stack}
    ThreadReleaseStack(StackBase,StackSize);
-   
+
    {Free Message List}
    FreeMem(ThreadEntry.Messages.List);
-   
+
    {Free RTL Thread Vars}
    FreeMem(ThreadEntry.TlsPointer);
-   
+
    {Free Thread List}
    ListDestroy(ThreadEntry.List);
-   
+
    {Free Thread Lock}
    SpinDestroy(ThreadEntry.Lock);
-   
+
    {Free Thread Entry}
    FreeMem(ThreadEntry);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -13916,10 +13938,10 @@ begin
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Destroy (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
@@ -13930,13 +13952,13 @@ begin
  if Thread = FIQ_THREAD_HANDLE[ThreadEntry.CurrentCPU] then Exit;
  if Thread = SWI_THREAD_HANDLE[ThreadEntry.CurrentCPU] then Exit;
  if Thread = IDLE_THREAD_HANDLE[ThreadEntry.CurrentCPU] then Exit;
- 
+
  {Check State}
  if (ThreadEntry.State <> THREAD_STATE_TERMINATED) then Exit;
- 
+
  {Remove Thread entry}
  if SpinLock(ThreadTableLock) = ERROR_SUCCESS then
-  begin                                                                
+  begin
    try
     {Acquire the Lock}
     if SCHEDULER_FIQ_ENABLED then
@@ -13946,14 +13968,14 @@ begin
     else
      begin
       ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-     end;  
+     end;
     if ResultCode = ERROR_SUCCESS then
      begin
       Unlock:=True;
       try
        {Check Signature}
        if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
-    
+
        {Check for Queue}
        if ThreadEntry.ScheduleQueue <> INVALID_HANDLE_VALUE then
         begin
@@ -13963,15 +13985,15 @@ begin
 
          {Set ScheduleQueue}
          ThreadEntry.ScheduleQueue:=INVALID_HANDLE_VALUE;
-        end; 
-    
+        end;
+
        {Check Stack Base}
        if ThreadEntry.StackBase <> nil then
         begin
          {Insert in Queue}
          Result:=QueueInsertKey(SchedulerGetQueueHandle(ThreadEntry.CurrentCPU,QUEUE_TYPE_SCHEDULE_TERMINATION),Thread,SCHEDULER_TERMINATION_QUANTUM);
          if Result <> ERROR_SUCCESS then Exit;
-         
+
          {Release the Lock}
          if SCHEDULER_FIQ_ENABLED then
           begin
@@ -13980,28 +14002,28 @@ begin
          else
           begin
            Result:=SpinUnlockIRQ(ThreadEntry.Lock);
-          end;     
+          end;
          if Result <> ERROR_SUCCESS then Exit;
          Unlock:=False;
-         
-         {Release Thread Stack} 
+
+         {Release Thread Stack}
          ThreadReleaseStack(ThreadEntry.StackBase,ThreadEntry.StackSize);
-         
+
          {Clear Stack Base and Size}
          ThreadEntry.StackBase:=nil;
          ThreadEntry.StackSize:=0;
-         
+
          {Clear Stack Pointer}
          ThreadEntry.StackPointer:=nil;
         end
-       else 
+       else
         begin
          {Check Flags}
          if (ThreadEntry.Flags and THREAD_FLAG_PERSIST) = 0 then
           begin
            {Invalidate Thread entry}
            ThreadEntry.Signature:=0;
-           
+
            {Unlink Thread entry}
            PrevEntry:=ThreadEntry.Prev;
            NextEntry:=ThreadEntry.Next;
@@ -14011,7 +14033,7 @@ begin
              if NextEntry <> nil then
               begin
                NextEntry.Prev:=nil;
-              end;       
+              end;
             end
            else
             begin
@@ -14019,22 +14041,22 @@ begin
              if NextEntry <> nil then
               begin
                NextEntry.Prev:=PrevEntry;
-              end;       
-            end;     
-        
+              end;
+            end;
+
            {Decrement Thread Count}
            Dec(ThreadTableCount);
-        
+
            {Check Thread Count}
            if ThreadTableCount < 1 then
             begin
              {$IFDEF THREAD_DEBUG}
              if THREAD_LOG_ENABLED then ThreadLogDebug('Final thread exiting, System Halted');
              {$ENDIF}
-             
+
              Halt;
             end;
-           
+
            {Release the Lock}
            if SCHEDULER_FIQ_ENABLED then
             begin
@@ -14043,25 +14065,25 @@ begin
            else
             begin
              Result:=SpinUnlockIRQ(ThreadEntry.Lock);
-            end;     
+            end;
            if Result <> ERROR_SUCCESS then Exit;
            Unlock:=False;
-           
-           {Free Thread List} 
+
+           {Free Thread List}
            if ThreadEntry.List <> INVALID_HANDLE_VALUE then
             begin
              ListDestroy(ThreadEntry.List);
             end;
-           
-           {Release Thread Stack} 
+
+           {Release Thread Stack}
            {ThreadReleaseStack(ThreadEntry.StackBase,ThreadEntry.StackSize);} {Released during first call}
-           
-           {Free Message List} 
+
+           {Free Message List}
            FreeMem(ThreadEntry.Messages.List);
-       
-           {Free RTL Thread Vars} 
+
+           {Free RTL Thread Vars}
            FreeMem(ThreadEntry.TlsPointer);
-          
+
            {Free TLS Thread Vars}
            for Count:=0 to THREAD_TLS_MAXIMUM - 1 do
             begin
@@ -14069,19 +14091,19 @@ begin
               begin
                FreeMem(ThreadEntry.TlsTable[Count]);
               end;
-              
+
              {ThreadEntry.TlsTable[Count]:=nil;} {Cleared by FreeMem}
              {ThreadEntry.TlsFlags[Count]:=THREAD_TLS_FLAG_NONE;} {Cleared by FreeMem}
             end;
-           
+
            {Free Thread Lock}
            SpinDestroy(ThreadEntry.Lock);
-           
+
            {Free Thread Entry}
            FreeMem(ThreadEntry);
           end;
         end;
-    
+
        {Return Result}
        Result:=ERROR_SUCCESS;
       finally
@@ -14095,18 +14117,18 @@ begin
          else
           begin
            SpinUnlockIRQ(ThreadEntry.Lock);
-          end;     
-        end;  
+          end;
+        end;
       end;
      end
     else
      begin
       {Return Result}
       Result:=ERROR_CAN_NOT_COMPLETE;
-     end;     
+     end;
    finally
     SpinUnlock(ThreadTableLock);
-   end;                                    
+   end;
   end
  else
   begin
@@ -14129,7 +14151,7 @@ begin
  else
   begin
    Result:=INVALID_HANDLE_VALUE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -14143,19 +14165,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Current (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
- 
+
  {Check Thread}
  Result:=ERROR_FUNCTION_FAILED;
  if SCHEDULER_FIQ_ENABLED then
@@ -14165,8 +14187,8 @@ begin
  else
   begin
    if (ThreadGetCurrent <> INVALID_HANDLE_VALUE) and (ThreadGetCurrent <> IRQ_THREAD_HANDLE[CPUGetCurrent]) then Exit;
-  end;  
- 
+  end;
+
  {Return Result}
  if Assigned(ThreadSetCurrentHandler) then
   begin
@@ -14175,7 +14197,7 @@ begin
  else
   begin
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -14191,14 +14213,14 @@ var
 begin
  {}
  Result:='';
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Name (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
-  
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
@@ -14206,7 +14228,7 @@ begin
 
  {Allocate Buffer}
  SetLength(WorkBuffer,THREAD_NAME_LENGTH - 1);
- 
+
  {Acquire the Lock}
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -14215,7 +14237,7 @@ begin
  else
   begin
    ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-  end;  
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    try
@@ -14224,7 +14246,7 @@ begin
 
     {Copy to Buffer}
     StrLCopy(PChar(WorkBuffer),ThreadEntry.Name,THREAD_NAME_LENGTH - 1);
-    
+
     {Result must be returned outside lock}
    finally
     {Release the Lock}
@@ -14235,21 +14257,21 @@ begin
     else
      begin
       SpinUnlockIRQ(ThreadEntry.Lock);
-     end;     
+     end;
    end;
-  
+
    {Update Buffer}
    SetLength(WorkBuffer,StrLen(PChar(WorkBuffer)));
-   
+
    {Return Result}
    Result:=WorkBuffer;
   end
  else
   begin
    {Nothing}
-  end;  
+  end;
 end;
-   
+
 {==============================================================================}
 
 function ThreadSetName(Thread:TThreadHandle;const Name:String):LongWord;
@@ -14266,15 +14288,15 @@ begin
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Name (Handle=' + HandleToHex(Thread) + ' Name=' + Name + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
-  
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -14283,7 +14305,7 @@ begin
  else
   begin
    ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-  end;  
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    try
@@ -14292,7 +14314,7 @@ begin
 
     {Set Name}
     StrLCopy(ThreadEntry.Name,PChar(Name),THREAD_NAME_LENGTH - 1);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -14304,13 +14326,13 @@ begin
     else
      begin
       SpinUnlockIRQ(ThreadEntry.Lock);
-     end;     
+     end;
    end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -14328,16 +14350,16 @@ begin
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get CPU (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
-  
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
 
- {Return CPU} 
+ {Return CPU}
  Result:=ThreadEntry.CurrentCPU;
 end;
 
@@ -14361,13 +14383,13 @@ begin
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set CPU (Handle=' + HandleToHex(Thread) + ' CPU=' + CPUIDToString(CPU) + ')');
  {$ENDIF}
- 
+
  {Check CPU}
  if CPU > (SCHEDULER_CPU_COUNT - 1) then Exit;
 
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
-  
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
@@ -14381,7 +14403,7 @@ begin
  else
   begin
    ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-  end;  
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    try
@@ -14390,13 +14412,13 @@ begin
 
     {Check Affinity}
     if (ThreadEntry.Affinity and (1 shl CPU)) = 0 then Exit;
-    
+
     {Get Current CPU}
     Current:=ThreadEntry.CurrentCPU;
- 
+
     {Set Target CPU}
     ThreadEntry.TargetCPU:=CPU;
-    
+
     {Return Result}
     Result:=Current;
    finally
@@ -14408,13 +14430,13 @@ begin
     else
      begin
       SpinUnlockIRQ(ThreadEntry.Lock);
-     end;     
+     end;
    end;
   end
  else
   begin
    {Nothing}
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -14432,16 +14454,16 @@ begin
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get State (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
-  
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
 
- {Return State} 
+ {Return State}
  Result:=ThreadEntry.State;
 end;
 
@@ -14458,21 +14480,21 @@ begin
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Flags (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
-  
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
 
- {Return Flags} 
+ {Return Flags}
  Result:=ThreadEntry.Flags;
 end;
 
 {==============================================================================}
- 
+
 function ThreadSetFlags(Thread:TThreadHandle;Flags:LongWord):LongWord;
 {Set the current flags of a thread}
 {Thread: Handle of thread to set}
@@ -14484,17 +14506,17 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Flags (Handle=' + HandleToHex(Thread) + ' Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
- 
+
  {Check Flags}
  if (Flags and THREAD_FLAG_INTERNAL) <> 0 then Exit;
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
@@ -14508,7 +14530,7 @@ begin
  else
   begin
    ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-  end;  
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    try
@@ -14517,7 +14539,7 @@ begin
 
     {Set Flags}
     ThreadEntry.Flags:=Flags;
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -14529,13 +14551,13 @@ begin
     else
      begin
       SpinUnlockIRQ(ThreadEntry.Lock);
-     end;     
+     end;
    end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -14551,17 +14573,17 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Add Flags (Handle=' + HandleToHex(Thread) + ' Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
- 
+
  {Check Flags}
  if (Flags and THREAD_FLAG_INTERNAL) <> 0 then Exit;
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
@@ -14575,7 +14597,7 @@ begin
  else
   begin
    ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-  end;  
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    try
@@ -14584,7 +14606,7 @@ begin
 
     {Add Flags}
     ThreadEntry.Flags:=ThreadEntry.Flags or Flags;
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -14596,13 +14618,13 @@ begin
     else
      begin
       SpinUnlockIRQ(ThreadEntry.Lock);
-     end;     
+     end;
    end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -14618,17 +14640,17 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Remove Flags (Handle=' + HandleToHex(Thread) + ' Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
- 
+
  {Check Flags}
  if (Flags and THREAD_FLAG_INTERNAL) <> 0 then Exit;
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
@@ -14642,7 +14664,7 @@ begin
  else
   begin
    ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-  end;  
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    try
@@ -14651,7 +14673,7 @@ begin
 
     {Remove Flags}
     ThreadEntry.Flags:=ThreadEntry.Flags and not(Flags);
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -14663,13 +14685,13 @@ begin
     else
      begin
       SpinUnlockIRQ(ThreadEntry.Lock);
-     end;     
+     end;
    end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -14687,16 +14709,16 @@ begin
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Locale (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
-  
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
 
- {Return Locale} 
+ {Return Locale}
  Result:=ThreadEntry.Locale;
 end;
 
@@ -14713,14 +14735,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Locale (Handle=' + HandleToHex(Thread) + ' Locale=' + IntToHex(Locale,8) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
@@ -14734,7 +14756,7 @@ begin
  else
   begin
    ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-  end;  
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    try
@@ -14743,7 +14765,7 @@ begin
 
     {Set Locale}
     ThreadEntry.Locale:=Locale;
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -14755,13 +14777,13 @@ begin
     else
      begin
       SpinUnlockIRQ(ThreadEntry.Lock);
-     end;     
+     end;
    end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -14779,14 +14801,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Times (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
@@ -14800,7 +14822,7 @@ begin
  else
   begin
    ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-  end;  
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    try
@@ -14811,7 +14833,7 @@ begin
     CreateTime:=ThreadEntry.CreateTime;
     ExitTime:=ThreadEntry.ExitTime;
     KernelTime:=ThreadEntry.KernelTime;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -14823,17 +14845,17 @@ begin
     else
      begin
       SpinUnlockIRQ(ThreadEntry.Lock);
-     end;     
+     end;
    end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
-    
+
 {==============================================================================}
-    
+
 function ThreadGetSwitchCount(Thread:TThreadHandle;var SwitchCount:Int64):LongWord;
 {Get the current context switch count of a thread (How many times the thread has been scheduled)}
 {Thread: Handle of thread to get}
@@ -14845,14 +14867,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Switch Count (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
@@ -14866,7 +14888,7 @@ begin
  else
   begin
    ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-  end;  
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    try
@@ -14875,7 +14897,7 @@ begin
 
     {Get Count}
     SwitchCount:=ThreadEntry.SwitchCount;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -14887,15 +14909,15 @@ begin
     else
      begin
       SpinUnlockIRQ(ThreadEntry.Lock);
-     end;     
+     end;
    end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
-    
+
 {==============================================================================}
 
 function ThreadGetStackFree:LongWord;
@@ -14911,29 +14933,29 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Get Thread}
  Thread:=ThreadGetCurrent;
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
- 
+
  {Get Size and Base}
  StackBase:=PtrUInt(ThreadEntry.StackBase);
  StackSize:=ThreadEntry.StackSize;
- 
+
  {Get Stack Pointer}
  StackPointer:=GetSP;
- 
+
  {Return Stack Free}
  Result:=StackPointer - (StackBase - StackSize);
 end;
-    
+
 {==============================================================================}
- 
+
 function ThreadGetStackSize(Thread:TThreadHandle):LongWord;
 {Get the current stack size of a thread}
 {Thread: Handle of thread to get}
@@ -14947,16 +14969,16 @@ begin
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Stack Size (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
-  
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
 
- {Return Stack Size} 
+ {Return Stack Size}
  Result:=ThreadEntry.StackSize;
 end;
 
@@ -14975,16 +14997,16 @@ begin
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Stack Base (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
-  
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
 
- {Return Stack Base} 
+ {Return Stack Base}
  Result:=PtrUInt(ThreadEntry.StackBase);
 end;
 
@@ -15001,19 +15023,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Stack Base (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
 
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
- 
+
  {Check Thread}
  Result:=ERROR_FUNCTION_FAILED;
  if SCHEDULER_FIQ_ENABLED then
@@ -15023,11 +15045,11 @@ begin
  else
   begin
    if ThreadGetCurrent <> IRQ_THREAD_HANDLE[CPUGetCurrent] then Exit;
-  end;  
- 
+  end;
+
  {Set Stack Base}
  ThreadEntry.StackBase:=Pointer(StackBase);
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -15047,16 +15069,16 @@ begin
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Stack Pointer (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
-  
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
 
- {Return Stack Pointer} 
+ {Return Stack Pointer}
  Result:=PtrUInt(ThreadEntry.StackPointer);
 end;
 
@@ -15075,10 +15097,10 @@ begin
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Exit Code (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
-  
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
@@ -15088,11 +15110,11 @@ begin
  Result:=STILL_ACTIVE;
  if ThreadEntry.State = THREAD_STATE_TERMINATED then
   begin
-   {Return ExitCode} 
+   {Return ExitCode}
    Result:=ThreadEntry.ExitCode;
   end;
 end;
- 
+
 {==============================================================================}
 
 function ThreadGetAffinity(Thread:TThreadHandle):LongWord;
@@ -15108,19 +15130,19 @@ begin
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Affinity (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
-  
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
- 
- {Return Affinity} 
+
+ {Return Affinity}
  Result:=ThreadEntry.Affinity;
 end;
- 
+
 {==============================================================================}
 
 function ThreadSetAffinity(Thread:TThreadHandle;Affinity:LongWord):LongWord;
@@ -15141,21 +15163,21 @@ begin
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Affinity (Handle=' + HandleToHex(Thread) + ' Affinity=' + IntToHex(Affinity,8) + ')');
  {$ENDIF}
- 
+
  {Check Affinity}
  if (Affinity <> CPU_AFFINITY_ALL) and ((Affinity = CPU_AFFINITY_NONE) or ((Affinity and not(SCHEDULER_CPU_MASK)) <> 0)) then
   begin
    Exit;
   end;
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
-  
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -15164,7 +15186,7 @@ begin
  else
   begin
    ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-  end;  
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    try
@@ -15173,10 +15195,10 @@ begin
 
     {Get Affinity}
     Current:=ThreadEntry.Affinity;
- 
+
     {Set Affinity}
     ThreadEntry.Affinity:=(Affinity and SCHEDULER_CPU_MASK);
-    
+
     {Return Result}
     Result:=Current;
    finally
@@ -15188,15 +15210,15 @@ begin
     else
      begin
       SpinUnlockIRQ(ThreadEntry.Lock);
-     end;     
+     end;
    end;
   end
  else
   begin
    {Nothing}
-  end;  
+  end;
 end;
- 
+
 {==============================================================================}
 
 function ThreadGetPriority(Thread:TThreadHandle):LongWord;
@@ -15212,16 +15234,16 @@ begin
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Priority (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
 
- {Return Current Priority} 
+ {Return Current Priority}
  Result:=ThreadEntry.Priority;
 end;
 
@@ -15245,7 +15267,7 @@ begin
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Priority (Handle=' + HandleToHex(Thread) + ' Priority=' + IntToStr(Priority) + ')');
  {$ENDIF}
- 
+
  {Check Priority}
  if Priority = THREAD_PRIORITY_NONE then
   begin
@@ -15253,19 +15275,19 @@ begin
    if (Thread <> IRQ_THREAD_HANDLE[CPUGetCurrent]) and (Thread <> FIQ_THREAD_HANDLE[CPUGetCurrent]) and (Thread <> SWI_THREAD_HANDLE[CPUGetCurrent]) then
     begin
      Exit;
-    end; 
+    end;
   end
  else
-  begin 
+  begin
    if (Priority < THREAD_PRIORITY_MINIMUM) or (Priority > THREAD_PRIORITY_MAXIMUM) then
     begin
      Exit;
     end;
-  end;  
+  end;
 
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
-  
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
@@ -15279,7 +15301,7 @@ begin
  else
   begin
    ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-  end;  
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    try
@@ -15288,10 +15310,10 @@ begin
 
     {Get Current Priority}
     Current:=ThreadEntry.Priority;
- 
+
     {Set Target Priority}
     ThreadEntry.TargetPriority:=Priority;
-    
+
     {Return Result}
     Result:=Current;
    finally
@@ -15303,13 +15325,13 @@ begin
     else
      begin
       SpinUnlockIRQ(ThreadEntry.Lock);
-     end;     
+     end;
    end;
   end
  else
   begin
    {Nothing}
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -15324,23 +15346,23 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Get Thread}
  Thread:=ThreadGetCurrent;
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
 
- {Return LastError} 
+ {Return LastError}
  Result:=ThreadEntry.LastError;
 end;
 
 {==============================================================================}
 
-procedure ThreadSetLastError(LastError:LongWord); 
+procedure ThreadSetLastError(LastError:LongWord);
 {Set the last error value for the current Thread}
 {Note: No lock required as only ever called by the thread itself}
 var
@@ -15351,7 +15373,7 @@ begin
  {Get Thread}
  Thread:=ThreadGetCurrent;
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
@@ -15373,11 +15395,11 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Get Thread}
  Thread:=ThreadGetCurrent;
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
@@ -15385,8 +15407,8 @@ begin
 
  {Set LastError}
  ThreadEntry.LastError:=LastError;
- 
- {Return Result} 
+
+ {Return Result}
  Result:=ERROR_SUCCESS;
 end;
 
@@ -15402,17 +15424,17 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Get Thread}
  Thread:=ThreadGetCurrent;
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
 
- {Return WaitResult} 
+ {Return WaitResult}
  Result:=ThreadEntry.WaitResult;
 end;
 
@@ -15428,23 +15450,23 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Get Thread}
  Thread:=ThreadGetCurrent;
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
 
- {Return ReceiveResult} 
+ {Return ReceiveResult}
  Result:=ThreadEntry.ReceiveResult;
 end;
 
 {==============================================================================}
 
-function ThreadGetTlsIndex(TlsIndex:LongWord):LongWord;                      
+function ThreadGetTlsIndex(TlsIndex:LongWord):LongWord;
 {Get the current status of a TLS index in the TLS index table}
 {TlsIndex: The TLS index to get the status for}
 {Return: THREAD_TLS_FREE if unused, THREAD_TLS_USED if in use or THREAD_TLS_INVALID on error}
@@ -15452,11 +15474,11 @@ function ThreadGetTlsIndex(TlsIndex:LongWord):LongWord;
 begin
  {}
  Result:=THREAD_TLS_INVALID;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Tls Index (Index=' + IntToStr(TlsIndex) + ')');
  {$ENDIF}
- 
+
  {Check Index}
  if TlsIndex >= THREAD_TLS_MAXIMUM then Exit;
 
@@ -15486,14 +15508,14 @@ var
 begin
  {}
  Result:=TLS_OUT_OF_INDEXES;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Alloc Tls Index Ex (Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
- 
+
  {Lock the Table}
  if SpinLock(ThreadTableLock) = ERROR_SUCCESS then
-  begin                                                                
+  begin
    try
     {Check Indexes}
     for Count:=0 to THREAD_TLS_MAXIMUM - 1 do
@@ -15506,16 +15528,16 @@ begin
          begin
           ThreadEntry.TlsTable[Count]:=nil;
           ThreadEntry.TlsFlags[Count]:=Flags;
-          
+
           ThreadEntry:=ThreadEntry.Next;
          end;
 
         {Allocate Index}
         ThreadTlsTable[Count]:=THREAD_TLS_USED;
-        
+
         {Increment Index Count}
         Inc(ThreadTlsTableCount);
-        
+
         {Return Result}
         Result:=Count;
         Exit;
@@ -15523,7 +15545,7 @@ begin
      end;
    finally
     SpinUnlock(ThreadTableLock);
-   end;                                    
+   end;
   end;
 end;
 
@@ -15538,27 +15560,27 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Release Tls Index (Index=' + IntToStr(TlsIndex) + ')');
  {$ENDIF}
- 
+
  {Check Index}
  if TlsIndex >= THREAD_TLS_MAXIMUM then Exit;
- 
+
  {Lock the Table}
  if SpinLock(ThreadTableLock) = ERROR_SUCCESS then
-  begin                                                                
+  begin
    try
     {Check Table}
     if ThreadTlsTable[TlsIndex] <> THREAD_TLS_USED then Exit;
-    
+
     {Release Index}
     ThreadTlsTable[TlsIndex]:=THREAD_TLS_FREE;
-    
+
     {Decrement Index Count}
     Dec(ThreadTlsTableCount);
-    
+
     {Initialize Thread Tables}
     ThreadEntry:=ThreadTable;
     while ThreadEntry <> nil do
@@ -15567,18 +15589,18 @@ begin
        begin
         FreeMem(ThreadEntry.TlsTable[TlsIndex]);
        end;
-      
+
       ThreadEntry.TlsTable[TlsIndex]:=nil;
       ThreadEntry.TlsFlags[TlsIndex]:=THREAD_TLS_FLAG_NONE;
-      
+
       ThreadEntry:=ThreadEntry.Next;
      end;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
     SpinUnlock(ThreadTableLock);
-   end;                                    
+   end;
   end;
 end;
 
@@ -15594,15 +15616,15 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Tls Value (Index=' + IntToStr(TlsIndex) + ')');
  {$ENDIF}
- 
+
  {Get Thread}
  Thread:=ThreadGetCurrent;
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
@@ -15610,8 +15632,8 @@ begin
 
  {Check the Index}
  if ThreadGetTlsIndex(TlsIndex) <> THREAD_TLS_USED then Exit;
- 
- {Return Pointer} 
+
+ {Return Pointer}
  Result:=ThreadEntry.TlsTable[TlsIndex];
 end;
 
@@ -15628,15 +15650,15 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Tls Value (Index=' + IntToStr(TlsIndex) + ' Value=' + PtrToHex(TlsValue) + ')');
  {$ENDIF}
- 
+
  {Get Thread}
  Thread:=ThreadGetCurrent;
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
@@ -15644,14 +15666,14 @@ begin
 
  {Check the Index}
  if ThreadGetTlsIndex(TlsIndex) <> THREAD_TLS_USED then Exit;
- 
+
  {Set Pointer}
  ThreadEntry.TlsTable[TlsIndex]:=TlsValue;
- 
- {Return Result} 
+
+ {Return Result}
  Result:=ERROR_SUCCESS;
-end; 
- 
+end;
+
 {==============================================================================}
 
 function ThreadGetTlsPointer(Thread:TThreadHandle):Pointer;
@@ -15667,16 +15689,16 @@ begin
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Get Tls Pointer (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
 
- {Return Tls Pointer} 
+ {Return Tls Pointer}
  Result:=ThreadEntry.TlsPointer;
 end;
 
@@ -15693,14 +15715,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Set Tls Pointer (Handle=' + HandleToHex(Thread) + ' TlsPointer=' + PtrToHex(TlsPointer) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
@@ -15714,7 +15736,7 @@ begin
  else
   begin
    ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-  end;  
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    try
@@ -15723,7 +15745,7 @@ begin
 
     {Set Tls Pointer}
     ThreadEntry.TlsPointer:=TlsPointer;
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -15735,13 +15757,13 @@ begin
     else
      begin
       SpinUnlockIRQ(ThreadEntry.Lock);
-     end;     
+     end;
    end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -15759,19 +15781,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Ready (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -15780,7 +15802,7 @@ begin
  else
   begin
    ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-  end;  
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    try
@@ -15794,16 +15816,16 @@ begin
      begin
       Exit;
      end
-    else if ThreadEntry.State = THREAD_STATE_RUNNING then 
+    else if ThreadEntry.State = THREAD_STATE_RUNNING then
      begin
       Exit;
      end;
-    
+
     {Set State}
     ThreadEntry.State:=THREAD_STATE_READY;
-  
+
     {Do not update Kernel Time}
-  
+
     {Check CPU}
     if SCHEDULER_CPU_COUNT > 1 then
      begin
@@ -15812,7 +15834,7 @@ begin
         {$IFDEF SCHEDULER_DEBUG}
         Inc(SchedulerSelectCPU[CPUGetCurrent]);
         {$ENDIF}
-        
+
         {Update CPU}
         ThreadEntry.CurrentCPU:=ThreadEntry.TargetCPU;
        end
@@ -15824,7 +15846,7 @@ begin
           {$IFDEF SCHEDULER_DEBUG}
           Inc(SchedulerSelectAffinity[CPUGetCurrent]);
           {$ENDIF}
-          
+
           {Check CPUs 0 to SCHEDULER_CPU_COUNT - 1}
           for Count:=0 to SCHEDULER_CPU_COUNT - 1 do
            begin
@@ -15833,14 +15855,14 @@ begin
               {Update CPU}
               ThreadEntry.CurrentCPU:=Count;
               ThreadEntry.TargetCPU:=Count;
-              
+
               Break;
-             end; 
-           end; 
-         end; 
-       end;      
+             end;
+           end;
+         end;
+       end;
      end;
-     
+
     {Check Priority}
     if ThreadEntry.Priority <> ThreadEntry.TargetPriority then
      begin
@@ -15851,7 +15873,7 @@ begin
       {Update Priority}
       ThreadEntry.Priority:=ThreadEntry.TargetPriority;
      end;
-    
+
     {Enqueue Thread (Current CPU and Priority)}
     Result:=QueueEnqueue(SchedulerGetQueueHandleEx(ThreadEntry.CurrentCPU,ThreadEntry.Priority),Thread);
    finally
@@ -15863,16 +15885,16 @@ begin
     else
      begin
       SpinUnlockIRQ(ThreadEntry.Lock);
-     end;     
+     end;
    end;
-   
+
    {Check Reschedule}
    if Reschedule then SchedulerReschedule(False);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -15889,19 +15911,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Timeout (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -15910,7 +15932,7 @@ begin
  else
   begin
    ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-  end;  
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    try
@@ -15924,7 +15946,7 @@ begin
      begin
       Exit;
      end
-    else if ThreadEntry.State = THREAD_STATE_RUNNING then 
+    else if ThreadEntry.State = THREAD_STATE_RUNNING then
      begin
       Exit;
      end;
@@ -15934,14 +15956,14 @@ begin
      begin
       {Remove from WaitList (Semaphore/CriticalSection/Event/Thread etc)}
       ListRemove(ThreadEntry.WaitList,@ThreadEntry.ListElement);
-                                                                  
+
       {Set WaitList}
       ThreadEntry.WaitList:=INVALID_HANDLE_VALUE;
-    
+
       {Set WaitResult}
       ThreadEntry.WaitResult:=WAIT_TIMEOUT;
      end
-    else if ThreadEntry.State = THREAD_STATE_RECEIVE_TIMEOUT then 
+    else if ThreadEntry.State = THREAD_STATE_RECEIVE_TIMEOUT then
      begin
       {Set ReceiveResult}
       ThreadEntry.ReceiveResult:=WAIT_TIMEOUT;
@@ -15953,9 +15975,9 @@ begin
 
     {Set State}
     ThreadEntry.State:=THREAD_STATE_READY;
-  
+
     {Do not update Kernel Time}
-  
+
     {Check CPU}
     if SCHEDULER_CPU_COUNT > 1 then
      begin
@@ -15964,7 +15986,7 @@ begin
         {$IFDEF SCHEDULER_DEBUG}
         Inc(SchedulerSelectCPU[CPUGetCurrent]);
         {$ENDIF}
-        
+
         {Update CPU}
         ThreadEntry.CurrentCPU:=ThreadEntry.TargetCPU;
        end
@@ -15976,7 +15998,7 @@ begin
           {$IFDEF SCHEDULER_DEBUG}
           Inc(SchedulerSelectAffinity[CPUGetCurrent]);
           {$ENDIF}
-          
+
           {Check CPUs 0 to SCHEDULER_CPU_COUNT - 1}
           for Count:=0 to SCHEDULER_CPU_COUNT - 1 do
            begin
@@ -15985,14 +16007,14 @@ begin
               {Update CPU}
               ThreadEntry.CurrentCPU:=Count;
               ThreadEntry.TargetCPU:=Count;
-              
+
               Break;
-             end; 
-           end; 
-         end; 
-       end;      
+             end;
+           end;
+         end;
+       end;
      end;
-     
+
     {Check Priority}
     if ThreadEntry.Priority <> ThreadEntry.TargetPriority then
      begin
@@ -16003,7 +16025,7 @@ begin
       {Update Priority}
       ThreadEntry.Priority:=ThreadEntry.TargetPriority;
      end;
-     
+
     {Enqueue Thread (Current CPU and Priority)}
     Result:=QueueEnqueue(SchedulerGetQueueHandleEx(ThreadEntry.CurrentCPU,ThreadEntry.Priority),Thread);
    finally
@@ -16015,13 +16037,13 @@ begin
     else
      begin
       SpinUnlockIRQ(ThreadEntry.Lock);
-     end;     
+     end;
    end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -16042,19 +16064,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Wake (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -16063,7 +16085,7 @@ begin
  else
   begin
    ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-  end;  
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    try
@@ -16077,7 +16099,7 @@ begin
      begin
       Exit;
      end
-    else if ThreadEntry.State = THREAD_STATE_RUNNING then 
+    else if ThreadEntry.State = THREAD_STATE_RUNNING then
      begin
       Exit;
      end;
@@ -16089,43 +16111,43 @@ begin
       Result:=QueueDeleteKey(ThreadEntry.ScheduleQueue,Thread);
       if Result <> ERROR_SUCCESS then Exit;
      end
-    else if ThreadEntry.State = THREAD_STATE_WAIT then 
+    else if ThreadEntry.State = THREAD_STATE_WAIT then
      begin
       {Remove from WaitList (Semaphore/CriticalSection/Event/Thread etc)}
-      ListRemove(ThreadEntry.WaitList,@ThreadEntry.ListElement);  
-                                                                                 
+      ListRemove(ThreadEntry.WaitList,@ThreadEntry.ListElement);
+
       {Set WaitList}
       ThreadEntry.WaitList:=INVALID_HANDLE_VALUE;
 
       {Set WaitResult}
       ThreadEntry.WaitResult:=WAIT_ABANDONED;
      end
-    else if ThreadEntry.State = THREAD_STATE_WAIT_TIMEOUT then 
+    else if ThreadEntry.State = THREAD_STATE_WAIT_TIMEOUT then
      begin
       {Remove from Queue}
       Result:=QueueDeleteKey(ThreadEntry.ScheduleQueue,Thread);
       if Result <> ERROR_SUCCESS then Exit;
 
       {Remove from WaitList (Semaphore/CriticalSection/Event/Thread etc)}
-      ListRemove(ThreadEntry.WaitList,@ThreadEntry.ListElement);  
-                                                                                 
+      ListRemove(ThreadEntry.WaitList,@ThreadEntry.ListElement);
+
       {Set WaitList}
       ThreadEntry.WaitList:=INVALID_HANDLE_VALUE;
 
       {Set WaitResult}
       ThreadEntry.WaitResult:=WAIT_TIMEOUT;
      end
-    else if ThreadEntry.State = THREAD_STATE_RECEIVE then 
+    else if ThreadEntry.State = THREAD_STATE_RECEIVE then
      begin
       {Set ReceiveResult}
       ThreadEntry.ReceiveResult:=WAIT_ABANDONED;
      end
-    else if ThreadEntry.State = THREAD_STATE_RECEIVE_TIMEOUT then 
+    else if ThreadEntry.State = THREAD_STATE_RECEIVE_TIMEOUT then
      begin
       {Remove from Queue}
       Result:=QueueDeleteKey(ThreadEntry.ScheduleQueue,Thread);
       if Result <> ERROR_SUCCESS then Exit;
-      
+
       {Set ReceiveResult}
       ThreadEntry.ReceiveResult:=WAIT_TIMEOUT;
      end
@@ -16133,12 +16155,12 @@ begin
      begin
       Exit;
      end;
-     
+
     {Set State}
     ThreadEntry.State:=THREAD_STATE_READY;
-     
+
     {Do not update Kernel Time}
-     
+
     {Check CPU}
     if SCHEDULER_CPU_COUNT > 1 then
      begin
@@ -16147,7 +16169,7 @@ begin
         {$IFDEF SCHEDULER_DEBUG}
         Inc(SchedulerSelectCPU[CPUGetCurrent]);
         {$ENDIF}
-        
+
         {Update CPU}
         ThreadEntry.CurrentCPU:=ThreadEntry.TargetCPU;
        end
@@ -16159,7 +16181,7 @@ begin
           {$IFDEF SCHEDULER_DEBUG}
           Inc(SchedulerSelectAffinity[CPUGetCurrent]);
           {$ENDIF}
-          
+
           {Check CPUs 0 to SCHEDULER_CPU_COUNT - 1}
           for Count:=0 to SCHEDULER_CPU_COUNT - 1 do
            begin
@@ -16168,14 +16190,14 @@ begin
               {Update CPU}
               ThreadEntry.CurrentCPU:=Count;
               ThreadEntry.TargetCPU:=Count;
-              
+
               Break;
-             end; 
-           end; 
-         end; 
-       end;      
+             end;
+           end;
+         end;
+       end;
      end;
-     
+
     {Check Priority}
     if ThreadEntry.Priority <> ThreadEntry.TargetPriority then
      begin
@@ -16186,7 +16208,7 @@ begin
       {Update Priority}
       ThreadEntry.Priority:=ThreadEntry.TargetPriority;
      end;
-     
+
     {Enqueue Thread (Current CPU and Priority)}
     Result:=QueueEnqueue(SchedulerGetQueueHandleEx(ThreadEntry.CurrentCPU,ThreadEntry.Priority),Thread);
    finally
@@ -16198,13 +16220,13 @@ begin
     else
      begin
       SpinUnlockIRQ(ThreadEntry.Lock);
-     end;     
+     end;
    end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -16229,7 +16251,7 @@ begin
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread End (ExitCode=' + IntToStr(ExitCode) + ')');
  {$ENDIF}
- 
+
  ThreadTerminate(ThreadGetCurrent,ExitCode);
 end;
 
@@ -16251,23 +16273,23 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Halt (ExitCode=' + IntToStr(ExitCode) + ')');
  {$ENDIF}
- 
+
  {Get Thread}
  Thread:=ThreadGetCurrent;
  if Thread = INVALID_HANDLE_VALUE then Exit;
-   
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
- 
+
  {Get Exit Time}
  ExitTime:=ClockGetTime;
- 
+
  {Acquire the Lock}
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -16276,7 +16298,7 @@ begin
  else
   begin
    ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-  end;  
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    Reschedule:=False;
@@ -16291,29 +16313,29 @@ begin
      begin
       Exit;
      end;
-     
+
     {Set ExitTime}
     ThreadEntry.ExitTime:=ExitTime;
-    
+
     {Set ExitCode}
     ThreadEntry.ExitCode:=ExitCode;
-    
+
     {Set State}
     ThreadEntry.State:=THREAD_STATE_HALTED;
-    
+
     {$IFDEF THREAD_STATISTICS}
     {Update Kernel Time}
     if SchedulerThreadQuantum[ThreadEntry.CurrentCPU] <= (SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority]) then
      begin
       Inc(ThreadEntry.KernelTime,((SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority] - SchedulerThreadQuantum[ThreadEntry.CurrentCPU]) * TIME_TICKS_PER_SCHEDULER_INTERRUPT));
-     end; 
+     end;
     {$ENDIF}
-    
+
     {Reschedule}
     Reschedule:=True;
-   
+
     {Return Result}
-    Result:=ERROR_SUCCESS;    
+    Result:=ERROR_SUCCESS;
    finally
     {Release the Lock}
     if SCHEDULER_FIQ_ENABLED then
@@ -16323,21 +16345,21 @@ begin
     else
      begin
       SpinUnlockIRQ(ThreadEntry.Lock);
-     end;     
+     end;
    end;
-   
+
    {Check Reschedule}
    if Reschedule then SchedulerReschedule(False);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
 
-function ThreadTerminate(Thread:TThreadHandle;ExitCode:LongWord):LongWord; 
+function ThreadTerminate(Thread:TThreadHandle;ExitCode:LongWord):LongWord;
 {Terminate but do not destroy the supplied Thread
 
  The terminated thread is placed on the termination queue until any threads
@@ -16357,14 +16379,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Terminate (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
@@ -16372,7 +16394,7 @@ begin
 
  {Get Exit Time}
  ExitTime:=ClockGetTime;
- 
+
  {Acquire the Lock}
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -16381,7 +16403,7 @@ begin
  else
   begin
    ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-  end;  
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    Reschedule:=False;
@@ -16396,20 +16418,20 @@ begin
      begin
       Exit;
      end;
-     
+
     {Set ExitTime}
     ThreadEntry.ExitTime:=ExitTime;
-     
+
     {Set ExitCode}
     ThreadEntry.ExitCode:=ExitCode;
-    
+
     {Check List}
     while ListNotEmpty(ThreadEntry.List) do
      begin
       {Release waiting thread}
       ThreadRelease(ThreadEntry.List);
      end;
-    
+
     {Check State}
     case ThreadEntry.State of
      THREAD_STATE_RUNNING:begin
@@ -16422,11 +16444,11 @@ begin
 
        {Set ScheduleQueue}
        ThreadEntry.ScheduleQueue:=INVALID_HANDLE_VALUE;
-      end;  
+      end;
      THREAD_STATE_SLEEP:begin
        {Remove from Queue (Scheduler Sleep)}
        QueueDeleteKey(ThreadEntry.ScheduleQueue,Thread);
-       
+
        {Set ScheduleQueue}
        ThreadEntry.ScheduleQueue:=INVALID_HANDLE_VALUE;
       end;
@@ -16435,21 +16457,21 @@ begin
       end;
      THREAD_STATE_WAIT:begin
        {Remove from WaitList (Semaphore/CriticalSection/Event/Thread etc)}
-       ListRemove(ThreadEntry.WaitList,@ThreadEntry.ListElement); 
-                                                                                        
+       ListRemove(ThreadEntry.WaitList,@ThreadEntry.ListElement);
+
        {Set WaitList}
        ThreadEntry.WaitList:=INVALID_HANDLE_VALUE;
       end;
      THREAD_STATE_WAIT_TIMEOUT:begin
        {Remove from Queue (Scheduler Timeout)}
        QueueDeleteKey(ThreadEntry.ScheduleQueue,Thread);
-      
+
        {Set ScheduleQueue}
        ThreadEntry.ScheduleQueue:=INVALID_HANDLE_VALUE;
 
        {Remove from WaitList (Semaphore/CriticalSection/Event/Thread etc)}
-       ListRemove(ThreadEntry.WaitList,@ThreadEntry.ListElement); 
-                                                                      
+       ListRemove(ThreadEntry.WaitList,@ThreadEntry.ListElement);
+
        {Set WaitList}
        ThreadEntry.WaitList:=INVALID_HANDLE_VALUE;
       end;
@@ -16459,7 +16481,7 @@ begin
      THREAD_STATE_RECEIVE_TIMEOUT:begin
        {Remove from Queue (Scheduler Timeout)}
        QueueDeleteKey(ThreadEntry.ScheduleQueue,Thread);
-      
+
        {Set ScheduleQueue}
        ThreadEntry.ScheduleQueue:=INVALID_HANDLE_VALUE;
       end;
@@ -16467,7 +16489,7 @@ begin
 
     {Set State}
     ThreadEntry.State:=THREAD_STATE_TERMINATED;
-    
+
     {$IFDEF THREAD_STATISTICS}
     {Check Current Thread (It is normally considered unsafe to terminate another thread that is running)}
     if Thread = ThreadGetCurrent then
@@ -16476,14 +16498,14 @@ begin
       if SchedulerThreadQuantum[ThreadEntry.CurrentCPU] <= (SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority]) then
        begin
         Inc(ThreadEntry.KernelTime,((SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority] - SchedulerThreadQuantum[ThreadEntry.CurrentCPU]) * TIME_TICKS_PER_SCHEDULER_INTERRUPT));
-       end; 
+       end;
      end;
     {$ENDIF}
-    
+
     {Insert in Queue}
     Result:=QueueInsertKey(SchedulerGetQueueHandle(ThreadEntry.CurrentCPU,QUEUE_TYPE_SCHEDULE_TERMINATION),Thread,SCHEDULER_TERMINATION_INITIAL);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -16495,16 +16517,16 @@ begin
     else
      begin
       SpinUnlockIRQ(ThreadEntry.Lock);
-     end;     
+     end;
    end;
-  
+
    {Check Reschedule}
-   if Reschedule then SchedulerReschedule(False); 
+   if Reschedule then SchedulerReschedule(False);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -16515,26 +16537,26 @@ function ThreadYield:LongWord;
 begin
  {}
  {Reschedule}
- Result:=SchedulerReschedule(True); 
+ Result:=SchedulerReschedule(True);
 end;
 
 {==============================================================================}
 
 function ThreadSleep(Milliseconds:LongWord):LongWord;
 {Place the current thread on the sleep queue for a specified number of milliseconds}
-{Milliseconds: Number of milliseconds to sleep} 
+{Milliseconds: Number of milliseconds to sleep}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
- Ticks:Integer;        
+ Ticks:Integer;
  ResultCode:LongWord;
  Thread:TThreadHandle;
  ThreadEntry:PThreadEntry;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Calculate Ticks}
- Ticks:=SCHEDULER_INTERRUPTS_PER_MILLISECOND * Milliseconds; 
+ Ticks:=SCHEDULER_INTERRUPTS_PER_MILLISECOND * Milliseconds;
 
  {Check Ticks}
  if Ticks > 0 then
@@ -16542,18 +16564,18 @@ begin
    {Get Thread}
    Thread:=ThreadGetCurrent;
    if Thread = INVALID_HANDLE_VALUE then Exit;
-  
+
    {Check the Handle}
    ThreadEntry:=PThreadEntry(Thread);
    if ThreadEntry = nil then Exit;
    if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
-   
+
    {Check the Handle}
    if Thread = IRQ_THREAD_HANDLE[ThreadEntry.CurrentCPU] then Exit;
    if Thread = FIQ_THREAD_HANDLE[ThreadEntry.CurrentCPU] then Exit;
    if Thread = SWI_THREAD_HANDLE[ThreadEntry.CurrentCPU] then Exit;
    if Thread = IDLE_THREAD_HANDLE[ThreadEntry.CurrentCPU] then Exit;
-   
+
    {Acquire the Lock}
    if SCHEDULER_FIQ_ENABLED then
     begin
@@ -16562,7 +16584,7 @@ begin
    else
     begin
      ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-    end;  
+    end;
    if ResultCode = ERROR_SUCCESS then
     begin
      try
@@ -16576,18 +16598,18 @@ begin
        begin
         Exit;
        end;
-      
+
       {Set State}
       ThreadEntry.State:=THREAD_STATE_SLEEP;
-      
+
       {$IFDEF THREAD_STATISTICS}
       {Update Kernel Time}
       if SchedulerThreadQuantum[ThreadEntry.CurrentCPU] <= (SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority]) then
        begin
         Inc(ThreadEntry.KernelTime,((SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority] - SchedulerThreadQuantum[ThreadEntry.CurrentCPU]) * TIME_TICKS_PER_SCHEDULER_INTERRUPT));
-       end; 
-      {$ENDIF} 
-      
+       end;
+      {$ENDIF}
+
       {Insert in Queue (Current CPU)}
       Result:=QueueInsertKey(SchedulerGetQueueHandle(ThreadEntry.CurrentCPU,QUEUE_TYPE_SCHEDULE_SLEEP),Thread,Ticks);
       if Result <> ERROR_SUCCESS then Exit;
@@ -16600,22 +16622,22 @@ begin
       else
        begin
         SpinUnlockIRQ(ThreadEntry.Lock);
-       end;     
+       end;
      end;
     end
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
      Exit;
-    end;  
+    end;
   end;
- 
+
  {Reschedule}
  SchedulerReschedule(Ticks = 0);
 
  {Return Result}
  Result:=ERROR_SUCCESS;
-end; 
+end;
 
 {==============================================================================}
 
@@ -16642,7 +16664,7 @@ function ThreadWaitEx(List:TListHandle;Lock:TSpinHandle;Flags,Timeout:LongWord):
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 {Note: Caller must hold the lock on the synchronisation object containing the list}
 var
- Ticks:Integer;        
+ Ticks:Integer;
  Reschedule:Boolean;
  ResultCode:LongWord;
  Thread:TThreadHandle;
@@ -16650,23 +16672,23 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Wait (List=' + HandleToHex(List) + ' Lock=' + HandleToHex(Lock) + ')');
  {$ENDIF}
- 
+
  {Check List}
  if List = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Thread}
  Thread:=ThreadGetCurrent;
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -16675,7 +16697,7 @@ begin
  else
   begin
    ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-  end;  
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    Reschedule:=False;
@@ -16696,10 +16718,10 @@ begin
      begin
       {This should not happen as the caller should have used Timeout = 0 as a marker
        to check the resource and return if not available, simply return WAIT_TIMEOUT}
-   
+
       {Set WaitResult}
       ThreadEntry.WaitResult:=WAIT_TIMEOUT;
-   
+
       {Return Result}
       Result:=ERROR_WAIT_TIMEOUT; {Could be ERROR_SUCCESS, makes no difference}
      end
@@ -16708,61 +16730,61 @@ begin
       {Add to List}
       Result:=ListAddLast(List,@ThreadEntry.ListElement);
       if Result <> ERROR_SUCCESS then Exit;
- 
+
       {Set WaitList}
       ThreadEntry.WaitList:=List;
-      
+
       {Set State}
       ThreadEntry.State:=THREAD_STATE_WAIT;
-      
+
       {$IFDEF THREAD_STATISTICS}
       {Update Kernel Time}
       if SchedulerThreadQuantum[ThreadEntry.CurrentCPU] <= (SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority]) then
        begin
         Inc(ThreadEntry.KernelTime,((SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority] - SchedulerThreadQuantum[ThreadEntry.CurrentCPU]) * TIME_TICKS_PER_SCHEDULER_INTERRUPT));
-       end; 
+       end;
       {$ENDIF}
-      
+
       {Reschedule}
       Reschedule:=True;
-        
+
       {Return Result}
-      Result:=ERROR_SUCCESS;    
+      Result:=ERROR_SUCCESS;
      end
     else
      begin
       {Calculate Ticks}
       Ticks:=SCHEDULER_INTERRUPTS_PER_MILLISECOND * Timeout;
-       
+
       {Add to List}
       Result:=ListAddLast(List,@ThreadEntry.ListElement);
       if Result <> ERROR_SUCCESS then Exit;
- 
+
       {Set WaitList}
       ThreadEntry.WaitList:=List;
-      
+
       {Set State}
       ThreadEntry.State:=THREAD_STATE_WAIT_TIMEOUT;
-      
+
       {$IFDEF THREAD_STATISTICS}
       {Update Kernel Time}
       if SchedulerThreadQuantum[ThreadEntry.CurrentCPU] <= (SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority]) then
        begin
         Inc(ThreadEntry.KernelTime,((SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority] - SchedulerThreadQuantum[ThreadEntry.CurrentCPU]) * TIME_TICKS_PER_SCHEDULER_INTERRUPT));
-       end; 
+       end;
       {$ENDIF}
-      
+
       {Insert in Queue (Current CPU)}
       Result:=QueueInsertKey(SchedulerGetQueueHandle(ThreadEntry.CurrentCPU,QUEUE_TYPE_SCHEDULE_TIMEOUT),Thread,Ticks);
       if Result <> ERROR_SUCCESS then Exit;
-      
+
       {Reschedule}
       Reschedule:=True;
-       
+
       {Return Result}
-      Result:=ERROR_SUCCESS;    
-     end;  
- 
+      Result:=ERROR_SUCCESS;
+     end;
+
     {Check Lock}
     if Lock <> INVALID_HANDLE_VALUE then
      begin
@@ -16781,7 +16803,7 @@ begin
          begin
           {Enable FIQ}
           EnableFIQ;  //To Do //Critical //This could be a problem if part of a chain, need a way to test the spin mask for FIQ
-         end;         
+         end;
         Result:=SpinUnlockIRQFIQ(Lock);
        end
       else if (Flags and LOCK_FLAG_FIQ) <> 0 then
@@ -16792,7 +16814,7 @@ begin
           {Exchange Masks}
           SpinMaskExchange(ThreadEntry.Lock,Lock); //Remove
          end;
-        Result:=SpinUnlockFIQ(Lock); 
+        Result:=SpinUnlockFIQ(Lock);
        end
       else if (Flags and LOCK_FLAG_IRQ) <> 0 then
        begin
@@ -16814,21 +16836,21 @@ begin
     {Release the Lock}
     if SCHEDULER_FIQ_ENABLED then
      begin
-      SpinUnlockIRQFIQ(ThreadEntry.Lock); 
+      SpinUnlockIRQFIQ(ThreadEntry.Lock);
      end
     else
      begin
       SpinUnlockIRQ(ThreadEntry.Lock);
-     end;     
+     end;
    end;
-   
+
    {Check Reschedule}
-   if Reschedule then SchedulerReschedule(False); 
+   if Reschedule then SchedulerReschedule(False);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -16847,27 +16869,27 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Release (List=' + HandleToHex(List) + ')');
  {$ENDIF}
- 
+
  {Check List}
  if List = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get List First}
- ListElement:=ListGetFirstEx(List,True); 
+ ListElement:=ListGetFirstEx(List,True);
  if ListElement <> nil then
   begin
    {Get Thread}
    Thread:=ListElement.Thread;
    if Thread = INVALID_HANDLE_VALUE then Exit;
-   
+
    {Check the Handle}
    ThreadEntry:=PThreadEntry(Thread);
    if ThreadEntry = nil then Exit;
    if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
-   
+
    {Acquire the Lock}
    if SCHEDULER_FIQ_ENABLED then
     begin
@@ -16876,7 +16898,7 @@ begin
    else
     begin
      ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-    end;  
+    end;
    if ResultCode = ERROR_SUCCESS then
     begin
      try
@@ -16890,17 +16912,17 @@ begin
        begin
         Exit;
        end
-      else if ThreadEntry.State = THREAD_STATE_RUNNING then 
+      else if ThreadEntry.State = THREAD_STATE_RUNNING then
        begin
         Exit;
        end;
-       
+
       {Check State}
       if ThreadEntry.State = THREAD_STATE_WAIT then
        begin
         {Set WaitResult}
         ThreadEntry.WaitResult:=ERROR_SUCCESS;
-      
+
         {Set WaitList}
         ThreadEntry.WaitList:=INVALID_HANDLE_VALUE;
        end
@@ -16912,7 +16934,7 @@ begin
 
         {Set WaitResult}
         ThreadEntry.WaitResult:=ERROR_SUCCESS;
-      
+
         {Set WaitList}
         ThreadEntry.WaitList:=INVALID_HANDLE_VALUE;
        end
@@ -16925,7 +16947,7 @@ begin
       ThreadEntry.State:=THREAD_STATE_READY;
 
       {Do not update Kernel Time}
-      
+
       {Check CPU}
       if SCHEDULER_CPU_COUNT > 1 then
        begin
@@ -16934,7 +16956,7 @@ begin
           {$IFDEF SCHEDULER_DEBUG}
           Inc(SchedulerSelectCPU[CPUGetCurrent]);
           {$ENDIF}
-          
+
           {Update CPU}
           ThreadEntry.CurrentCPU:=ThreadEntry.TargetCPU;
          end
@@ -16946,7 +16968,7 @@ begin
             {$IFDEF SCHEDULER_DEBUG}
             Inc(SchedulerSelectAffinity[CPUGetCurrent]);
             {$ENDIF}
-            
+
             {Check CPUs 0 to SCHEDULER_CPU_COUNT - 1}
             for Count:=0 to SCHEDULER_CPU_COUNT - 1 do
              begin
@@ -16955,25 +16977,25 @@ begin
                 {Update CPU}
                 ThreadEntry.CurrentCPU:=Count;
                 ThreadEntry.TargetCPU:=Count;
-                
+
                 Break;
-               end; 
-             end; 
-           end; 
-         end;      
+               end;
+             end;
+           end;
+         end;
        end;
-       
+
       {Check Priority}
       if ThreadEntry.Priority <> ThreadEntry.TargetPriority then
        begin
         {$IFDEF SCHEDULER_DEBUG}
         Inc(SchedulerSelectPriority[CPUGetCurrent]);
         {$ENDIF}
-  
+
         {Update Priority}
         ThreadEntry.Priority:=ThreadEntry.TargetPriority;
        end;
-       
+
       {Enqueue Thread (Current CPU and Priority)}
       Result:=QueueEnqueue(SchedulerGetQueueHandleEx(ThreadEntry.CurrentCPU,ThreadEntry.Priority),Thread);
      finally
@@ -16985,13 +17007,13 @@ begin
       else
        begin
         SpinUnlockIRQ(ThreadEntry.Lock);
-       end;     
+       end;
      end;
     end
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;  
+    end;
   end
  else
   begin
@@ -17015,27 +17037,27 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Abandon (List=' + HandleToHex(List) + ')');
  {$ENDIF}
- 
+
  {Check List}
  if List = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get List First}
- ListElement:=ListGetFirstEx(List,True); 
+ ListElement:=ListGetFirstEx(List,True);
  if ListElement <> nil then
   begin
    {Get Thread}
    Thread:=ListElement.Thread;
    if Thread = INVALID_HANDLE_VALUE then Exit;
-   
+
    {Check the Handle}
    ThreadEntry:=PThreadEntry(Thread);
    if ThreadEntry = nil then Exit;
    if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
-   
+
    {Acquire the Lock}
    if SCHEDULER_FIQ_ENABLED then
     begin
@@ -17044,7 +17066,7 @@ begin
    else
     begin
      ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-    end;  
+    end;
    if ResultCode = ERROR_SUCCESS then
     begin
      try
@@ -17058,17 +17080,17 @@ begin
        begin
         Exit;
        end
-      else if ThreadEntry.State = THREAD_STATE_RUNNING then 
+      else if ThreadEntry.State = THREAD_STATE_RUNNING then
        begin
         Exit;
        end;
-       
+
       {Check State}
       if ThreadEntry.State = THREAD_STATE_WAIT then
        begin
         {Set WaitResult}
         ThreadEntry.WaitResult:=WAIT_ABANDONED;
-      
+
         {Set WaitList}
         ThreadEntry.WaitList:=INVALID_HANDLE_VALUE;
        end
@@ -17080,7 +17102,7 @@ begin
 
         {Set WaitResult}
         ThreadEntry.WaitResult:=WAIT_ABANDONED;
-      
+
         {Set WaitList}
         ThreadEntry.WaitList:=INVALID_HANDLE_VALUE;
        end
@@ -17093,7 +17115,7 @@ begin
       ThreadEntry.State:=THREAD_STATE_READY;
 
       {Do not update Kernel Time}
-      
+
       {Check CPU}
       if SCHEDULER_CPU_COUNT > 1 then
        begin
@@ -17102,7 +17124,7 @@ begin
           {$IFDEF SCHEDULER_DEBUG}
           Inc(SchedulerSelectCPU[CPUGetCurrent]);
           {$ENDIF}
-          
+
           {Update CPU}
           ThreadEntry.CurrentCPU:=ThreadEntry.TargetCPU;
          end
@@ -17114,7 +17136,7 @@ begin
             {$IFDEF SCHEDULER_DEBUG}
             Inc(SchedulerSelectAffinity[CPUGetCurrent]);
             {$ENDIF}
-            
+
             {Check CPUs 0 to SCHEDULER_CPU_COUNT - 1}
             for Count:=0 to SCHEDULER_CPU_COUNT - 1 do
              begin
@@ -17123,25 +17145,25 @@ begin
                 {Update CPU}
                 ThreadEntry.CurrentCPU:=Count;
                 ThreadEntry.TargetCPU:=Count;
-                
+
                 Break;
-               end; 
-             end; 
-           end; 
-         end;      
+               end;
+             end;
+           end;
+         end;
        end;
-       
+
       {Check Priority}
       if ThreadEntry.Priority <> ThreadEntry.TargetPriority then
        begin
         {$IFDEF SCHEDULER_DEBUG}
         Inc(SchedulerSelectPriority[CPUGetCurrent]);
         {$ENDIF}
-  
+
         {Update Priority}
         ThreadEntry.Priority:=ThreadEntry.TargetPriority;
        end;
-  
+
       {Enqueue Thread (Current CPU and Priority)}
       Result:=QueueEnqueue(SchedulerGetQueueHandleEx(ThreadEntry.CurrentCPU,ThreadEntry.Priority),Thread);
      finally
@@ -17153,13 +17175,13 @@ begin
       else
        begin
         SpinUnlockIRQ(ThreadEntry.Lock);
-       end;     
+       end;
      end;
     end
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;  
+    end;
   end
  else
   begin
@@ -17183,11 +17205,11 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Wait Terminate (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
 
@@ -17195,7 +17217,7 @@ begin
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -17204,7 +17226,7 @@ begin
  else
   begin
    ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-  end;  
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    Unlock:=True;
@@ -17218,8 +17240,8 @@ begin
       {Check State}
       Result:=ERROR_WAIT_TIMEOUT;
       if ThreadEntry.State <> THREAD_STATE_TERMINATED then Exit;
-     end; 
-   
+     end;
+
     {Check State}
     if ThreadEntry.State <> THREAD_STATE_TERMINATED then
      begin
@@ -17228,12 +17250,12 @@ begin
        begin
         {Create List} {Note: List is always preallocated on threads to prevent IRQ/FIQ deadlock}
         ThreadEntry.List:=ListCreateEx(LIST_TYPE_WAIT_THREAD,SchedulerGetListFlags(LIST_TYPE_WAIT_THREAD));
-       end; 
+       end;
 
       {Check Timeout}
       if Timeout = INFINITE then
        begin
-        {Wait on Thread} 
+        {Wait on Thread}
         if SCHEDULER_FIQ_ENABLED then
          begin
           ThreadWait(ThreadEntry.List,ThreadEntry.Lock,LOCK_FLAG_IRQFIQ);
@@ -17243,7 +17265,7 @@ begin
           ThreadWait(ThreadEntry.List,ThreadEntry.Lock,LOCK_FLAG_IRQ);
          end;
         Unlock:=False;
-        
+
         {Check Result}
         WaitResult:=ThreadGetWaitResult;
         if WaitResult = WAIT_TIMEOUT then
@@ -17251,7 +17273,7 @@ begin
           Result:=ERROR_WAIT_TIMEOUT;
           Exit;
          end
-        else if WaitResult = WAIT_ABANDONED then 
+        else if WaitResult = WAIT_ABANDONED then
          begin
           Result:=ERROR_WAIT_ABANDONED;
           Exit;
@@ -17260,11 +17282,11 @@ begin
          begin
           Result:=WaitResult;
           Exit;
-         end;         
+         end;
        end
       else
        begin
-        {Wait on Thread with Timeout} 
+        {Wait on Thread with Timeout}
         if SCHEDULER_FIQ_ENABLED then
          begin
           ThreadWaitEx(ThreadEntry.List,ThreadEntry.Lock,LOCK_FLAG_IRQFIQ,Timeout);
@@ -17274,7 +17296,7 @@ begin
           ThreadWaitEx(ThreadEntry.List,ThreadEntry.Lock,LOCK_FLAG_IRQ,Timeout);
          end;
         Unlock:=False;
-        
+
         {Check Result}
         WaitResult:=ThreadGetWaitResult;
         if WaitResult = WAIT_TIMEOUT then
@@ -17282,7 +17304,7 @@ begin
           Result:=ERROR_WAIT_TIMEOUT;
           Exit;
          end
-        else if WaitResult = WAIT_ABANDONED then 
+        else if WaitResult = WAIT_ABANDONED then
          begin
           Result:=ERROR_WAIT_ABANDONED;
           Exit;
@@ -17291,12 +17313,12 @@ begin
          begin
           Result:=WaitResult;
           Exit;
-         end;         
-       end;       
+         end;
+       end;
      end;
 
     {Return Result}
-    Result:=ERROR_SUCCESS;    
+    Result:=ERROR_SUCCESS;
    finally
     {Release the Lock}
     if Unlock then
@@ -17308,14 +17330,14 @@ begin
       else
        begin
         SpinUnlockIRQ(ThreadEntry.Lock);
-       end;     
-     end;  
+       end;
+     end;
    end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -17335,11 +17357,11 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Suspend (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
 
@@ -17347,13 +17369,13 @@ begin
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
- 
+
  {Check the Handle}
  if Thread = IRQ_THREAD_HANDLE[ThreadEntry.CurrentCPU] then Exit;
  if Thread = FIQ_THREAD_HANDLE[ThreadEntry.CurrentCPU] then Exit;
  if Thread = SWI_THREAD_HANDLE[ThreadEntry.CurrentCPU] then Exit;
  if Thread = IDLE_THREAD_HANDLE[ThreadEntry.CurrentCPU] then Exit;
- 
+
  {Acquire the Lock}
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -17362,7 +17384,7 @@ begin
  else
   begin
    ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-  end;  
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    Reschedule:=False;
@@ -17383,17 +17405,17 @@ begin
      begin
       {Remove from queue}
       QueueDeleteKey(ThreadEntry.ScheduleQueue,Thread);
-      
+
       {Set State}
       ThreadEntry.State:=THREAD_STATE_SUSPENDED;
-      
+
       {Do not update Kernel Time}
      end
     else
      begin
       {Set State}
       ThreadEntry.State:=THREAD_STATE_SUSPENDED;
-      
+
       {$IFDEF THREAD_STATISTICS}
       {Check Current Thread (It is normally considered unsafe to suspend another thread that is running)}
       if Thread = ThreadGetCurrent then
@@ -17402,14 +17424,14 @@ begin
         if SchedulerThreadQuantum[ThreadEntry.CurrentCPU] <= (SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority]) then
          begin
           Inc(ThreadEntry.KernelTime,((SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority] - SchedulerThreadQuantum[ThreadEntry.CurrentCPU]) * TIME_TICKS_PER_SCHEDULER_INTERRUPT));
-         end; 
-       end; 
+         end;
+       end;
       {$ENDIF}
-      
+
       {Reschedule}
       Reschedule:=True;
      end;
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -17421,16 +17443,16 @@ begin
     else
      begin
       SpinUnlockIRQ(ThreadEntry.Lock);
-     end;     
+     end;
    end;
-  
+
    {Check Reschedule}
-   if Reschedule then SchedulerReschedule(False); 
+   if Reschedule then SchedulerReschedule(False);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -17446,14 +17468,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Resume (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
@@ -17464,7 +17486,7 @@ begin
  if Thread = FIQ_THREAD_HANDLE[ThreadEntry.CurrentCPU] then Exit;
  if Thread = SWI_THREAD_HANDLE[ThreadEntry.CurrentCPU] then Exit;
  if Thread = IDLE_THREAD_HANDLE[ThreadEntry.CurrentCPU] then Exit;
- 
+
  {Acquire the Lock}
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -17473,7 +17495,7 @@ begin
  else
   begin
    ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-  end;  
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    try
@@ -17490,9 +17512,9 @@ begin
 
     {Set State}
     ThreadEntry.State:=THREAD_STATE_READY;
-  
+
     {Do not update Kernel Time}
-  
+
     {Check CPU}
     if SCHEDULER_CPU_COUNT > 1 then
      begin
@@ -17501,7 +17523,7 @@ begin
         {$IFDEF SCHEDULER_DEBUG}
         Inc(SchedulerSelectCPU[CPUGetCurrent]);
         {$ENDIF}
-        
+
         {Update CPU}
         ThreadEntry.CurrentCPU:=ThreadEntry.TargetCPU;
        end
@@ -17513,7 +17535,7 @@ begin
           {$IFDEF SCHEDULER_DEBUG}
           Inc(SchedulerSelectAffinity[CPUGetCurrent]);
           {$ENDIF}
-          
+
           {Check CPUs 0 to SCHEDULER_CPU_COUNT - 1}
           for Count:=0 to SCHEDULER_CPU_COUNT - 1 do
            begin
@@ -17522,14 +17544,14 @@ begin
               {Update CPU}
               ThreadEntry.CurrentCPU:=Count;
               ThreadEntry.TargetCPU:=Count;
-              
+
               Break;
-             end; 
-           end; 
-         end; 
-       end;      
+             end;
+           end;
+         end;
+       end;
      end;
-     
+
     {Check Priority}
     if ThreadEntry.Priority <> ThreadEntry.TargetPriority then
      begin
@@ -17540,7 +17562,7 @@ begin
       {Update Priority}
       ThreadEntry.Priority:=ThreadEntry.TargetPriority;
      end;
-  
+
     {Enqueue Thread (Current CPU and Priority)}
     Result:=QueueEnqueue(SchedulerGetQueueHandleEx(ThreadEntry.CurrentCPU,ThreadEntry.Priority),Thread);
    finally
@@ -17552,18 +17574,18 @@ begin
     else
      begin
       SpinUnlockIRQ(ThreadEntry.Lock);
-     end;     
+     end;
    end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
 
-function ThreadWaitMessage:LongWord;                     
+function ThreadWaitMessage:LongWord;
 {Make the current thread wait until a message is received (indefinitely)}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 {Note: The received message is not removed from the message list}
@@ -17588,14 +17610,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Send Message (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
@@ -17609,7 +17631,7 @@ begin
  else
   begin
    ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-  end;  
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    try
@@ -17630,13 +17652,13 @@ begin
       Result:=ERROR_NO_MORE_ITEMS;
       Exit;
      end;
- 
-    {Write Message} 
+
+    {Write Message}
     PMessage(PtrUInt(ThreadEntry.Messages.List) + PtrUInt(((ThreadEntry.Messages.Start + ThreadEntry.Messages.Count) mod ThreadEntry.Messages.Maximum) * SizeOf(TMessage)))^:=Message;
-    
+
     {Update Count}
     Inc(ThreadEntry.Messages.Count);
- 
+
     {Check State}
     if ThreadEntry.State = THREAD_STATE_RECEIVE then
      begin
@@ -17645,9 +17667,9 @@ begin
 
       {Set State}
       ThreadEntry.State:=THREAD_STATE_READY;
-  
+
       {Do not update Kernel Time}
-  
+
       {Check CPU}
       if SCHEDULER_CPU_COUNT > 1 then
        begin
@@ -17656,7 +17678,7 @@ begin
           {$IFDEF SCHEDULER_DEBUG}
           Inc(SchedulerSelectCPU[CPUGetCurrent]);
           {$ENDIF}
-          
+
           {Update CPU}
           ThreadEntry.CurrentCPU:=ThreadEntry.TargetCPU;
          end
@@ -17668,7 +17690,7 @@ begin
             {$IFDEF SCHEDULER_DEBUG}
             Inc(SchedulerSelectAffinity[CPUGetCurrent]);
             {$ENDIF}
-            
+
             {Check CPUs 0 to SCHEDULER_CPU_COUNT - 1}
             for Count:=0 to SCHEDULER_CPU_COUNT - 1 do
              begin
@@ -17677,25 +17699,25 @@ begin
                 {Update CPU}
                 ThreadEntry.CurrentCPU:=Count;
                 ThreadEntry.TargetCPU:=Count;
-                
+
                 Break;
-               end; 
-             end; 
-           end; 
-         end;      
+               end;
+             end;
+           end;
+         end;
        end;
-       
+
       {Check Priority}
       if ThreadEntry.Priority <> ThreadEntry.TargetPriority then
        begin
         {$IFDEF SCHEDULER_DEBUG}
         Inc(SchedulerSelectPriority[CPUGetCurrent]);
         {$ENDIF}
-  
+
         {Update Priority}
         ThreadEntry.Priority:=ThreadEntry.TargetPriority;
        end;
-       
+
       {Enqueue Thread (Current CPU and Priority)}
       Result:=QueueEnqueue(SchedulerGetQueueHandleEx(ThreadEntry.CurrentCPU,ThreadEntry.Priority),Thread);
       if Result <> ERROR_SUCCESS then Exit;
@@ -17705,15 +17727,15 @@ begin
       {Remove from Queue}
       Result:=QueueDeleteKey(ThreadEntry.ScheduleQueue,Thread);
       if Result <> ERROR_SUCCESS then Exit;
-  
+
       {Set ReceiveResult}
       ThreadEntry.ReceiveResult:=ERROR_SUCCESS;
-      
+
       {Set State}
       ThreadEntry.State:=THREAD_STATE_READY;
-    
+
       {Do not update Kernel Time}
-    
+
       {Check CPU}
       if SCHEDULER_CPU_COUNT > 1 then
        begin
@@ -17722,7 +17744,7 @@ begin
           {$IFDEF SCHEDULER_DEBUG}
           Inc(SchedulerSelectCPU[CPUGetCurrent]);
           {$ENDIF}
-          
+
           {Update CPU}
           ThreadEntry.CurrentCPU:=ThreadEntry.TargetCPU;
          end
@@ -17734,7 +17756,7 @@ begin
             {$IFDEF SCHEDULER_DEBUG}
             Inc(SchedulerSelectAffinity[CPUGetCurrent]);
             {$ENDIF}
-            
+
             {Check CPUs 0 to SCHEDULER_CPU_COUNT - 1}
             for Count:=0 to SCHEDULER_CPU_COUNT - 1 do
              begin
@@ -17743,25 +17765,25 @@ begin
                 {Update CPU}
                 ThreadEntry.CurrentCPU:=Count;
                 ThreadEntry.TargetCPU:=Count;
-                
+
                 Break;
-               end; 
-             end; 
-           end; 
-         end;      
+               end;
+             end;
+           end;
+         end;
        end;
-       
+
       {Check Priority}
       if ThreadEntry.Priority <> ThreadEntry.TargetPriority then
        begin
         {$IFDEF SCHEDULER_DEBUG}
         Inc(SchedulerSelectPriority[CPUGetCurrent]);
         {$ENDIF}
-  
+
         {Update Priority}
         ThreadEntry.Priority:=ThreadEntry.TargetPriority;
        end;
-    
+
       {Enqueue Thread (Current CPU and Priority)}
       Result:=QueueEnqueue(SchedulerGetQueueHandleEx(ThreadEntry.CurrentCPU,ThreadEntry.Priority),Thread);
       if Result <> ERROR_SUCCESS then Exit;
@@ -17778,18 +17800,18 @@ begin
     else
      begin
       SpinUnlockIRQ(ThreadEntry.Lock);
-     end;     
+     end;
    end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
 
-function ThreadReceiveMessage(var Message:TMessage):LongWord;                     
+function ThreadReceiveMessage(var Message:TMessage):LongWord;
 {Make the current thread wait to receive a message (indefinitely)}
 {Message: The received message if successful, undefined on error}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
@@ -17807,7 +17829,7 @@ function ThreadReceiveMessageEx(var Message:TMessage;Timeout:LongWord;Remove:Boo
 {Remove: If true then remove the received message from the message list}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
- Ticks:Integer;        
+ Ticks:Integer;
  Reschedule:Boolean;
  ResultCode:LongWord;
  ReceiveResult:LongWord;
@@ -17816,15 +17838,15 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Receive Message (Timeout=' + IntToStr(Timeout) + ')');
  {$ENDIF}
- 
+
  {Get Thread}
  Thread:=ThreadGetCurrent;
  if Thread = INVALID_HANDLE_VALUE then Exit;
-   
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
@@ -17838,7 +17860,7 @@ begin
  else
   begin
    ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-  end;  
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    Reschedule:=False;
@@ -17860,24 +17882,24 @@ begin
       {Check Count}
       Result:=ERROR_WAIT_TIMEOUT;
       if ThreadEntry.Messages.Count = 0 then Exit;
-     end; 
+     end;
 
     {Check for Message}
     if ThreadEntry.Messages.Count > 0 then
      begin
       {Read Message}
       Message:=PMessage(PtrUInt(ThreadEntry.Messages.List) + PtrUInt(ThreadEntry.Messages.Start * SizeOf(TMessage)))^;
-      
+
       {Check Remove}
       if Remove then
        begin
         {Update Start}
         ThreadEntry.Messages.Start:=(ThreadEntry.Messages.Start + 1) mod ThreadEntry.Messages.Maximum;
-      
+
         {Update Count}
         Dec(ThreadEntry.Messages.Count);
        end;
-       
+
       {Return Result}
       Result:=ERROR_SUCCESS;
      end
@@ -17889,42 +17911,42 @@ begin
         {Wait on Message}
         {Set State}
         ThreadEntry.State:=THREAD_STATE_RECEIVE;
-      
+
         {$IFDEF THREAD_STATISTICS}
         {Update Kernel Time}
         if SchedulerThreadQuantum[ThreadEntry.CurrentCPU] <= (SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority]) then
          begin
           Inc(ThreadEntry.KernelTime,((SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority] - SchedulerThreadQuantum[ThreadEntry.CurrentCPU]) * TIME_TICKS_PER_SCHEDULER_INTERRUPT));
-         end; 
+         end;
         {$ENDIF}
-        
+
         {Reschedule}
         Reschedule:=True;
        end
       else
-       begin      
+       begin
         {Wait on Message with Timeout}
         {Calculate Ticks}
         Ticks:=SCHEDULER_INTERRUPTS_PER_MILLISECOND * Timeout;
-        
+
         {Set State}
         ThreadEntry.State:=THREAD_STATE_RECEIVE_TIMEOUT;
-      
+
         {$IFDEF THREAD_STATISTICS}
         {Update Kernel Time}
         if SchedulerThreadQuantum[ThreadEntry.CurrentCPU] <= (SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority]) then
          begin
           Inc(ThreadEntry.KernelTime,((SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority] - SchedulerThreadQuantum[ThreadEntry.CurrentCPU]) * TIME_TICKS_PER_SCHEDULER_INTERRUPT));
-         end; 
+         end;
         {$ENDIF}
-        
+
         {Insert in Queue (Current CPU)}
         if QueueInsertKey(SchedulerGetQueueHandle(ThreadEntry.CurrentCPU,QUEUE_TYPE_SCHEDULE_TIMEOUT),Thread,Ticks) <> ERROR_SUCCESS then Exit;
-        
+
         {Reschedule}
         Reschedule:=True;
-       end; 
-     end;   
+       end;
+     end;
    finally
     {Release the Lock}
     if SCHEDULER_FIQ_ENABLED then
@@ -17934,15 +17956,15 @@ begin
     else
      begin
       SpinUnlockIRQ(ThreadEntry.Lock);
-     end;     
+     end;
    end;
-   
+
    {Check Reschedule}
    if Reschedule then
     begin
      {Reschedule}
-     SchedulerReschedule(False); 
-    
+     SchedulerReschedule(False);
+
      {Check Result}
      ReceiveResult:=ThreadGetReceiveResult;
      if ReceiveResult = WAIT_TIMEOUT then
@@ -17950,7 +17972,7 @@ begin
        Result:=ERROR_WAIT_TIMEOUT;
        Exit;
       end
-     else if ReceiveResult = WAIT_ABANDONED then 
+     else if ReceiveResult = WAIT_ABANDONED then
       begin
        Result:=ERROR_WAIT_ABANDONED;
        Exit;
@@ -17959,8 +17981,8 @@ begin
       begin
        Result:=ReceiveResult;
        Exit;
-      end;         
-     
+      end;
+
      {Receive Message (No Wait)}
      Result:=ThreadReceiveMessageEx(Message,0,Remove);
     end;
@@ -17968,7 +17990,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -17985,14 +18007,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Abandon Message (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
@@ -18006,7 +18028,7 @@ begin
  else
   begin
    ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-  end;  
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    try
@@ -18020,7 +18042,7 @@ begin
      begin
       Exit;
      end
-    else if ThreadEntry.State = THREAD_STATE_RUNNING then 
+    else if ThreadEntry.State = THREAD_STATE_RUNNING then
      begin
       Exit;
      end;
@@ -18035,7 +18057,7 @@ begin
       ThreadEntry.State:=THREAD_STATE_READY;
 
       {Do not update Kernel Time}
-      
+
       {Check CPU}
       if SCHEDULER_CPU_COUNT > 1 then
        begin
@@ -18044,7 +18066,7 @@ begin
           {$IFDEF SCHEDULER_DEBUG}
           Inc(SchedulerSelectCPU[CPUGetCurrent]);
           {$ENDIF}
-          
+
           {Update CPU}
           ThreadEntry.CurrentCPU:=ThreadEntry.TargetCPU;
          end
@@ -18056,7 +18078,7 @@ begin
             {$IFDEF SCHEDULER_DEBUG}
             Inc(SchedulerSelectAffinity[CPUGetCurrent]);
             {$ENDIF}
-            
+
             {Check CPUs 0 to SCHEDULER_CPU_COUNT - 1}
             for Count:=0 to SCHEDULER_CPU_COUNT - 1 do
              begin
@@ -18065,25 +18087,25 @@ begin
                 {Update CPU}
                 ThreadEntry.CurrentCPU:=Count;
                 ThreadEntry.TargetCPU:=Count;
-                
+
                 Break;
-               end; 
-             end; 
-           end; 
-         end;      
+               end;
+             end;
+           end;
+         end;
        end;
-       
+
       {Check Priority}
       if ThreadEntry.Priority <> ThreadEntry.TargetPriority then
        begin
         {$IFDEF SCHEDULER_DEBUG}
         Inc(SchedulerSelectPriority[CPUGetCurrent]);
         {$ENDIF}
-  
+
         {Update Priority}
         ThreadEntry.Priority:=ThreadEntry.TargetPriority;
        end;
-  
+
       {Enqueue Thread (Current CPU and Priority)}
       Result:=QueueEnqueue(SchedulerGetQueueHandleEx(ThreadEntry.CurrentCPU,ThreadEntry.Priority),Thread);
       if Result <> ERROR_SUCCESS then Exit;
@@ -18093,15 +18115,15 @@ begin
       {Remove from Queue}
       Result:=QueueDeleteKey(ThreadEntry.ScheduleQueue,Thread);
       if Result <> ERROR_SUCCESS then Exit;
-  
+
       {Set ReceiveResult}
       ThreadEntry.ReceiveResult:=WAIT_TIMEOUT;
-      
+
       {Set State}
       ThreadEntry.State:=THREAD_STATE_READY;
-  
+
       {Do not update Kernel Time}
-  
+
       {Check CPU}
       if SCHEDULER_CPU_COUNT > 1 then
        begin
@@ -18110,7 +18132,7 @@ begin
           {$IFDEF SCHEDULER_DEBUG}
           Inc(SchedulerSelectCPU[CPUGetCurrent]);
           {$ENDIF}
-          
+
           {Update CPU}
           ThreadEntry.CurrentCPU:=ThreadEntry.TargetCPU;
          end
@@ -18122,7 +18144,7 @@ begin
             {$IFDEF SCHEDULER_DEBUG}
             Inc(SchedulerSelectAffinity[CPUGetCurrent]);
             {$ENDIF}
-            
+
             {Check CPUs 0 to SCHEDULER_CPU_COUNT - 1}
             for Count:=0 to SCHEDULER_CPU_COUNT - 1 do
              begin
@@ -18131,25 +18153,25 @@ begin
                 {Update CPU}
                 ThreadEntry.CurrentCPU:=Count;
                 ThreadEntry.TargetCPU:=Count;
-                
+
                 Break;
-               end; 
-             end; 
-           end; 
-         end;      
+               end;
+             end;
+           end;
+         end;
        end;
-       
+
       {Check Priority}
       if ThreadEntry.Priority <> ThreadEntry.TargetPriority then
        begin
         {$IFDEF SCHEDULER_DEBUG}
         Inc(SchedulerSelectPriority[CPUGetCurrent]);
         {$ENDIF}
-  
+
         {Update Priority}
         ThreadEntry.Priority:=ThreadEntry.TargetPriority;
        end;
-   
+
       {Enqueue Thread (Current CPU and Priority)}
       Result:=QueueEnqueue(SchedulerGetQueueHandleEx(ThreadEntry.CurrentCPU,ThreadEntry.Priority),Thread);
       if Result <> ERROR_SUCCESS then Exit;
@@ -18166,13 +18188,13 @@ begin
     else
      begin
       SpinUnlockIRQ(ThreadEntry.Lock);
-     end;     
+     end;
    end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -18188,11 +18210,11 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Lock (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
 
@@ -18200,7 +18222,7 @@ begin
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -18209,7 +18231,7 @@ begin
  else
   begin
    Result:=SpinLockIRQ(ThreadEntry.Lock);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -18225,11 +18247,11 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Thread Unlock (Handle=' + HandleToHex(Thread) + ')');
  {$ENDIF}
- 
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
 
@@ -18237,7 +18259,7 @@ begin
  ThreadEntry:=PThreadEntry(Thread);
  if ThreadEntry = nil then Exit;
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
- 
+
  {Release the Lock}
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -18246,11 +18268,11 @@ begin
  else
   begin
    Result:=SpinUnlockIRQ(ThreadEntry.Lock);
-  end;     
+  end;
 end;
- 
+
 {==============================================================================}
- 
+
 procedure ThreadTimer(Data:Pointer);
 {Procedure called internally to process terminated threads}
 
@@ -18261,14 +18283,14 @@ begin
  {}
  {Get Current CPU}
  CurrentCPU:=CPUGetCurrent;
- 
+
  {Check Terminated}
  while QueueFirstKeyEx(SchedulerTerminationQueue[CurrentCPU],True,False) <= 0 do
   begin
    {$IFDEF SCHEDULER_DEBUG}
    Inc(SchedulerTerminationCounter[CurrentCPU]);
    {$ENDIF}
-   
+
    {Destroy Thread}
    ThreadDestroy(QueueDequeueEx(SchedulerTerminationQueue[CurrentCPU],False,True));
   end;
@@ -18282,24 +18304,24 @@ end;
 function SchedulerCheck(CPUID:LongWord):LongWord;
 {Check if the sleep queue is empty, if not then decrement the first key
  Then check if the timeout queue is empty, if not then decrement the first key
- 
+
  If either key reaches zero, return success to indicate there are threads to be
  woken or threads whose timeout has expired
- 
+
  Finally check if the termination queue is empty, if not then decrement the first
  key
- 
+
  Items will be removed from the termination queue by SchedulerReschedule}
-{CPUID: The ID of the current CPU} 
+{CPUID: The ID of the current CPU}
 {Return: ERROR_SUCCESS if either first key is zero, ERROR_NO_MORE_ITEMS if both queues are empty or another error code on failure}
 {Note: Called by scheduler interrupt with IRQ or FIQ disabled and running on the IRQ or FIQ thread}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check CPU}
  if CPUID > (SCHEDULER_CPU_COUNT - 1) then Exit;
- 
+
  {Check Thread}
  Result:=ERROR_FUNCTION_FAILED;
  if SCHEDULER_FIQ_ENABLED then
@@ -18308,33 +18330,33 @@ begin
   end
  else
   begin
-   if ThreadGetCurrent <> IRQ_THREAD_HANDLE[CPUID] then Exit; 
-  end;  
- 
+   if ThreadGetCurrent <> IRQ_THREAD_HANDLE[CPUID] then Exit;
+  end;
+
  {Check the Handler}
  if Assigned(SchedulerCheckHandler) then
   begin
-   {Use the Handler method} 
+   {Use the Handler method}
    Result:=SchedulerCheckHandler(CPUID);
   end
  else
-  begin 
+  begin
    {Use the Default method}
    {Setup Result}
    Result:=ERROR_NO_MORE_ITEMS;
- 
+
    {Check Sleep Queue}
    if QueueDecrementKey(SchedulerSleepQueue[CPUID]) <= 0 then
     begin
      Result:=ERROR_SUCCESS;
     end;
- 
+
    {Check Timeout Queue}
    if QueueDecrementKey(SchedulerTimeoutQueue[CPUID]) <= 0 then
     begin
      Result:=ERROR_SUCCESS;
     end;
-    
+
    {Check Termination Queue}
    QueueDecrementKey(SchedulerTerminationQueue[CPUID]);
   end;
@@ -18346,13 +18368,13 @@ function SchedulerWakeup(CPUID:LongWord):LongWord;
 {Remove all threads from the sleep queue that have no more time to sleep
 
  Threads will be placed back on the ready queue for rescheduling}
-{CPUID: The ID of the current CPU} 
+{CPUID: The ID of the current CPU}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 {Note: Called by scheduler interrupt with IRQ or FIQ disabled and running on the IRQ or FIQ thread}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check CPU}
  if CPUID > (SCHEDULER_CPU_COUNT - 1) then Exit;
 
@@ -18365,16 +18387,16 @@ begin
  else
   begin
    if ThreadGetCurrent <> IRQ_THREAD_HANDLE[CPUID] then Exit;
-  end;  
- 
+  end;
+
  {Check the Handler}
  if Assigned(SchedulerWakeupHandler) then
   begin
-   {Use the Handler method} 
+   {Use the Handler method}
    Result:=SchedulerWakeupHandler(CPUID);
   end
  else
-  begin 
+  begin
    {Use the Default method}
    {Ready Threads}
    while QueueFirstKeyEx(SchedulerSleepQueue[CPUID],True,False) <= 0 do
@@ -18383,10 +18405,10 @@ begin
     end;
    {Unlock Queue}
    QueueUnlock(SchedulerSleepQueue[CPUID]);
- 
+
    {Return Result}
    Result:=ERROR_SUCCESS;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -18394,15 +18416,15 @@ end;
 function SchedulerExpire(CPUID:LongWord):LongWord;
 {Remove all threads from the timeout queue that have no more time to wait
 
- Threads will be placed back on the ready queue for rescheduling but will 
+ Threads will be placed back on the ready queue for rescheduling but will
  return with an error indicating the timeout expired}
-{CPUID: The ID of the current CPU} 
+{CPUID: The ID of the current CPU}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 {Note: Called by scheduler interrupt with IRQ or FIQ disabled and running on the IRQ or FIQ thread}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check CPU}
  if CPUID > (SCHEDULER_CPU_COUNT - 1) then Exit;
 
@@ -18415,16 +18437,16 @@ begin
  else
   begin
    if ThreadGetCurrent <> IRQ_THREAD_HANDLE[CPUID] then Exit;
-  end;  
- 
+  end;
+
  {Check the Handler}
  if Assigned(SchedulerExpireHandler) then
   begin
-   {Use the Handler method} 
+   {Use the Handler method}
    Result:=SchedulerExpireHandler(CPUID);
   end
  else
-  begin 
+  begin
    {Use the Default method}
    {Timeout Threads}
    while QueueFirstKeyEx(SchedulerTimeoutQueue[CPUID],True,False) <= 0 do
@@ -18436,7 +18458,7 @@ begin
 
    {Return Result}
    Result:=ERROR_SUCCESS;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -18447,25 +18469,25 @@ function SchedulerSwitch(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
  The next thread to run will be selected based on remaining quantum of the current
  thread, ready threads at higher priority levels and scheduler priority quantum for
  fair scheduling of lower priority threads}
-{CPUID: The ID of the current CPU} 
+{CPUID: The ID of the current CPU}
 {Thread: The handle of the currently running thread (Before IRQ or FIQ occurred)}
 {Return: The handle of the current thread which may be the old thread or a new thread}
 {Note: Called by scheduler interrupt with IRQ or FIQ disabled and running on the IRQ or FIQ thread}
 var
  ResultCode:LongWord;
- 
+
  NewThread:TThreadHandle;
- 
+
  ThreadEntry:PThreadEntry;
  NewThreadEntry:PThreadEntry;
 begin
  {}
  Result:=Thread;
- 
+
  {$IFDEF SCHEDULER_DEBUG}
  Inc(SchedulerSwitchEntry[CPUID]);
  {$ENDIF}
- 
+
  {Check CPU}
  if CPUID > (SCHEDULER_CPU_COUNT - 1) then Exit;
 
@@ -18477,25 +18499,25 @@ begin
  else
   begin
    if ThreadGetCurrent <> IRQ_THREAD_HANDLE[CPUID] then Exit;
-  end;  
- 
+  end;
+
  {Check the Handler}
  if Assigned(SchedulerSwitchHandler) then
   begin
-   {Use the Handler method} 
+   {Use the Handler method}
    Result:=SchedulerSwitchHandler(CPUID,Thread);
   end
  else
-  begin 
+  begin
    {Use the Default method}
    {Check Thread}
    if Thread = INVALID_HANDLE_VALUE then Exit;
-   
+
    {Check the Handle}
    ThreadEntry:=PThreadEntry(Thread);
    if ThreadEntry = nil then Exit;
    if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
-   
+
    {Acquire the Lock}
    if SCHEDULER_FIQ_ENABLED then
     begin
@@ -18504,7 +18526,7 @@ begin
    else
     begin
      ResultCode:=SpinLockIRQ(ThreadEntry.Lock);
-    end;  
+    end;
    if ResultCode = ERROR_SUCCESS then
     begin
      try
@@ -18524,11 +18546,11 @@ begin
         if NewThreadEntry = nil then Exit;
         if NewThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
        end;
-   
+
       {$IFDEF SCHEDULER_DEBUG}
       SchedulerSwitchThread[CPUID]:=NewThread;
       {$ENDIF}
-      
+
       {Check New Thread}
       if (NewThread = Thread) or (NewThread = INVALID_HANDLE_VALUE) then
        begin
@@ -18541,7 +18563,7 @@ begin
         else
          begin
           Inc(SchedulerSwitchCurrent[CPUID]);
-         end;         
+         end;
         {$ENDIF}
        end
       else
@@ -18554,25 +18576,25 @@ begin
         else
          begin
           ResultCode:=SpinLockIRQ(NewThreadEntry.Lock);
-         end;  
+         end;
         if ResultCode = ERROR_SUCCESS then
          begin
           try
            {$IFDEF SCHEDULER_DEBUG}
            Inc(SchedulerSwitchCounter[CPUID]);
            {$ENDIF}
-           
+
            {Set State}
            NewThreadEntry.State:=THREAD_STATE_RUNNING;
-  
+
            {Set CPU}
            NewThreadEntry.CurrentCPU:=CPUID;
-     
+
            {$IFDEF THREAD_STATISTICS}
            {Update Switch Count}
            Inc(NewThreadEntry.SwitchCount);
            {$ENDIF}
-           
+
            if SCHEDULER_FIQ_ENABLED then
             begin
              {Perform a Context Switch (FIQ)}
@@ -18582,10 +18604,10 @@ begin
             begin
              {Perform a Context Switch (IRQ)}
              ContextSwitchIRQ(@ThreadEntry.StackPointer,@NewThreadEntry.StackPointer,NewThread);
-            end;    
-    
+            end;
+
            {Return Result}
-           Result:=NewThread;   
+           Result:=NewThread;
           finally
            {Release the Lock}
            if SCHEDULER_FIQ_ENABLED then
@@ -18595,14 +18617,14 @@ begin
            else
             begin
              SpinUnlockIRQ(NewThreadEntry.Lock);
-            end;     
+            end;
           end;
          end
         else
          begin
           {Nothing}
-         end;  
-       end;  
+         end;
+       end;
      finally
       {Release the Lock}
       if SCHEDULER_FIQ_ENABLED then
@@ -18612,27 +18634,27 @@ begin
       else
        begin
         SpinUnlockIRQ(ThreadEntry.Lock);
-       end;     
+       end;
      end;
     end
    else
     begin
      {Nothing}
-    end;  
-  end; 
+    end;
+  end;
 end;
 
 {==============================================================================}
 
 function SchedulerSelect(CPUID:LongWord;Thread:TThreadHandle;Yield:Boolean):TThreadHandle;
 {Select the next thread to be run based on state, yield, quantum and priority}
-{CPUID: The ID of the current CPU} 
+{CPUID: The ID of the current CPU}
 {Thread: The handle of the currently running thread (Before IRQ or FIQ occurred or when Reschedule was called)}
 {Yield: True if the current thread is giving up its remaining time slice}
 {Return: The handle of the next thread to run or INVALID_HANDLE_VALUE on no selection or error}
 {Note: Called either by scheduler interrupt with IRQ or FIQ disabled and running on the IRQ or FIQ thread
        Or by scheduler reschedule with IRQ or FIQ disabled and running on the current thread}
-{Note: Caller must either hold a lock on the current thread or have disabled IRQ or FIQ}  
+{Note: Caller must either hold a lock on the current thread or have disabled IRQ or FIQ}
 var
  Count:LongWord;
  Value:LongWord;
@@ -18645,31 +18667,31 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {$IFDEF SCHEDULER_DEBUG}
  Inc(SchedulerSelectEntry[CPUID]);
  {$ENDIF}
- 
+
  {Check CPU}
  if CPUID > (SCHEDULER_CPU_COUNT - 1) then Exit;
- 
+
  {Check the Handler}
  if Assigned(SchedulerSelectHandler) then
   begin
-   {Use the Handler method} 
+   {Use the Handler method}
    Result:=SchedulerSelectHandler(CPUID,Thread,Yield);
   end
  else
-  begin 
+  begin
    {Use the Default method}
    {Check Thread}
    if Thread = INVALID_HANDLE_VALUE then Exit;
-   
+
    {Check the Handle}
    ThreadEntry:=PThreadEntry(Thread);
    if ThreadEntry = nil then Exit;
    if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
- 
+
    {Check State}
    if ThreadEntry.State = THREAD_STATE_RUNNING then
     begin
@@ -18680,7 +18702,7 @@ begin
        Result:=Thread;
        Exit;
       end;
-     
+
      {Check Yield, Thread Quantum and Higher Priority Threads}
      {$IFNDEF SCHEDULER_YIELD_ALTERNATE}
      if not(Yield) and (SchedulerThreadQuantum[CPUID] > 0) and (ThreadEntry.Priority >= FirstBitSet(SchedulerPriorityMask[CPUID])) then
@@ -18697,19 +18719,19 @@ begin
        {Return Thread}
        Result:=Thread;
        Exit;
-      end; 
+      end;
 
      {Set State}
      ThreadEntry.State:=THREAD_STATE_READY;
-     
+
      {$IFDEF THREAD_STATISTICS}
      {Update Kernel Time}
      if SchedulerThreadQuantum[CPUID] <= (SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority]) then
       begin
        Inc(ThreadEntry.KernelTime,((SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority] - SchedulerThreadQuantum[CPUID]) * TIME_TICKS_PER_SCHEDULER_INTERRUPT));
-      end; 
+      end;
      {$ENDIF}
-     
+
      {Check CPU}
      if SCHEDULER_CPU_COUNT > 1 then
       begin
@@ -18718,7 +18740,7 @@ begin
          {$IFDEF SCHEDULER_DEBUG}
          Inc(SchedulerSelectCPU[CPUID]);
          {$ENDIF}
-         
+
          {Update CPU}
          ThreadEntry.CurrentCPU:=ThreadEntry.TargetCPU;
         end
@@ -18730,7 +18752,7 @@ begin
            {$IFDEF SCHEDULER_DEBUG}
            Inc(SchedulerSelectAffinity[CPUID]);
            {$ENDIF}
-           
+
            {Check CPUs 0 to SCHEDULER_CPU_COUNT - 1}
            for Count:=0 to SCHEDULER_CPU_COUNT - 1 do
             begin
@@ -18739,14 +18761,14 @@ begin
                {Update CPU}
                ThreadEntry.CurrentCPU:=Count;
                ThreadEntry.TargetCPU:=Count;
-               
+
                Break;
-              end; 
-            end; 
-          end; 
-        end;      
+              end;
+            end;
+          end;
+        end;
       end;
-      
+
      {Check Priority}
      if ThreadEntry.Priority <> ThreadEntry.TargetPriority then
       begin
@@ -18757,23 +18779,23 @@ begin
        {Update Priority}
        ThreadEntry.Priority:=ThreadEntry.TargetPriority;
       end;
-     
-     {Enqueue Thread (Current CPU and Priority)} 
+
+     {Enqueue Thread (Current CPU and Priority)}
      if QueueEnqueue(SchedulerGetQueueHandleEx(ThreadEntry.CurrentCPU,ThreadEntry.Priority),Thread) <> ERROR_SUCCESS then
       begin
        {$IFDEF SCHEDULER_DEBUG}
        Inc(SchedulerSelectFailure[CPUID]);
        {$ENDIF}
-       
+
        {Restore State}
        ThreadEntry.State:=THREAD_STATE_RUNNING;
 
        {Return Thread}
        Result:=Thread;
        Exit;
-      end; 
+      end;
     end;
-   
+
    {Check Migration (Boot CPU Only)}
    if (SCHEDULER_CPU_COUNT > 1) and (CPUID = SCHEDULER_CPU_BOOT) and (SchedulerThreadMigration = SCHEDULER_MIGRATION_ENABLED) then
     begin
@@ -18781,9 +18803,9 @@ begin
      if SchedulerMigrationQuantum > 0 then
       begin
        {Decrement Migration Quantum}
-       Dec(SchedulerMigrationQuantum); 
+       Dec(SchedulerMigrationQuantum);
       end;
-      
+
      {Check Migration Quantum}
      if SchedulerMigrationQuantum < 1 then
       begin
@@ -18792,7 +18814,7 @@ begin
        MaxCPU:=CPU_ID_0;
        MinCount:=$FFFFFFFF;
        MaxCount:=0;
-       
+
        {Check CPUs 0 to SCHEDULER_CPU_COUNT - 1}
        for Count:=0 to SCHEDULER_CPU_COUNT - 1 do
         begin
@@ -18801,72 +18823,72 @@ begin
           begin
            {Get Thread Count}
            Value:=SchedulerThreadCount[Count];
-           
+
            {Check Min Count}
            if Value < MinCount then
             begin
              MinCPU:=Count;
              MinCount:=Value;
             end;
-           
+
            {Check Max Count}
            if Value > MaxCount then
             begin
              MaxCPU:=Count;
              MaxCount:=Value;
             end;
-          end;  
+          end;
         end;
-       
-       {Compare Min/Max} 
+
+       {Compare Min/Max}
        if MinCPU <> MaxCPU then
         begin
          if (MaxCount - MinCount) > (MinCount + SCHEDULER_MIGRATION_OFFSET) then
-          begin       
+          begin
            {Try to migrate a thread from MaxCPU to MinCPU}
-           //To Do //Compare affinity here (QueueFind), no need in normal select due to Queue per CPU 
+           //To Do //Compare affinity here (QueueFind), no need in normal select due to Queue per CPU
                    //Perhaps this should just set TargetCPU and allow rescheduling to migrate the thread ?
                    //Yes, Just do QueueFind and set TargetCPU for next Reschedule
-                               
+
            {$IFDEF SCHEDULER_DEBUG}
            Inc(SchedulerMigrationCounter);
            {$ENDIF}
-          end;                      
-        end; 
-        
-       {Set Migration Quantum} 
+          end;
+        end;
+
+       {Set Migration Quantum}
        SchedulerMigrationQuantum:=SCHEDULER_MIGRATION_QUANTUM;
       end;
     end;
-    
+
    {Check Starvation Quantum}
    if SchedulerStarvationQuantum[CPUID] < 1 then
     begin
      {$IFDEF SCHEDULER_DEBUG}
      Inc(SchedulerSelectForce[CPUID]);
      {$ENDIF}
-     
+
      {Get Next Priority}
      Priority:=SchedulerStarvationNext[CPUID];
-     
+
      {Check Priority}
      if Priority >= THREAD_PRIORITY_MINIMUM then Dec(Priority);
      if Priority < THREAD_PRIORITY_MINIMUM then Priority:=THREAD_PRIORITY_MAXIMUM;
-     
+
      {Select New Thread}
      while (Result = INVALID_HANDLE_VALUE) do
       begin
        {Dequeue New Thread}
        Result:=QueueDequeue(SchedulerGetQueueHandleEx(CPUID,Priority));
        if Result <> INVALID_HANDLE_VALUE then Break;
-       
+
        {Decrement Priority}
        Dec(Priority);
-        
+
        {Check Priority}
        if Priority < THREAD_PRIORITY_MINIMUM then Priority:=THREAD_PRIORITY_MAXIMUM;
-      end; 
-     
+      end;
+
      {Set Next Priority}
      SchedulerStarvationNext[CPUID]:=Priority;
     end
@@ -18877,34 +18899,34 @@ begin
      {$IFDEF SCHEDULER_DEBUG}
      Inc(SchedulerSelectYield[CPUID]);
      {$ENDIF}
-    
+
      {Get Current Priority}
      Priority:=ThreadEntry.Priority;
-     
+
      {Check Priority and Queue Count (Allow for THREAD_PRIORITY_IDLE)}
      if (Priority > THREAD_PRIORITY_MINIMUM) and (not(SchedulerYieldCurrent[CPUID]) or (QueueCount(SchedulerGetQueueHandleEx(CPUID,Priority)) <= 1)) then Dec(Priority);
-     
+
      {Account for THREAD_PRIORITY_NONE (IRQ/FIQ threads)}
      if Priority < THREAD_PRIORITY_MINIMUM then Priority:=FirstBitSet(SchedulerPriorityMask[CPUID]);
-     
+
      {Update Yield Current}
      SchedulerYieldCurrent[CPUID]:=not(SchedulerYieldCurrent[CPUID]);
-     
+
      {Select New Thread}
      while (Result = INVALID_HANDLE_VALUE) do
       begin
        {Dequeue New Thread}
        Result:=QueueDequeue(SchedulerGetQueueHandleEx(CPUID,Priority));
        if Result <> INVALID_HANDLE_VALUE then Break;
-       
+
        {Decrement Priority}
        Dec(Priority);
-        
+
        {Check Priority}
        if Priority < THREAD_PRIORITY_MINIMUM then Break;
-      end; 
+      end;
     end
-   {$ENDIF} 
+   {$ENDIF}
    else
     begin
      {Check Priority Mask}
@@ -18913,42 +18935,42 @@ begin
        {$IFDEF SCHEDULER_DEBUG}
        Inc(SchedulerSelectNoMask[CPUID]);
        {$ENDIF}
-       
+
        {Get Minimum Priority}
        Priority:=THREAD_PRIORITY_MINIMUM;
       end
-     else 
+     else
       begin
        {$IFDEF SCHEDULER_DEBUG}
        Inc(SchedulerSelectNormal[CPUID]);
        {$ENDIF}
-      
+
        {Get Highest Prioity}
        Priority:=FirstBitSet(SchedulerPriorityMask[CPUID]);
-       
+
        {Select New Thread}
        while (Result = INVALID_HANDLE_VALUE) do
         begin
          {Dequeue New Thread}
          Result:=QueueDequeue(SchedulerGetQueueHandleEx(CPUID,Priority));
          if Result <> INVALID_HANDLE_VALUE then Break;
-         
+
          {Get Highest Prioity}
          Priority:=FirstBitSet(SchedulerPriorityMask[CPUID]);
-  
+
          {Check Priority}
          if Priority < THREAD_PRIORITY_MINIMUM then Break;
-        end; 
-      end;  
+        end;
+      end;
     end;
-   
+
    {Check No Thread}
    if Result = INVALID_HANDLE_VALUE then
     begin
      {$IFDEF SCHEDULER_DEBUG}
      Inc(SchedulerSelectInvalid[CPUID]);
      {$ENDIF}
-     
+
      {Dequeue Idle Thread}
      Result:=QueueDequeue(SchedulerGetQueueHandleEx(CPUID,THREAD_PRIORITY_IDLE));
      if Result = INVALID_HANDLE_VALUE then
@@ -18956,7 +18978,7 @@ begin
        {Dequeue None Thread}
        Result:=QueueDequeue(SchedulerGetQueueHandleEx(CPUID,THREAD_PRIORITY_NONE));
       end;
-     
+
      {Check No Thread}
      if Result = INVALID_HANDLE_VALUE then
       begin
@@ -18964,7 +18986,7 @@ begin
         begin
          {Restore Thread State}
          ThreadEntry.State:=THREAD_STATE_RUNNING;
-         
+
          {Do not set Thread Quantum}
         end
        else
@@ -18972,20 +18994,20 @@ begin
          {$IFDEF SCHEDULER_DEBUG}
          Inc(SchedulerSelectNoReady[CPUID]);
          {$ENDIF}
-         
+
          {$IFDEF THREAD_DEBUG}
          if THREAD_LOG_ENABLED then ThreadLogDebug('Failed to find ready thread, CPU Halted');
          {$ENDIF}
-         
+
          Halt;
-        end;        
+        end;
       end
      else
       begin
        {$IFDEF SCHEDULER_DEBUG}
        Inc(SchedulerSelectDefaulted[CPUID]);
        {$ENDIF}
-      end;      
+      end;
     end
    {Check New Thread}
    else if Result = Thread then
@@ -18995,14 +19017,14 @@ begin
 
      {Set Thread Quantum}
      SchedulerThreadQuantum[CPUID]:=SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority];
-     
+
      {Check Starvation Quantum (Allow for THREAD_PRIORITY_IDLE/NONE)}
      if (SchedulerStarvationQuantum[CPUID] > 0) and (ThreadEntry.Priority > THREAD_PRIORITY_MINIMUM) then
       begin
        {$IFDEF SCHEDULER_DEBUG}
        Inc(SchedulerStarvationDecrement[CPUID]);
        {$ENDIF}
-      
+
        {Decrement Starvation Quantum}
        Dec(SchedulerStarvationQuantum[CPUID]);
       end;
@@ -19011,14 +19033,14 @@ begin
     begin
      {Set Thread Quantum}
      SchedulerThreadQuantum[CPUID]:=SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[Priority];
-     
+
      {Check Starvation Quantum (Allow for thread priority)}
      if (SchedulerStarvationQuantum[CPUID] > 0) and (Priority > THREAD_PRIORITY_NORMAL) and (Priority >= ThreadEntry.Priority) then
-      begin                                        
+      begin
        {$IFDEF SCHEDULER_DEBUG}
        Inc(SchedulerStarvationDecrement[CPUID]);
        {$ENDIF}
-      
+
        {Decrement Starvation Quantum}
        Dec(SchedulerStarvationQuantum[CPUID]);
       end
@@ -19027,12 +19049,12 @@ begin
        {$IFDEF SCHEDULER_DEBUG}
        Inc(SchedulerStarvationReset[CPUID]);
        {$ENDIF}
-      
-       {Reset Starvation Quantum} 
+
+       {Reset Starvation Quantum}
        SchedulerStarvationQuantum[CPUID]:=SCHEDULER_STARVATION_QUANTUM;
       end;
-    end;    
-  end; 
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -19051,41 +19073,41 @@ var
  IRQMask:TIRQMask;
  FIQMask:TFIQMask;
  CurrentCPU:LongWord;
- 
+
  Thread:TThreadHandle;
  NewThread:TThreadHandle;
- 
+
  ThreadEntry:PThreadEntry;
  NewThreadEntry:PThreadEntry;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF SCHEDULER_DEBUG}
  Inc(SchedulerRescheduleEntry[CPUGetCurrent]);
  {$ENDIF}
- 
+
  {Check the Handler}
  if Assigned(SchedulerRescheduleHandler) then
   begin
-   {Use the Handler method} 
+   {Use the Handler method}
    Result:=SchedulerRescheduleHandler(Yield);
   end
  else
-  begin 
+  begin
    {Use the Default method}
    {Get Current CPU}
    CurrentCPU:=CPUGetCurrent;
-   
+
    {Get Current Thread}
    Thread:=ThreadGetCurrent;
    if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
    {Check the Handle}
    ThreadEntry:=PThreadEntry(Thread);
    if ThreadEntry = nil then Exit;
    if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
-   
+
    {Disable IRQ/FIQ}
    if SCHEDULER_FIQ_ENABLED then
     begin
@@ -19093,8 +19115,8 @@ begin
     end
    else
     begin
-     IRQMask:=SaveIRQ; 
-    end; 
+     IRQMask:=SaveIRQ;
+    end;
    try
     {Select New Thread}
     NewThread:=SchedulerSelect(CurrentCPU,Thread,Yield);
@@ -19105,11 +19127,11 @@ begin
       if NewThreadEntry = nil then Exit;
       if NewThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
      end;
-   
+
     {$IFDEF SCHEDULER_DEBUG}
     SchedulerRescheduleThread[CurrentCPU]:=NewThread;
     {$ENDIF}
-    
+
     {Check New Thread}
     if (NewThread = Thread) or (NewThread = INVALID_HANDLE_VALUE)  then
      begin
@@ -19120,9 +19142,9 @@ begin
         Inc(SchedulerRescheduleInvalid[CurrentCPU]);
        end
       else
-       begin      
+       begin
         Inc(SchedulerRescheduleCurrent[CurrentCPU]);
-       end; 
+       end;
       {$ENDIF}
      end
     else
@@ -19130,44 +19152,44 @@ begin
       {$IFDEF SCHEDULER_DEBUG}
       Inc(SchedulerRescheduleCounter[CurrentCPU]);
       {$ENDIF}
-      
+
       {Set State}
       NewThreadEntry.State:=THREAD_STATE_RUNNING;
-  
+
       {Set CPU}
       NewThreadEntry.CurrentCPU:=CurrentCPU;
-      
+
       {$IFDEF THREAD_STATISTICS}
       {Update Switch Count}
       Inc(NewThreadEntry.SwitchCount);
       {$ENDIF}
-      
+
       if SCHEDULER_SWI_ENABLED then
        begin
         {Perform the System Call}
         SystemCall(SYSTEM_CALL_CONTEXT_SWITCH,PtrUInt(@ThreadEntry.StackPointer),PtrUInt(@NewThreadEntry.StackPointer),NewThread);
        end
       else
-       begin      
+       begin
         {Perform the Context Switch}
         ContextSwitch(@ThreadEntry.StackPointer,@NewThreadEntry.StackPointer,NewThread);
-       end; 
-     end; 
+       end;
+     end;
 
     {Return Result}
-    Result:=ERROR_SUCCESS; 
+    Result:=ERROR_SUCCESS;
    finally
     {Restore IRQ/FIQ}
     if SCHEDULER_FIQ_ENABLED then
      begin
       RestoreIRQFIQ(FIQMask);
      end
-    else 
+    else
      begin
       RestoreIRQ(IRQMask);
-     end; 
+     end;
    end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -19182,18 +19204,18 @@ begin
  {Check the Handler}
  if Assigned(SchedulerMigrationEnableHandler) then
   begin
-   {Use the Handler method} 
+   {Use the Handler method}
    Result:=SchedulerMigrationEnableHandler;
   end
  else
-  begin 
+  begin
    {Use the Default method}
    SchedulerThreadMigration:=SCHEDULER_MIGRATION_ENABLED;
-   
+
    Result:=ERROR_SUCCESS;
-  end; 
+  end;
 end;
- 
+
 {==============================================================================}
 
 function SchedulerMigrationDisable:LongWord;
@@ -19206,130 +19228,130 @@ begin
  {Check the Handler}
  if Assigned(SchedulerMigrationDisableHandler) then
   begin
-   {Use the Handler method} 
+   {Use the Handler method}
    Result:=SchedulerMigrationDisableHandler;
   end
  else
-  begin 
+  begin
    {Use the Default method}
    SchedulerThreadMigration:=SCHEDULER_MIGRATION_DISABLED;
-   
+
    Result:=ERROR_SUCCESS;
-  end; 
+  end;
 end;
 
 {==============================================================================}
 
 function SchedulerPreemptEnable(CPUID:LongWord):LongWord;
 {Enable thread preemption for the specified CPU}
-{CPUID: The ID of the CPU to enable for} 
+{CPUID: The ID of the CPU to enable for}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check CPU}
  if CPUID > (SCHEDULER_CPU_COUNT - 1) then Exit;
- 
+
  {Check the Handler}
  if Assigned(SchedulerPreemptEnableHandler) then
   begin
-   {Use the Handler method} 
+   {Use the Handler method}
    Result:=SchedulerPreemptEnableHandler(CPUID);
   end
  else
-  begin 
+  begin
    {Use the Default method}
    SchedulerThreadPreempt[CPUID]:=SCHEDULER_PREEMPT_ENABLED;
-   
+
    Result:=ERROR_SUCCESS;
-  end; 
+  end;
 end;
 
 {==============================================================================}
 
 function SchedulerPreemptDisable(CPUID:LongWord):LongWord;
 {Disable thread preemption for the specified CPU}
-{CPUID: The ID of the CPU to disable for} 
+{CPUID: The ID of the CPU to disable for}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check CPU}
  {if CPUID = SCHEDULER_CPU_BOOT then Exit;} {Cannot disable on Boot CPU}
  if CPUID > (SCHEDULER_CPU_COUNT - 1) then Exit;
- 
+
  {Check the Handler}
  if Assigned(SchedulerPreemptDisableHandler) then
   begin
-   {Use the Handler method} 
+   {Use the Handler method}
    Result:=SchedulerPreemptDisableHandler(CPUID);
   end
  else
-  begin 
+  begin
    {Use the Default method}
    SchedulerThreadPreempt[CPUID]:=SCHEDULER_PREEMPT_DISABLED;
-   
+
    Result:=ERROR_SUCCESS;
-  end; 
+  end;
 end;
 
 {==============================================================================}
 
 function SchedulerAllocationEnable(CPUID:LongWord):LongWord;
 {Enable thread allocation for the specified CPU}
-{CPUID: The ID of the CPU to enable for} 
+{CPUID: The ID of the CPU to enable for}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check CPU}
  if CPUID > (SCHEDULER_CPU_COUNT - 1) then Exit;
- 
+
  {Check the Handler}
  if Assigned(SchedulerAllocationEnableHandler) then
   begin
-   {Use the Handler method} 
+   {Use the Handler method}
    Result:=SchedulerAllocationEnableHandler(CPUID);
   end
  else
-  begin 
+  begin
    {Use the Default method}
    SchedulerThreadAllocation[CPUID]:=SCHEDULER_ALLOCATION_ENABLED;
-   
+
    Result:=ERROR_SUCCESS;
-  end; 
+  end;
 end;
 
 {==============================================================================}
 
 function SchedulerAllocationDisable(CPUID:LongWord):LongWord;
 {Disable thread allocation for the specified CPU}
-{CPUID: The ID of the CPU to disable for} 
+{CPUID: The ID of the CPU to disable for}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check CPU}
  if CPUID = SCHEDULER_CPU_BOOT then Exit; {Cannot disable on Boot CPU}
  if CPUID > (SCHEDULER_CPU_COUNT - 1) then Exit;
- 
+
  {Check the Handler}
  if Assigned(SchedulerAllocationDisableHandler) then
   begin
-   {Use the Handler method} 
+   {Use the Handler method}
    Result:=SchedulerAllocationDisableHandler(CPUID);
   end
  else
-  begin 
+  begin
    {Use the Default method}
    SchedulerThreadAllocation[CPUID]:=SCHEDULER_ALLOCATION_DISABLED;
-   
+
    Result:=ERROR_SUCCESS;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -19342,7 +19364,7 @@ begin
  {}
  Result:=MessageslotCreateEx(MESSAGESLOT_DEFAULT_MAXIMUM,MESSAGESLOT_FLAG_NONE);
 end;
- 
+
 {==============================================================================}
 
 function MessageslotCreateEx(Maximum:LongWord;Flags:LongWord):TMessageslotHandle;
@@ -19355,11 +19377,11 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Messageslot Create (Maximum=' + IntToStr(Maximum) + ' Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
- 
+
  {Check Maximum}
  if Maximum < 1 then Exit;
 
@@ -19371,7 +19393,7 @@ begin
  else
   begin
    MessageslotEntry:=AllocMem(SizeOf(TMessageslotEntry));
-  end;  
+  end;
  if MessageslotEntry = nil then Exit;
 
  {Setup Messageslot entry}
@@ -19385,14 +19407,14 @@ begin
  MessageslotEntry.WaitEx:=ThreadWaitEx;
  MessageslotEntry.Release:=ThreadRelease;
  MessageslotEntry.Abandon:=ThreadAbandon;
- 
+
  {Check Messageslot flags}
  if (Flags and (MESSAGESLOT_FLAG_IRQ or MESSAGESLOT_FLAG_FIQ or MESSAGESLOT_FLAG_IRQFIQ)) <> 0 then
   begin
    {Create Messageslot List}
    MessageslotEntry.List:=ListCreateEx(LIST_TYPE_WAIT_MESSAGESLOT,SchedulerGetListFlags(LIST_TYPE_WAIT_MESSAGESLOT));
   end;
-  
+
  {Insert Messageslot entry}
  if SpinLock(MessageslotTableLock) = ERROR_SUCCESS then
   begin
@@ -19408,10 +19430,10 @@ begin
       MessageslotTable.Prev:=MessageslotEntry;
       MessageslotTable:=MessageslotEntry;
      end;
-    
+
     {Increment Messageslot Count}
     Inc(MessageslotTableCount);
-    
+
     {Return Messageslot entry}
     Result:=TMessageslotHandle(MessageslotEntry);
    finally
@@ -19425,13 +19447,13 @@ begin
     begin
      ListDestroy(MessageslotEntry.List);
     end;
-    
+
    {Free Messageslot Lock}
    SpinDestroy(MessageslotEntry.Lock);
-   
+
    {Free Messageslot Entry}
    FreeMem(MessageslotEntry);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -19447,14 +19469,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Messageslot Destroy (Handle=' + HandleToHex(Messageslot) + ')');
  {$ENDIF}
- 
+
  {Check Messageslot}
  if Messageslot = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  MessageslotEntry:=PMessageslotEntry(Messageslot);
  if MessageslotEntry = nil then Exit;
@@ -19480,9 +19502,9 @@ begin
     else
      begin
       Result:=SpinLock(MessageslotEntry.Lock);
-     end;    
+     end;
     if Result <> ERROR_SUCCESS then Exit;
-   
+
     {Check Signature}
     if MessageslotEntry.Signature <> MESSAGESLOT_SIGNATURE then
      begin
@@ -19504,22 +19526,22 @@ begin
         Result:=SpinUnlock(MessageslotEntry.Lock);
        end;
       if Result <> ERROR_SUCCESS then Exit;
-      
+
       {Return Result}
       Result:=ERROR_INVALID_PARAMETER;
       Exit;
      end;
-    
+
     {Invalidate Messageslot entry}
     MessageslotEntry.Signature:=0;
-    
+
     {Check List}
     while ListNotEmpty(MessageslotEntry.List) do
      begin
       {Abandon waiting thread}
       MessageslotEntry.Abandon(MessageslotEntry.List);
      end;
-     
+
     {Unlink Messageslot entry}
     PrevEntry:=MessageslotEntry.Prev;
     NextEntry:=MessageslotEntry.Next;
@@ -19529,7 +19551,7 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -19537,12 +19559,12 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=PrevEntry;
-       end;       
-     end;     
+       end;
+     end;
 
     {Decrement Messageslot Count}
     Dec(MessageslotTableCount);
-    
+
     {Release the Lock}
     if (MessageslotEntry.Flags and MESSAGESLOT_FLAG_IRQFIQ) <> 0 then
      begin
@@ -19567,18 +19589,18 @@ begin
      begin
       ListDestroy(MessageslotEntry.List);
      end;
- 
+
     {Free Messageslot Lock}
     SpinDestroy(MessageslotEntry.Lock);
-    
+
     {Free Messageslot Entry}
     FreeMem(MessageslotEntry);
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
     SpinUnlock(MessageslotTableLock);
-   end;                                    
+   end;
   end
  else
   begin
@@ -19591,7 +19613,7 @@ end;
 
 function MessageslotCount(Messageslot:TMessageslotHandle):LongWord;
 {Get the number of available messages in a Messageslot entry}
-{Messageslot: Messageslot to get from} 
+{Messageslot: Messageslot to get from}
 {Return: Number of messages or INVALID_HANDLE_VALUE on error}
 var
  ResultCode:LongWord;
@@ -19599,14 +19621,14 @@ var
 begin
  {}
  Result:=LongWord(INVALID_HANDLE_VALUE);
- 
+
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Messageslot Count (Handle=' + HandleToHex(Messageslot) + ')');
  {$ENDIF}
- 
+
  {Check Messageslot}
  if Messageslot = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  MessageslotEntry:=PMessageslotEntry(Messageslot);
  if MessageslotEntry = nil then Exit;
@@ -19628,14 +19650,14 @@ begin
  else
   begin
    ResultCode:=SpinLock(MessageslotEntry.Lock);
-  end;    
+  end;
  {Check Lock Result}
  if ResultCode = ERROR_SUCCESS then
   begin
    try
     {Check Signature}
     if MessageslotEntry.Signature <> MESSAGESLOT_SIGNATURE then Exit;
-   
+
     {Get the Count}
     Result:=MessageslotEntry.Messages.Count;
    finally
@@ -19657,14 +19679,14 @@ begin
       SpinUnlock(MessageslotEntry.Lock);
      end;
    end;
-  end;    
+  end;
 end;
 
 {==============================================================================}
 
 function MessageslotSend(Messageslot:TMessageslotHandle;const Message:TMessage):LongWord;
 {Send a message to a Messageslot}
-{Messageslot: Messageslot to send to} 
+{Messageslot: Messageslot to send to}
 {Message: Contents of message to send}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
@@ -19677,15 +19699,15 @@ begin
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Messageslot Send Message (Handle=' + HandleToHex(Messageslot) + ')');
  {$ENDIF}
- 
+
  {Check Messageslot}
  if Messageslot = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  MessageslotEntry:=PMessageslotEntry(Messageslot);
  if MessageslotEntry = nil then Exit;
  if MessageslotEntry.Signature <> MESSAGESLOT_SIGNATURE then Exit;
- 
+
  {Check the Handler}
  if Assigned(MessageslotSendHandler) then
   begin
@@ -19720,35 +19742,35 @@ begin
       end
      else
       begin
-       if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+       if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
         begin
          Inc(MessageslotDeadlockCounter);
         end;
-      end;  
+      end;
      {$ENDIF}
-    
+
      ResultCode:=SpinLock(MessageslotEntry.Lock);
-    end;    
+    end;
    {Check Lock Result}
    if ResultCode = ERROR_SUCCESS then
     begin
      try
       {Check Signature}
       if MessageslotEntry.Signature <> MESSAGESLOT_SIGNATURE then Exit;
-      
+
       {Check Count}
       if MessageslotEntry.Messages.Count >= MessageslotEntry.Messages.Maximum then
        begin
         Result:=ERROR_NO_MORE_ITEMS;
         Exit;
        end;
- 
-      {Write Message} 
+
+      {Write Message}
       PMessage(PtrUInt(MessageslotEntry.Messages.List) + PtrUInt(((MessageslotEntry.Messages.Start + MessageslotEntry.Messages.Count) mod MessageslotEntry.Messages.Maximum) * SizeOf(TMessage)))^:=Message;
-    
+
       {Update Count}
       Inc(MessageslotEntry.Messages.Count);
- 
+
       {Check List}
       while ListNotEmpty(MessageslotEntry.List) do
        begin
@@ -19758,7 +19780,7 @@ begin
           Break;
          end;
        end;
-     
+
       {Return Result}
       Result:=ERROR_SUCCESS;
      finally
@@ -19784,15 +19806,15 @@ begin
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;    
-  end; 
+    end;
+  end;
 end;
- 
+
 {==============================================================================}
 
 function MessageslotReceive(Messageslot:TMessageslotHandle;var Message:TMessage):LongWord;
 {Receive a message from a Messageslot}
-{Messageslot: Messageslot to receive from} 
+{Messageslot: Messageslot to receive from}
 {Message: The received message if successful, undefined on error}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
@@ -19806,12 +19828,12 @@ begin
 
    {Check Messageslot}
    if Messageslot = INVALID_HANDLE_VALUE then Exit;
- 
+
    {Check the Handle}
    MessageslotEntry:=PMessageslotEntry(Messageslot);
    if MessageslotEntry = nil then Exit;
    if MessageslotEntry.Signature <> MESSAGESLOT_SIGNATURE then Exit;
-  
+
    {Use the Handler method}
    Result:=MessageslotReceiveHandler(MessageslotEntry,@Message);
   end
@@ -19819,14 +19841,14 @@ begin
   begin
    {Use the Default method}
    Result:=MessageslotReceiveEx(Messageslot,Message,INFINITE);
-  end; 
+  end;
 end;
- 
+
 {==============================================================================}
 
-function MessageslotReceiveEx(Messageslot:TMessageslotHandle;var Message:TMessage;Timeout:LongWord):LongWord;  
+function MessageslotReceiveEx(Messageslot:TMessageslotHandle;var Message:TMessage;Timeout:LongWord):LongWord;
 {Receive a message from a Messageslot}
-{Messageslot: Messageslot to receive from} 
+{Messageslot: Messageslot to receive from}
 {Message: The received message if successful, undefined on error}
 {Timeout: Milliseconds to wait before timeout (0 equals do not wait, INFINITE equals wait forever)}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
@@ -19842,15 +19864,15 @@ begin
  {$IFDEF THREAD_DEBUG}
  if THREAD_LOG_ENABLED then ThreadLogDebug('Messageslot Receive Message (Handle=' + HandleToHex(Messageslot) + ')');
  {$ENDIF}
- 
+
  {Check Messageslot}
  if Messageslot = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  MessageslotEntry:=PMessageslotEntry(Messageslot);
  if MessageslotEntry = nil then Exit;
  if MessageslotEntry.Signature <> MESSAGESLOT_SIGNATURE then Exit;
- 
+
  {Check the Handler}
  if Assigned(MessageslotReceiveExHandler) then
   begin
@@ -19885,15 +19907,15 @@ begin
       end
      else
       begin
-       if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+       if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
         begin
          Inc(MessageslotDeadlockCounter);
         end;
-      end;  
+      end;
      {$ENDIF}
-    
+
      ResultCode:=SpinLock(MessageslotEntry.Lock);
-    end;    
+    end;
    {Check Lock Result}
    if ResultCode = ERROR_SUCCESS then
     begin
@@ -19901,24 +19923,24 @@ begin
      try
       {Check Signature}
       if MessageslotEntry.Signature <> MESSAGESLOT_SIGNATURE then Exit;
- 
+
       {Check Timeout}
       if Timeout = 0 then
        begin
         {Check Count}
         Result:=ERROR_WAIT_TIMEOUT;
         if MessageslotEntry.Messages.Count = 0 then Exit;
-       end; 
- 
+       end;
+
       {Check for Message}
       if MessageslotEntry.Messages.Count > 0 then
        begin
         {Read Message}
         Message:=PMessage(PtrUInt(MessageslotEntry.Messages.List) + PtrUInt(MessageslotEntry.Messages.Start * SizeOf(TMessage)))^;
- 
+
         {Update Start}
         MessageslotEntry.Messages.Start:=(MessageslotEntry.Messages.Start + 1) mod MessageslotEntry.Messages.Maximum;
-      
+
         {Update Count}
         Dec(MessageslotEntry.Messages.Count);
        end
@@ -19929,15 +19951,15 @@ begin
          begin
           {Create List}
           MessageslotEntry.List:=ListCreateEx(LIST_TYPE_WAIT_MESSAGESLOT,SchedulerGetListFlags(LIST_TYPE_WAIT_MESSAGESLOT));
-         end; 
- 
+         end;
+
         {Check Timeout}
         if Timeout = INFINITE then
          begin
           {Wait on Message}
           MessageslotEntry.Wait(MessageslotEntry.List,MessageslotEntry.Lock,MessageslotEntry.Flags);
           Unlock:=False;
- 
+
           {Check Result}
           WaitResult:=ThreadGetWaitResult;
           if WaitResult = WAIT_TIMEOUT then
@@ -19945,7 +19967,7 @@ begin
             Result:=ERROR_WAIT_TIMEOUT;
             Exit;
            end
-          else if WaitResult = WAIT_ABANDONED then 
+          else if WaitResult = WAIT_ABANDONED then
            begin
             Result:=ERROR_WAIT_ABANDONED;
             Exit;
@@ -19954,18 +19976,18 @@ begin
            begin
             Result:=WaitResult;
             Exit;
-           end;         
- 
+           end;
+
           {Receive Message (Infinite Wait)}
           Result:=MessageslotReceiveEx(Messageslot,Message,INFINITE);
           Exit;
          end
         else
          begin
-          {Wait on Event with Timeout} 
+          {Wait on Event with Timeout}
           MessageslotEntry.WaitEx(MessageslotEntry.List,MessageslotEntry.Lock,MessageslotEntry.Flags,Timeout);
           Unlock:=False;
- 
+
           {Check Result}
           WaitResult:=ThreadGetWaitResult;
           if WaitResult = WAIT_TIMEOUT then
@@ -19973,7 +19995,7 @@ begin
             Result:=ERROR_WAIT_TIMEOUT;
             Exit;
            end
-          else if WaitResult = WAIT_ABANDONED then 
+          else if WaitResult = WAIT_ABANDONED then
            begin
             Result:=ERROR_WAIT_ABANDONED;
             Exit;
@@ -19982,16 +20004,16 @@ begin
            begin
             Result:=WaitResult;
             Exit;
-           end;         
- 
+           end;
+
           {Receive Message (No Wait)}
           Result:=MessageslotReceiveEx(Messageslot,Message,0);
           Exit;
-         end; 
-       end; 
-   
+         end;
+       end;
+
       {Return Result}
-      Result:=ERROR_SUCCESS; 
+      Result:=ERROR_SUCCESS;
      finally
       {Unlock the Messageslot}
       if Unlock then
@@ -20012,14 +20034,14 @@ begin
          begin
           SpinUnlock(MessageslotEntry.Lock);
          end;
-       end;  
+       end;
      end;
     end
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;    
-  end; 
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -20034,7 +20056,7 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Maximum}
  if Maximum < 1 then Exit;
 
@@ -20046,21 +20068,21 @@ begin
  else
   begin
    MailslotEntry:=AllocMem(SizeOf(TMailslotEntry));
-  end;  
+  end;
  if MailslotEntry = nil then Exit;
 
  {Setup Mailslot entry}
  MailslotEntry.Signature:=MAILSLOT_SIGNATURE;
  MailslotEntry.Maximum:=Maximum;
  MailslotEntry.Count:=0;
- MailslotEntry.Start:=0;     
+ MailslotEntry.Start:=0;
  MailslotEntry.Lock:=SpinCreate;
  MailslotEntry.Sender:=SemaphoreCreate(Maximum);
  MailslotEntry.Receiver:=SemaphoreCreate(0);
  MailslotEntry.Messages:=AllocMem(Maximum * SizeOf(PtrInt));
- 
+
  {Check Mailslot entry}
- if (MailslotEntry.Sender = INVALID_HANDLE_VALUE) or (MailslotEntry.Receiver = INVALID_HANDLE_VALUE) or (MailslotEntry.Messages = nil) then     
+ if (MailslotEntry.Sender = INVALID_HANDLE_VALUE) or (MailslotEntry.Receiver = INVALID_HANDLE_VALUE) or (MailslotEntry.Messages = nil) then
   begin
    {Free Mailslot Semaphores}
    if MailslotEntry.Receiver <> INVALID_HANDLE_VALUE then SemaphoreDestroy(MailslotEntry.Receiver);
@@ -20068,16 +20090,16 @@ begin
 
    {Free Mailslot Messages}
    if MailslotEntry.Messages <> nil then FreeMem(MailslotEntry.Messages);
-   
+
    {Free Mailslot Lock}
    SpinDestroy(MailslotEntry.Lock);
-   
+
    {Free Mailslot Entry}
    FreeMem(MailslotEntry);
-   
+
    Exit;
   end;
-  
+
  {Insert Mailslot entry}
  if SpinLock(MailslotTableLock) = ERROR_SUCCESS then
   begin
@@ -20093,10 +20115,10 @@ begin
       MailslotTable.Prev:=MailslotEntry;
       MailslotTable:=MailslotEntry;
      end;
-    
+
     {Increment Mailslot Count}
     Inc(MailslotTableCount);
-    
+
     {Return Mailslot entry}
     Result:=TMailslotHandle(MailslotEntry);
    finally
@@ -20111,15 +20133,15 @@ begin
 
    {Free Mailslot Messages}
    FreeMem(MailslotEntry.Messages);
-   
+
    {Free Mailslot Lock}
    SpinDestroy(MailslotEntry.Lock);
-   
+
    {Free Mailslot Entry}
    FreeMem(MailslotEntry);
-  end;  
+  end;
 end;
-         
+
 {==============================================================================}
 
 function MailslotDestroy(Mailslot:TMailslotHandle):LongWord;
@@ -20133,21 +20155,21 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Mailslot}
  if Mailslot = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  MailslotEntry:=PMailslotEntry(Mailslot);
  if MailslotEntry = nil then Exit;
  if MailslotEntry.Signature <> MAILSLOT_SIGNATURE then Exit;
- 
+
  {Remove Mailslot entry}
  if SpinLock(MailslotTableLock) = ERROR_SUCCESS then
   begin
    try
     {Acquire the Lock}
-    Result:=SpinLock(MailslotEntry.Lock); 
+    Result:=SpinLock(MailslotEntry.Lock);
     if Result <> ERROR_SUCCESS then Exit;
 
     {Check Signature}
@@ -20161,10 +20183,10 @@ begin
       Result:=ERROR_INVALID_PARAMETER;
       Exit;
      end;
-     
+
     {Invalidate Mailslot entry}
     MailslotEntry.Signature:=0;
-   
+
     {Unlink Mailslot entry}
     PrevEntry:=MailslotEntry.Prev;
     NextEntry:=MailslotEntry.Next;
@@ -20174,7 +20196,7 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -20182,29 +20204,29 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=PrevEntry;
-       end;       
-     end;     
-    
+       end;
+     end;
+
     {Decrement Mailslot Count}
     Dec(MailslotTableCount);
-    
+
     {Release the Lock}
     Result:=SpinUnlock(MailslotEntry.Lock);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Free Mailslot Semaphores}
     SemaphoreDestroy(MailslotEntry.Receiver);
     SemaphoreDestroy(MailslotEntry.Sender);
 
     {Free Mailslot Messages}
     FreeMem(MailslotEntry.Messages);
-    
+
     {Free Mailslot Lock}
     SpinDestroy(MailslotEntry.Lock);
-    
+
     {Free Mailslot Entry}
     FreeMem(MailslotEntry);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -20217,22 +20239,22 @@ begin
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;
 end;
-         
+
 {==============================================================================}
 
 function MailslotCount(Mailslot:TMailslotHandle):LongWord;
 {Get the number of available messages in a Mailslot entry}
-{Mailslot: Mailslot to get from} 
+{Mailslot: Mailslot to get from}
 {Return: Number of messages or INVALID_HANDLE_VALUE on error}
 var
  MailslotEntry:PMailslotEntry;
 begin
  {}
  Result:=LongWord(INVALID_HANDLE_VALUE);
- 
+
  {Check Mailslot}
  if Mailslot = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  MailslotEntry:=PMailslotEntry(Mailslot);
  if MailslotEntry = nil then Exit;
@@ -20255,14 +20277,14 @@ begin
  else
   begin
    {Nothing}
-  end;  
+  end;
 end;
 
 {==============================================================================}
 
 function MailslotSend(Mailslot:TMailslotHandle;Data:PtrInt):LongWord;
 {Send a message to a Mailslot}
-{Mailslot: Mailslot to send to} 
+{Mailslot: Mailslot to send to}
 {Data: Message to send to mailslot}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
@@ -20273,15 +20295,15 @@ begin
  if Assigned(MailslotSendHandler) then
   begin
    Result:=ERROR_INVALID_PARAMETER;
- 
+
    {Check Mailslot}
    if Mailslot = INVALID_HANDLE_VALUE then Exit;
- 
+
    {Check the Handle}
    MailslotEntry:=PMailslotEntry(Mailslot);
    if MailslotEntry = nil then Exit;
    if MailslotEntry.Signature <> MAILSLOT_SIGNATURE then Exit;
-   
+
    {$IFDEF LOCK_DEBUG}
    if SCHEDULER_FIQ_ENABLED then
     begin
@@ -20292,13 +20314,13 @@ begin
     end
    else
     begin
-     if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+     if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
       begin
        Inc(MailslotDeadlockCounter);
       end;
-    end;  
+    end;
    {$ENDIF}
-   
+
    {Use the Handler method}
    Result:=MailslotSendHandler(MailslotEntry,Data);
   end
@@ -20306,14 +20328,14 @@ begin
   begin
    {Use the Default method}
    Result:=MailslotSendEx(Mailslot,Data,INFINITE);
-  end; 
-end;  
+  end;
+end;
 
 {==============================================================================}
 
-function MailslotSendEx(Mailslot:TMailslotHandle;Data:PtrInt;Timeout:LongWord):LongWord; 
+function MailslotSendEx(Mailslot:TMailslotHandle;Data:PtrInt;Timeout:LongWord):LongWord;
 {Send a message to a Mailslot}
-{Mailslot: Mailslot to send to} 
+{Mailslot: Mailslot to send to}
 {Data: Message to send to mailslot}
 {Timeout: Milliseconds to wait before timeout (0 equals do not wait, INFINITE equals wait forever)}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
@@ -20322,10 +20344,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Mailslot}
  if Mailslot = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  MailslotEntry:=PMailslotEntry(Mailslot);
  if MailslotEntry = nil then Exit;
@@ -20341,13 +20363,13 @@ begin
   end
  else
   begin
-   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
     begin
      Inc(MailslotDeadlockCounter);
     end;
-  end;  
+  end;
  {$ENDIF}
- 
+
  {Check the Handler}
  if Assigned(MailslotSendExHandler) then
   begin
@@ -20368,18 +20390,18 @@ begin
         {Check Signature}
         Result:=ERROR_INVALID_PARAMETER;
         if MailslotEntry.Signature <> MAILSLOT_SIGNATURE then Exit;
-        
+
         {Write the message to the Mailslot}
         PPtrInt(PtrUInt(MailslotEntry.Messages) + (((MailslotEntry.Start + MailslotEntry.Count) mod MailslotEntry.Maximum) * SizeOf(PtrInt)))^:=Data;
-     
+
         {Update the Mailslot}
         Inc(MailslotEntry.Count);
-     
+
         {Signal a received message}
         SemaphoreSignal(MailslotEntry.Receiver);
-  
+
         {Return Result}
-        Result:=ERROR_SUCCESS; 
+        Result:=ERROR_SUCCESS;
        finally
         {Release the Lock}
         SpinUnlock(MailslotEntry.Lock);
@@ -20388,7 +20410,7 @@ begin
      else
       begin
        Result:=ERROR_CAN_NOT_COMPLETE;
-      end;  
+      end;
     end;
   end;
 end;
@@ -20397,7 +20419,7 @@ end;
 
 function MailslotReceive(Mailslot:TMailslotHandle):PtrInt;
 {Receive a message from a Mailslot}
-{Mailslot: Mailslot to receive from} 
+{Mailslot: Mailslot to receive from}
 {Return: Received message or INVALID_HANDLE_VALUE on error}
 var
  MailslotEntry:PMailslotEntry;
@@ -20407,15 +20429,15 @@ begin
  if Assigned(MailslotReceiveHandler) then
   begin
    Result:=INVALID_HANDLE_VALUE;
- 
+
    {Check Mailslot}
    if Mailslot = INVALID_HANDLE_VALUE then Exit;
- 
+
    {Check the Handle}
    MailslotEntry:=PMailslotEntry(Mailslot);
    if MailslotEntry = nil then Exit;
    if MailslotEntry.Signature <> MAILSLOT_SIGNATURE then Exit;
-   
+
    {$IFDEF LOCK_DEBUG}
    if SCHEDULER_FIQ_ENABLED then
     begin
@@ -20426,13 +20448,13 @@ begin
     end
    else
     begin
-     if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+     if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
       begin
        Inc(MailslotDeadlockCounter);
       end;
-    end;  
+    end;
    {$ENDIF}
-   
+
    {Use the Handler method}
    Result:=MailslotReceiveHandler(MailslotEntry);
   end
@@ -20440,14 +20462,14 @@ begin
   begin
    {Use the Default method}
    Result:=MailslotReceiveEx(Mailslot,INFINITE);
-  end; 
-end;  
+  end;
+end;
 
 {==============================================================================}
 
 function MailslotReceiveEx(Mailslot:TMailslotHandle;Timeout:LongWord):PtrInt;
 {Receive a message from a Mailslot}
-{Mailslot: Mailslot to receive from} 
+{Mailslot: Mailslot to receive from}
 {Timeout: Milliseconds to wait before timeout (0 equals do not wait, INFINITE equals wait forever)}
 {Return: Received message or INVALID_HANDLE_VALUE on error}
 var
@@ -20458,7 +20480,7 @@ begin
 
  {Check Mailslot}
  if Mailslot = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  MailslotEntry:=PMailslotEntry(Mailslot);
  if MailslotEntry = nil then Exit;
@@ -20474,13 +20496,13 @@ begin
   end
  else
   begin
-   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
     begin
      Inc(MailslotDeadlockCounter);
     end;
-  end;  
+  end;
  {$ENDIF}
- 
+
  {Check the Handler}
  if Assigned(MailslotReceiveExHandler) then
   begin
@@ -20500,14 +20522,14 @@ begin
         {Check Signature}
         Result:=ERROR_INVALID_PARAMETER;
         if MailslotEntry.Signature <> MAILSLOT_SIGNATURE then Exit;
-        
+
         {Receive the first message}
         Result:=PPtrInt(PtrUInt(MailslotEntry.Messages) + (MailslotEntry.Start * SizeOf(PtrInt)))^;
-     
+
         {Update the Mailslot}
         MailslotEntry.Start:=(MailslotEntry.Start + 1) mod MailslotEntry.Maximum;
         Dec(MailslotEntry.Count);
-     
+
         {Signal room to send}
         SemaphoreSignal(MailslotEntry.Sender);
        finally
@@ -20518,7 +20540,7 @@ begin
      else
       begin
        {Nothing}
-      end;  
+      end;
     end
    else
     begin
@@ -20530,7 +20552,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Buffer Functions}
-function BufferCreate(Size,Count:LongWord):TBufferHandle; {$IFDEF BUFFER_INLINE}inline;{$ENDIF} 
+function BufferCreate(Size,Count:LongWord):TBufferHandle; {$IFDEF BUFFER_INLINE}inline;{$ENDIF}
 {Create and insert a new Buffer entry}
 {Size: Size of each buffer in bytes}
 {Count: Total number of buffers}
@@ -20556,14 +20578,14 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Adjust Size}
  BufferSize:=Align(Size,HEAP_MIN_ALIGNMENT) + SizeOf(TBufferItem);
 
  {Check Size}
  if BufferSize < BUFFER_MIN_SIZE then Exit;
  if BufferSize > BUFFER_MAX_SIZE then Exit;
- 
+
  {Check Count}
  if Count < 1 then Exit;
  if Count > BUFFER_MAX_COUNT then Exit;
@@ -20576,14 +20598,14 @@ begin
  else
   begin
    BufferEntry:=AllocMem(SizeOf(TBufferEntry));
-  end;  
+  end;
  if BufferEntry = nil then Exit;
 
  {Setup Buffer entry}
  BufferEntry.Signature:=BUFFER_SIGNATURE;
  BufferEntry.Size:=BufferSize;
  BufferEntry.Count:=Count;
- BufferEntry.Flags:=Flags;     
+ BufferEntry.Flags:=Flags;
  BufferEntry.Lock:=SpinCreate;
  BufferEntry.Available:=SemaphoreCreate(Count);
  if (BufferEntry.Flags and BUFFER_FLAG_SHARED) <> 0 then
@@ -20596,24 +20618,24 @@ begin
   end;
 
  {Check Buffer entry}
- if (BufferEntry.Available = INVALID_HANDLE_VALUE) or (BufferEntry.Buffers = nil) then     
+ if (BufferEntry.Available = INVALID_HANDLE_VALUE) or (BufferEntry.Buffers = nil) then
   begin
    {Free Buffer Semaphore}
    if BufferEntry.Available <> INVALID_HANDLE_VALUE then SemaphoreDestroy(BufferEntry.Available);
 
    {Free Buffer Buffers}
    if BufferEntry.Buffers <> nil then FreeMem(BufferEntry.Buffers);
-   
+
    {Free Buffer Lock}
    SpinDestroy(BufferEntry.Lock);
-   
+
    {Free Buffer Entry}
    FreeMem(BufferEntry);
-   
+
    Exit;
   end;
-  
- {Initialize Buffer items} 
+
+ {Initialize Buffer items}
  BufferItem:=BufferEntry.Buffers;
  BufferEntry.First:=BufferItem;
  for BufferCount:=0 to Count - 1 do
@@ -20628,7 +20650,7 @@ begin
   end;
  {Update Last Item}
  BufferItem.Next:=nil;
- 
+
  {Insert Buffer entry}
  if SpinLock(BufferTableLock) = ERROR_SUCCESS then
   begin
@@ -20644,10 +20666,10 @@ begin
       BufferTable.Prev:=BufferEntry;
       BufferTable:=BufferEntry;
      end;
-    
+
     {Increment Buffer Count}
     Inc(BufferTableCount);
-    
+
     {Return Buffer entry}
     Result:=TBufferHandle(BufferEntry);
    finally
@@ -20661,15 +20683,15 @@ begin
 
    {Free Buffer Buffers}
    FreeMem(BufferEntry.Buffers);
-   
+
    {Free Buffer Lock}
    SpinDestroy(BufferEntry.Lock);
-   
+
    {Free Buffer Entry}
    FreeMem(BufferEntry);
-  end;  
+  end;
 end;
- 
+
 {==============================================================================}
 
 function BufferDestroy(Buffer:TBufferHandle):LongWord;
@@ -20686,18 +20708,18 @@ begin
 
  {Check Buffer}
  if Buffer = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  BufferEntry:=PBufferEntry(Buffer);
  if BufferEntry = nil then Exit;
  if BufferEntry.Signature <> BUFFER_SIGNATURE then Exit;
- 
+
  {Remove Buffer entry}
  if SpinLock(BufferTableLock) = ERROR_SUCCESS then
   begin
    try
     {Acquire the Lock}
-    Result:=SpinLock(BufferEntry.Lock); 
+    Result:=SpinLock(BufferEntry.Lock);
     if Result <> ERROR_SUCCESS then Exit;
 
     {Check Signature}
@@ -20706,15 +20728,15 @@ begin
       {Release the Lock}
       Result:=SpinUnlock(BufferEntry.Lock);
       if Result <> ERROR_SUCCESS then Exit;
-     
+
       {Return Result}
       Result:=ERROR_INVALID_PARAMETER;
       Exit;
-     end; 
-    
+     end;
+
     {Invalidate Buffer entry}
     BufferEntry.Signature:=0;
-   
+
     {Unlink Buffer entry}
     PrevEntry:=BufferEntry.Prev;
     NextEntry:=BufferEntry.Next;
@@ -20724,7 +20746,7 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -20732,28 +20754,28 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=PrevEntry;
-       end;       
-     end;     
-    
+       end;
+     end;
+
     {Decrement Buffer Count}
     Dec(BufferTableCount);
-    
+
     {Release the Lock}
     Result:=SpinUnlock(BufferEntry.Lock);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Free Buffer Semaphores}
     SemaphoreDestroy(BufferEntry.Available);
 
     {Free Buffer Messages}
     FreeMem(BufferEntry.Buffers);
-    
+
     {Free Buffer Lock}
     SpinDestroy(BufferEntry.Lock);
-    
+
     {Free Buffer Entry}
     FreeMem(BufferEntry);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -20778,22 +20800,22 @@ var
 begin
  {}
  Result:=LongWord(INVALID_HANDLE_VALUE);
- 
+
  {Check Buffer}
  if Buffer = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  BufferEntry:=PBufferEntry(Buffer);
  if BufferEntry = nil then Exit;
  if BufferEntry.Signature <> BUFFER_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if SpinLock(BufferEntry.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Signature}
     if BufferEntry.Signature <> BUFFER_SIGNATURE then Exit;
-    
+
     {Get Total Count}
     Result:=BufferEntry.Count;
    finally
@@ -20814,22 +20836,22 @@ var
 begin
  {}
  Result:=LongWord(INVALID_HANDLE_VALUE);
- 
+
  {Check Buffer}
  if Buffer = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  BufferEntry:=PBufferEntry(Buffer);
  if BufferEntry = nil then Exit;
  if BufferEntry.Signature <> BUFFER_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if SpinLock(BufferEntry.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Signature}
     if BufferEntry.Signature <> BUFFER_SIGNATURE then Exit;
-    
+
     {Get Available Count}
     Result:=SemaphoreCount(BufferEntry.Available);
    finally
@@ -20853,15 +20875,15 @@ begin
  if Assigned(BufferGetHandler) then
   begin
    Result:=nil;
-   
+
    {Check Buffer}
    if Buffer = INVALID_HANDLE_VALUE then Exit;
- 
+
    {Check the Handle}
    BufferEntry:=PBufferEntry(Buffer);
    if BufferEntry = nil then Exit;
    if BufferEntry.Signature <> BUFFER_SIGNATURE then Exit;
-  
+
    {$IFDEF LOCK_DEBUG}
    if SCHEDULER_FIQ_ENABLED then
     begin
@@ -20872,13 +20894,13 @@ begin
     end
    else
     begin
-     if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+     if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
       begin
        Inc(BufferDeadlockCounter);
       end;
-    end;  
+    end;
    {$ENDIF}
-  
+
    {Use Handler Method}
    Result:=BufferGetHandler(BufferEntry);
   end
@@ -20886,7 +20908,7 @@ begin
   begin
    {Use Default Method}
    Result:=BufferGetEx(Buffer,INFINITE);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -20903,15 +20925,15 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Buffer}
  if Buffer = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  BufferEntry:=PBufferEntry(Buffer);
  if BufferEntry = nil then Exit;
  if BufferEntry.Signature <> BUFFER_SIGNATURE then Exit;
- 
+
  {$IFDEF LOCK_DEBUG}
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -20922,13 +20944,13 @@ begin
   end
  else
   begin
-   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
     begin
      Inc(BufferDeadlockCounter);
     end;
-  end;  
+  end;
  {$ENDIF}
- 
+
  {Check Handler}
  if Assigned(BufferGetExHandler) then
   begin
@@ -20949,7 +20971,7 @@ begin
      {Wait on Buffer with Timeout}
      ResultCode:=SemaphoreWaitEx(BufferEntry.Available,Timeout);
     end;
-   
+
    {Check Result}
    if ResultCode = ERROR_SUCCESS then
     begin
@@ -20959,7 +20981,7 @@ begin
        try
         {Check Signature}
         if BufferEntry.Signature <> BUFFER_SIGNATURE then Exit;
-    
+
         {Get First}
         BufferItem:=BufferEntry.First;
         if BufferItem <> nil then
@@ -20967,10 +20989,10 @@ begin
           {Remove First}
           BufferEntry.First:=BufferItem.Next;
           BufferItem.Next:=BufferItem;
-     
+
           {Return Buffer}
           Result:=BufferItem.Buffer;
-         end; 
+         end;
        finally
         {Release the Lock}
         SpinUnlock(BufferEntry.Lock);
@@ -20979,13 +21001,13 @@ begin
      else
       begin
        {Nothing}
-      end;  
+      end;
     end
    else
     begin
      {Nothing}
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -21000,26 +21022,26 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  {Get Item}
  BufferItem:=PBufferItem(PtrUInt(Buffer) - PtrUInt(SizeOf(TBufferItem)));
  if BufferItem = nil then Exit;
- 
+
  {Check Item}
- if BufferItem.Buffer <> Buffer then Exit; 
+ if BufferItem.Buffer <> Buffer then Exit;
  if BufferItem.Next <> BufferItem then Exit;
- 
+
  {Check Buffer}
  if BufferItem.Parent = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  BufferEntry:=PBufferEntry(BufferItem.Parent);
  if BufferEntry = nil then Exit;
  if BufferEntry.Signature <> BUFFER_SIGNATURE then Exit;
- 
+
  {Check Handler}
  if Assigned(BufferFreeHandler) then
   begin
@@ -21035,16 +21057,16 @@ begin
      try
       {Check Signature}
       if BufferEntry.Signature <> BUFFER_SIGNATURE then Exit;
-      
+
       {Add First}
       BufferItem.Next:=BufferEntry.First;
       BufferEntry.First:=BufferItem;
- 
+
       {Signal Available}
       SemaphoreSignal(BufferEntry.Available);
-      
+
       {Return Result}
-      Result:=ERROR_SUCCESS; 
+      Result:=ERROR_SUCCESS;
      finally
       {Release the Lock}
       SpinUnlock(BufferEntry.Lock);
@@ -21053,8 +21075,8 @@ begin
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;  
-  end; 
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -21067,25 +21089,25 @@ function BufferIterate(Buffer:TBufferHandle;Previous:Pointer):Pointer;
 
 {Note: Iterate is intended to allow allocating or initializing buffers after
  a Buffer entry is created, or deallocating before a Buffer entry is destroyed.
- 
+
  The function will fail if any buffers are already in use (if the count and
  available count are not equal)}
-var 
+var
  BufferItem:PBufferItem;
  PreviousItem:PBufferItem;
  BufferEntry:PBufferEntry;
 begin
  {}
  Result:=nil;
- 
+
  {Check Buffer}
  if Buffer = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  BufferEntry:=PBufferEntry(Buffer);
  if BufferEntry = nil then Exit;
  if BufferEntry.Signature <> BUFFER_SIGNATURE then Exit;
- 
+
  {Check Handler}
  if Assigned(BufferIterateHandler) then
   begin
@@ -21101,7 +21123,7 @@ begin
      try
       {Check Signature}
       if BufferEntry.Signature <> BUFFER_SIGNATURE then Exit;
- 
+
       {Check Available}
       if SemaphoreCount(BufferEntry.Available) = BufferEntry.Count then
        begin
@@ -21111,7 +21133,7 @@ begin
           {Get First}
           BufferItem:=BufferEntry.First;
           if BufferItem = nil then Exit;
-  
+
           {Return Buffer}
           Result:=BufferItem.Buffer;
          end
@@ -21120,23 +21142,23 @@ begin
           {Get Previous}
           PreviousItem:=PBufferItem(PtrUInt(Previous) - PtrUInt(SizeOf(TBufferItem)));
           if PreviousItem = nil then Exit;
-          if PreviousItem.Buffer <> Previous then Exit; 
+          if PreviousItem.Buffer <> Previous then Exit;
           if PreviousItem.Parent <> Buffer then Exit;
-          
+
           {Get Next}
           BufferItem:=PreviousItem.Next;
           if BufferItem = nil then Exit;
-  
+
           {Return Buffer}
           Result:=BufferItem.Buffer;
-         end;       
-       end;  
+         end;
+       end;
      finally
       {Release the Lock}
       SpinUnlock(BufferEntry.Lock);
      end;
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -21148,7 +21170,7 @@ function EventCreate(ManualReset,InitialState:Boolean):TEventHandle; {$IFDEF EVE
               An manual reset event must be reset by calling EventReset
               An auto reset event is reset when a single waiting thread is released}
 {InitialState: Set the initial state of the event to signaled if true
-               or to unsignaled if false}             
+               or to unsignaled if false}
 {Return: Handle of new Event entry or INVALID_HANDLE_VALUE if entry could not be created}
 var
  Flags:LongWord;
@@ -21158,7 +21180,7 @@ begin
  Flags:=EVENT_FLAG_NONE;
  if ManualReset then Flags:=Flags or EVENT_FLAG_MANUAL_RESET;
  if InitialState then Flags:=Flags or EVENT_FLAG_INITIAL_STATE;
- 
+
  {Create Event}
  Result:=EventCreateEx(Flags);
 end;
@@ -21178,14 +21200,14 @@ begin
  {Create Event entry}
  if EVENT_SHARED_MEMORY then
   begin
-   EventEntry:=AllocSharedMem(SizeOf(TEventEntry)); 
+   EventEntry:=AllocSharedMem(SizeOf(TEventEntry));
   end
  else
-  begin 
-   EventEntry:=AllocMem(SizeOf(TEventEntry)); 
-  end; 
+  begin
+   EventEntry:=AllocMem(SizeOf(TEventEntry));
+  end;
  if EventEntry = nil then Exit;
- 
+
  {Setup Event entry}
  EventEntry.Signature:=EVENT_SIGNATURE;
  EventEntry.State:=EVENT_STATE_UNSIGNALED;
@@ -21196,13 +21218,13 @@ begin
  EventEntry.WaitEx:=ThreadWaitEx;
  EventEntry.Release:=ThreadRelease;
  EventEntry.Abandon:=ThreadAbandon;
- 
+
  {Setup Event entry}
  if (EventEntry.Flags and EVENT_FLAG_INITIAL_STATE) <> 0 then
   begin
    EventEntry.State:=EVENT_STATE_SIGNALED;
   end;
- 
+
  {Insert Event entry}
  if SpinLock(EventTableLock) = ERROR_SUCCESS then
   begin
@@ -21218,10 +21240,10 @@ begin
       EventTable.Prev:=EventEntry;
       EventTable:=EventEntry;
      end;
-    
+
     {Increment Event Count}
     Inc(EventTableCount);
-    
+
     {Return Event entry}
     Result:=TEventHandle(EventEntry);
    finally
@@ -21232,10 +21254,10 @@ begin
   begin
    {Free Event Lock}
    SpinDestroy(EventEntry.Lock);
-   
+
    {Free Event Entry}
    FreeMem(EventEntry);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -21251,15 +21273,15 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Event}
  if Event = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  EventEntry:=PEventEntry(Event);
  if EventEntry = nil then Exit;
  if EventEntry.Signature <> EVENT_SIGNATURE then Exit;
- 
+
  {Remove Event entry}
  if SpinLock(EventTableLock) = ERROR_SUCCESS then
   begin
@@ -21267,29 +21289,29 @@ begin
     {Acquire the Lock}
     Result:=SpinLock(EventEntry.Lock);
     if Result <> ERROR_SUCCESS then Exit;
- 
+
     {Check Signature}
     if EventEntry.Signature <> EVENT_SIGNATURE then
      begin
       {Release the Lock}
       Result:=SpinUnlock(EventEntry.Lock);
       if Result <> ERROR_SUCCESS then Exit;
-      
+
       {Return Result}
       Result:=ERROR_INVALID_PARAMETER;
       Exit;
      end;
-    
+
     {Invalidate Event entry}
     EventEntry.Signature:=0;
- 
+
     {Check Waiting Threads}
     while ListNotEmpty(EventEntry.List) do
      begin
       {Abandon waiting thread}
       EventEntry.Abandon(EventEntry.List);
      end;
-   
+
     {Unlink Event entry}
     PrevEntry:=EventEntry.Prev;
     NextEntry:=EventEntry.Next;
@@ -21299,7 +21321,7 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -21307,28 +21329,28 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=PrevEntry;
-       end;       
-     end;     
-    
+       end;
+     end;
+
     {Decrement Event Count}
     Dec(EventTableCount);
-    
+
     {Release the Lock}
     Result:=SpinUnlock(EventEntry.Lock);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Free Event List}
     if EventEntry.List <> INVALID_HANDLE_VALUE then
      begin
       ListDestroy(EventEntry.List);
      end;
-    
+
     {Free Event Lock}
     SpinDestroy(EventEntry.Lock);
-    
+
     {Free Event Entry}
     FreeMem(EventEntry);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -21353,22 +21375,22 @@ var
 begin
  {}
  Result:=LongWord(INVALID_HANDLE_VALUE);
- 
+
  {Check Event}
  if Event = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  EventEntry:=PEventEntry(Event);
  if EventEntry = nil then Exit;
  if EventEntry.Signature <> EVENT_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if SpinLock(EventEntry.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Signature}
     if EventEntry.Signature <> EVENT_SIGNATURE then Exit;
-    
+
     {Get State}
     Result:=EventEntry.State;
    finally
@@ -21384,10 +21406,10 @@ function EventWait(Event:TEventHandle):LongWord;
 {Wait on an existing Event entry
 
  If the Event is currently signaled then simply return immediately
- 
+
  If the Event is currently unsignaled then wait for it to be signaled
  before returning}
-{Event: Event to wait on} 
+{Event: Event to wait on}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  EventEntry:PEventEntry;
@@ -21397,15 +21419,15 @@ begin
  if Assigned(EventWaitHandler) then
   begin
    Result:=ERROR_INVALID_PARAMETER;
- 
+
    {Check Event}
    if Event = INVALID_HANDLE_VALUE then Exit;
- 
+
    {Check the Handle}
    EventEntry:=PEventEntry(Event);
    if EventEntry = nil then Exit;
    if EventEntry.Signature <> EVENT_SIGNATURE then Exit;
-  
+
    {$IFDEF LOCK_DEBUG}
    if SCHEDULER_FIQ_ENABLED then
     begin
@@ -21416,13 +21438,13 @@ begin
     end
    else
     begin
-     if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+     if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
       begin
        Inc(EventDeadlockCounter);
       end;
-    end;  
+    end;
    {$ENDIF}
-  
+
    {Use the Handler method}
    Result:=EventWaitHandler(EventEntry);
   end
@@ -21430,7 +21452,7 @@ begin
   begin
    {Use the Default method}
    Result:=EventWaitEx(Event,INFINITE);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -21439,10 +21461,10 @@ function EventWaitEx(Event:TEventHandle;Timeout:LongWord):LongWord;
 {Wait on an existing Event entry
 
  If the Event is currently signaled then simply return immediately
- 
+
  If the Event is currently unsignaled then wait for it to be signaled
  before returning}
-{Event: Event to wait on} 
+{Event: Event to wait on}
 {Timeout: Time in milliseconds to wait for the event to be signaled
           0 = No Wait
           INFINITE = Wait Indefinitely}
@@ -21454,10 +21476,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Event}
  if Event = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  EventEntry:=PEventEntry(Event);
  if EventEntry = nil then Exit;
@@ -21473,13 +21495,13 @@ begin
   end
  else
   begin
-   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
     begin
      Inc(EventDeadlockCounter);
     end;
-  end;  
+  end;
  {$ENDIF}
- 
+
  {Check the Handler}
  if Assigned(EventWaitExHandler) then
   begin
@@ -21496,15 +21518,15 @@ begin
      try
       {Check Signature}
       if EventEntry.Signature <> EVENT_SIGNATURE then Exit;
-    
+
       {Check Timeout}
       if Timeout = 0 then
        begin
         {Check State}
         Result:=ERROR_WAIT_TIMEOUT;
         if EventEntry.State <> EVENT_STATE_SIGNALED then Exit;
-       end; 
-     
+       end;
+
       {Check State}
       if EventEntry.State = EVENT_STATE_SIGNALED then
        begin
@@ -21514,24 +21536,24 @@ begin
           {Auto Reset}
           {Reset State}
           EventEntry.State:=EVENT_STATE_UNSIGNALED;
-         end;         
+         end;
        end
-      else 
+      else
        begin
         {Check List}
         if EventEntry.List = INVALID_HANDLE_VALUE then
          begin
           {Create List}
           EventEntry.List:=ListCreateEx(LIST_TYPE_WAIT_EVENT,SchedulerGetListFlags(LIST_TYPE_WAIT_EVENT));
-         end; 
-        
+         end;
+
         {Check Timeout}
         if Timeout = INFINITE then
          begin
           {Wait on Event}
           EventEntry.Wait(EventEntry.List,EventEntry.Lock,LOCK_FLAG_NONE);
           Unlock:=False;
-          
+
           {Check Result}
           WaitResult:=ThreadGetWaitResult;
           if WaitResult = WAIT_TIMEOUT then
@@ -21539,7 +21561,7 @@ begin
             Result:=ERROR_WAIT_TIMEOUT;
             Exit;
            end
-          else if WaitResult = WAIT_ABANDONED then 
+          else if WaitResult = WAIT_ABANDONED then
            begin
             Result:=ERROR_WAIT_ABANDONED;
             Exit;
@@ -21548,11 +21570,11 @@ begin
            begin
             Result:=WaitResult;
             Exit;
-           end;         
+           end;
          end
         else
          begin
-          {Wait on Event with Timeout} 
+          {Wait on Event with Timeout}
           EventEntry.WaitEx(EventEntry.List,EventEntry.Lock,LOCK_FLAG_NONE,Timeout);
           Unlock:=False;
 
@@ -21563,7 +21585,7 @@ begin
             Result:=ERROR_WAIT_TIMEOUT;
             Exit;
            end
-          else if WaitResult = WAIT_ABANDONED then 
+          else if WaitResult = WAIT_ABANDONED then
            begin
             Result:=ERROR_WAIT_ABANDONED;
             Exit;
@@ -21572,12 +21594,12 @@ begin
            begin
             Result:=WaitResult;
             Exit;
-           end;         
-         end; 
-       end; 
-   
+           end;
+         end;
+       end;
+
       {Return Result}
-      Result:=ERROR_SUCCESS; 
+      Result:=ERROR_SUCCESS;
      finally
       {Unlock the Event}
       if Unlock then SpinUnlock(EventEntry.Lock);
@@ -21586,8 +21608,8 @@ begin
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;    
-  end; 
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -21596,30 +21618,30 @@ function EventSet(Event:TEventHandle):LongWord;
 {Set (Signal) an existing Event entry
 
  If the event is currently signaled then return with no action
- 
+
  If the event is unsignaled then, if the event is manual reset release
  all waiting threads and return. If the event is auto reset release one
  waiting thread, unsignal the event and return
- 
- If no threads are waiting then simply signal the event and return, if 
+
+ If no threads are waiting then simply signal the event and return, if
  the event is auto reset then the next thread to wait will unsignal the
  event}
-{Event: Event to set} 
+{Event: Event to set}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  EventEntry:PEventEntry;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Event}
  if Event = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  EventEntry:=PEventEntry(Event);
  if EventEntry = nil then Exit;
  if EventEntry.Signature <> EVENT_SIGNATURE then Exit;
- 
+
  {$IFDEF LOCK_DEBUG}
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -21630,13 +21652,13 @@ begin
   end
  else
   begin
-   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
     begin
      Inc(EventDeadlockCounter);
     end;
-  end;  
+  end;
  {$ENDIF}
- 
+
  {Check the Handler}
  if Assigned(EventSetHandler) then
   begin
@@ -21658,7 +21680,7 @@ begin
        begin
         {Set State}
         EventEntry.State:=EVENT_STATE_SIGNALED;
-        
+
         {Check Flags}
         if (EventEntry.Flags and EVENT_FLAG_MANUAL_RESET) = 0 then
          begin
@@ -21671,9 +21693,9 @@ begin
              begin
               {Reset State}
               EventEntry.State:=EVENT_STATE_UNSIGNALED;
-              
+
               Break;
-             end; 
+             end;
            end;
          end
         else
@@ -21687,9 +21709,9 @@ begin
            end;
          end;
        end;
-       
+
       {Return Result}
-      Result:=ERROR_SUCCESS; 
+      Result:=ERROR_SUCCESS;
      finally
       {Unlock the Event}
       SpinUnlock(EventEntry.Lock);
@@ -21698,8 +21720,8 @@ begin
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;    
-  end; 
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -21708,19 +21730,19 @@ function EventReset(Event:TEventHandle):LongWord;
 {Reset (Unsignal) an existing Event entry
 
  If the event is currently unsignaled then return with no action
- 
+
  If the event is signaled then unsignal the event and return}
-{Event: Event to reset} 
+{Event: Event to reset}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  EventEntry:PEventEntry;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Event}
  if Event = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  EventEntry:=PEventEntry(Event);
  if EventEntry = nil then Exit;
@@ -21736,13 +21758,13 @@ begin
   end
  else
   begin
-   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
     begin
      Inc(EventDeadlockCounter);
     end;
-  end;  
+  end;
  {$ENDIF}
- 
+
  {Check the Handler}
  if Assigned(EventResetHandler) then
   begin
@@ -21765,9 +21787,9 @@ begin
         {Reset State}
         EventEntry.State:=EVENT_STATE_UNSIGNALED;
        end;
-       
+
       {Return Result}
-      Result:=ERROR_SUCCESS; 
+      Result:=ERROR_SUCCESS;
      finally
       {Unlock the Event}
       SpinUnlock(EventEntry.Lock);
@@ -21776,8 +21798,8 @@ begin
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;    
-  end; 
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -21786,28 +21808,28 @@ function EventPulse(Event:TEventHandle):LongWord;
 {Pulse (Set then Reset) an existing Event entry
 
  If the event is currently signaled then unsignal the event and return
- 
+
  If the event is unsignaled then, if the event is manual reset release
  all waiting threads, unsignal the event and return. If the event is
  auto reset release one waiting thread, unsignal the event and return
- 
+
  If no threads are waiting then simply unsignal the event and return}
-{Event: Event to pulse} 
+{Event: Event to pulse}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  EventEntry:PEventEntry;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Event}
  if Event = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  EventEntry:=PEventEntry(Event);
  if EventEntry = nil then Exit;
  if EventEntry.Signature <> EVENT_SIGNATURE then Exit;
- 
+
  {$IFDEF LOCK_DEBUG}
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -21818,13 +21840,13 @@ begin
   end
  else
   begin
-   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then 
+   if not(GetIRQ) and (InitializationCompleted[CPUGetCurrent]) then
     begin
      Inc(EventDeadlockCounter);
     end;
-  end;  
+  end;
  {$ENDIF}
- 
+
  {Check the Handler}
  if Assigned(EventPulseHandler) then
   begin
@@ -21847,11 +21869,11 @@ begin
         {Reset State}
         EventEntry.State:=EVENT_STATE_UNSIGNALED;
        end
-      else 
+      else
        begin
         {Set State}
         EventEntry.State:=EVENT_STATE_SIGNALED;
-        
+
         {Check Flags}
         if (EventEntry.Flags and EVENT_FLAG_MANUAL_RESET) = 0 then
          begin
@@ -21875,14 +21897,14 @@ begin
             {Release all threads waiting on Event}
             EventEntry.Release(EventEntry.List);
            end;
-         end;         
-        
+         end;
+
         {Reset State}
         EventEntry.State:=EVENT_STATE_UNSIGNALED;
-       end; 
-      
+       end;
+
       {Return Result}
-      Result:=ERROR_SUCCESS; 
+      Result:=ERROR_SUCCESS;
      finally
       {Unlock the Event}
       SpinUnlock(EventEntry.Lock);
@@ -21891,8 +21913,8 @@ begin
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;    
-  end; 
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -21914,11 +21936,11 @@ begin
  {Get State}
  State:=TIMER_STATE_DISABLED;
  if Enabled then State:=TIMER_STATE_ENABLED;
- 
+
  {Get Flags}
  Flags:=TIMER_FLAG_NONE;
  if Reschedule then Flags:=TIMER_FLAG_RESCHEDULE;
- 
+
  {Call TimerCreateEx}
  Result:=TimerCreateEx(Interval,State,Flags,Event,Data);
 end;
@@ -21941,24 +21963,24 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Interval}
  if Interval < 1 then Exit;
- 
+
  {Check State}
  if (State <> TIMER_STATE_DISABLED) and (State <> TIMER_STATE_ENABLED) then Exit;
- 
+
  {Check Event}
  if not(Assigned(Event)) then Exit;
- 
+
  {Get Size}
  Size:=SizeOf(TTimerEntry);
  if (Flags and TIMER_FLAG_WORKER) <> 0 then Size:=SizeOf(TTimerEntry) + SizeOf(TWorkerRequest);
- 
+
  {Create Timer entry}
- TimerEntry:=AllocMem(Size); 
+ TimerEntry:=AllocMem(Size);
  if TimerEntry = nil then Exit;
- 
+
  {Setup Timer entry}
  TimerEntry.Signature:=TIMER_SIGNATURE;
  TimerEntry.Interval:=Interval;
@@ -21969,13 +21991,13 @@ begin
  TimerEntry.Data:=Data;
  TimerEntry.TimerList:=nil;
  TimerEntry.TimerItem.Timer:=TTimerHandle(TimerEntry);
- 
+
  {Check Flags}
  if (Flags and TIMER_FLAG_WORKER) <> 0 then
   begin
    {Get Worker request}
    WorkerRequest:=PWorkerRequest(PtrUInt(TimerEntry) + PtrUInt(SizeOf(TTimerEntry)));
-   
+
    {Setup Worker request}
    WorkerRequest.Signature:=WORKER_SIGNATURE;
    WorkerRequest.Interval:=0;
@@ -21985,14 +22007,14 @@ begin
    WorkerRequest.Task:=TWorkerTask(Event);
    WorkerRequest.Data:=Data;
    WorkerRequest.Callback:=nil;
-   
+
    {Check Priority}
    if (Flags and TIMER_FLAG_PRIORITY) <> 0 then
     begin
      WorkerRequest.Flags:=WorkerRequest.Flags or WORKER_FLAG_PRIORITY;
     end;
   end;
- 
+
  {Insert Timer entry}
  if SpinLock(TimerTableLock) = ERROR_SUCCESS then
   begin
@@ -22008,10 +22030,10 @@ begin
       TimerTable.Prev:=TimerEntry;
       TimerTable:=TimerEntry;
      end;
-    
+
     {Increment Timer Count}
     Inc(TimerTableCount);
-    
+
     {Return Timer entry}
     Result:=TTimerHandle(TimerEntry);
 
@@ -22024,12 +22046,12 @@ begin
         {Calculate Ticks}
         Ticks:=CLOCK_TICKS_PER_MILLISECOND; {1 millisecond before first event}
        end
-      else 
+      else
        begin
         {Calculate Ticks}
         Ticks:=CLOCK_TICKS_PER_MILLISECOND * TimerEntry.Interval;
-       end; 
-      
+       end;
+
       {Insert in List}
       TimerInsertKey(Result,Ticks);
      end;
@@ -22041,11 +22063,11 @@ begin
   begin
    {Free Timer Lock}
    SpinDestroy(TimerEntry.Lock);
-   
+
    {Free Timer Entry}
    FreeMem(TimerEntry);
-  end;  
-end; 
+  end;
+end;
 
 {==============================================================================}
 
@@ -22064,12 +22086,12 @@ begin
 
  {Check Timer}
  if Timer = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  TimerEntry:=PTimerEntry(Timer);
  if TimerEntry = nil then Exit;
  if TimerEntry.Signature <> TIMER_SIGNATURE then Exit;
- 
+
  {Disable the Timer}
  Result:=TimerDisable(Timer);
  if Result <> ERROR_SUCCESS then Exit;
@@ -22081,32 +22103,32 @@ begin
     {Acquire the Lock}
     Result:=SpinLock(TimerEntry.Lock);
     if Result <> ERROR_SUCCESS then Exit;
- 
+
     {Check Signature}
     if TimerEntry.Signature <> TIMER_SIGNATURE then
      begin
       {Release the Lock}
       Result:=SpinUnlock(TimerEntry.Lock);
       if Result <> ERROR_SUCCESS then Exit;
-    
+
       {Return Result}
       Result:=ERROR_INVALID_PARAMETER;
       Exit;
-     end; 
-    
+     end;
+
     {Invalidate Timer entry}
     TimerEntry.Signature:=0;
-   
+
     {Check Flags}
     if (TimerEntry.Flags and TIMER_FLAG_WORKER) <> 0 then
      begin
       {Get Worker request}
       WorkerRequest:=PWorkerRequest(PtrUInt(TimerEntry) + PtrUInt(SizeOf(TTimerEntry)));
-      
+
       {Invalidate Worker request}
       WorkerRequest.Signature:=0;
      end;
-    
+
     {Unlink Timer entry}
     PrevEntry:=TimerEntry.Prev;
     NextEntry:=TimerEntry.Next;
@@ -22116,7 +22138,7 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -22124,22 +22146,22 @@ begin
       if NextEntry <> nil then
        begin
         NextEntry.Prev:=PrevEntry;
-       end;       
-     end;     
-   
+       end;
+     end;
+
     {Decrement Timer Count}
     Dec(TimerTableCount);
- 
+
     {Release the Lock}
     Result:=SpinUnlock(TimerEntry.Lock);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Free Timer Lock}
     SpinDestroy(TimerEntry.Lock);
-    
+
     {Free Timer Entry}
     FreeMem(TimerEntry);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -22151,8 +22173,8 @@ begin
    {Return Result}
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;
-end; 
- 
+end;
+
 {==============================================================================}
 
 function TimerEnable(Timer:TTimerHandle):LongWord;
@@ -22167,12 +22189,12 @@ begin
 
  {Check Timer}
  if Timer = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  TimerEntry:=PTimerEntry(Timer);
  if TimerEntry = nil then Exit;
  if TimerEntry.Signature <> TIMER_SIGNATURE then Exit;
- 
+
  {Check the Handler}
  if Assigned(TimerEnableHandler) then
   begin
@@ -22181,11 +22203,11 @@ begin
   end
  else
   begin
-   {Use the Default method}  
+   {Use the Default method}
    Result:=TimerEnableEx(Timer,TimerEntry.Interval,TimerEntry.Event,TimerEntry.Data);
-  end; 
+  end;
 end;
- 
+
 {==============================================================================}
 
 function TimerEnableEx(Timer:TTimerHandle;Interval:LongWord;Event:TTimerEvent;Data:Pointer):LongWord;
@@ -22204,18 +22226,18 @@ begin
 
  {Check Timer}
  if Timer = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check Interval}
  if Interval < 1 then Exit;
 
  {Check Event}
  if not(Assigned(Event)) then Exit;
- 
+
  {Check the Handle}
  TimerEntry:=PTimerEntry(Timer);
  if TimerEntry = nil then Exit;
  if TimerEntry.Signature <> TIMER_SIGNATURE then Exit;
- 
+
  {Check the Handler}
  if Assigned(TimerEnableExHandler) then
   begin
@@ -22231,42 +22253,42 @@ begin
      try
       {Check Signature}
       if TimerEntry.Signature <> TIMER_SIGNATURE then Exit;
-    
+
       {Check State}
       if TimerEntry.State = TIMER_STATE_DISABLED then
        begin
         {Set Interval}
         TimerEntry.Interval:=Interval;
-        
+
         {Set State}
         TimerEntry.State:=TIMER_STATE_ENABLED;
-        
+
         {Set Event}
         TimerEntry.Event:=Event;
-        
+
         {Set Data}
         TimerEntry.Data:=Data;
-        
+
         {Calculate Ticks}
         Ticks:=CLOCK_TICKS_PER_MILLISECOND * TimerEntry.Interval;
-      
+
         {Insert in List}
         TimerInsertKey(Timer,Ticks);
-       end; 
-     
+       end;
+
       {Return Result}
       Result:=ERROR_SUCCESS;
      finally
       {Release the Lock}
       SpinUnlock(TimerEntry.Lock);
-     end;   
+     end;
     end
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;  
-  end; 
-end; 
+    end;
+  end;
+end;
 
 {==============================================================================}
 
@@ -22282,12 +22304,12 @@ begin
 
  {Check Timer}
  if Timer = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the Handle}
  TimerEntry:=PTimerEntry(Timer);
  if TimerEntry = nil then Exit;
  if TimerEntry.Signature <> TIMER_SIGNATURE then Exit;
- 
+
  {Check the Handler}
  if Assigned(TimerDisableHandler) then
   begin
@@ -22312,21 +22334,21 @@ begin
 
         {Remove from List}
         TimerDeleteKey(Timer);
-       end; 
-     
+       end;
+
       {Return Result}
       Result:=ERROR_SUCCESS;
      finally
       {Release the Lock}
       SpinUnlock(TimerEntry.Lock);
-     end;   
+     end;
     end
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;  
-  end; 
-end; 
+    end;
+  end;
+end;
 
 {==============================================================================}
 
@@ -22353,10 +22375,10 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check the List}
  if TimerList = nil then Exit;
- 
+
  {Lock the List}
  if Lock then
   begin
@@ -22399,22 +22421,22 @@ begin
        begin
         TimerItem.Next.Prev:=nil;
        end;
-     
+
       {Decrement Count}
       Dec(TimerList.Count);
-      
+
       {Return Result}
       Result:=TimerItem.Timer;
-      
+
       {Release Item}
       {Check Timer}
       if Result = INVALID_HANDLE_VALUE then Exit;
-         
+
       {Check the Handle}
       TimerEntry:=PTimerEntry(Result);
       if TimerEntry = nil then Exit;
       if TimerEntry.Signature <> TIMER_SIGNATURE then Exit;
-      
+
       {Set TimerList}
       TimerEntry.TimerList:=nil;
      end;
@@ -22439,12 +22461,12 @@ begin
         SpinUnlock(TimerList.Lock);
        end;
      end;
-   end;   
+   end;
   end
  else
   begin
    {Nothing}
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -22471,10 +22493,10 @@ var
 begin
  {}
  Result:=TIMER_KEY_NONE;
- 
+
  {Check the List}
  if TimerList = nil then Exit;
- 
+
  {Lock the List}
  if Lock then
   begin
@@ -22530,12 +22552,12 @@ begin
         SpinUnlock(TimerList.Lock);
        end;
      end;
-   end;   
+   end;
   end
  else
   begin
    {Nothing}
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -22556,13 +22578,13 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Timer}
  if Timer = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the List}
  if TimerList = nil then Exit;
- 
+
  {Lock the List}
  if (TimerList.Flags and LOCK_FLAG_IRQFIQ) <> 0 then
   begin
@@ -22579,7 +22601,7 @@ begin
  else
   begin
    ResultCode:=SpinLock(TimerList.Lock);
-  end;    
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    try
@@ -22588,14 +22610,14 @@ begin
     TimerEntry:=PTimerEntry(Timer);
     if TimerEntry = nil then Exit;
     if TimerEntry.Signature <> TIMER_SIGNATURE then Exit;
-       
+
     {Use Timer Item}
     TimerItem:=@TimerEntry.TimerItem;
-    TimerItem.Key:=0;   
-       
+    TimerItem.Key:=0;
+
     {Set TimerList}
     TimerEntry.TimerList:=TimerList;
- 
+
     {Find Item}
     Offset:=0;
     PrevItem:=nil;
@@ -22606,15 +22628,15 @@ begin
       if Key < (Offset + NextItem.Key) then
        begin
         Dec(NextItem.Key,(Key - Offset));
-        Break; 
+        Break;
        end;
-      Inc(Offset,NextItem.Key);  
+      Inc(Offset,NextItem.Key);
       PrevItem:=NextItem;
-      NextItem:=NextItem.Next; 
+      NextItem:=NextItem.Next;
      end;
- 
+
     {Insert Item}
-    TimerItem.Key:=(Key - Offset); 
+    TimerItem.Key:=(Key - Offset);
     {Get Prev/Next}
     TimerItem.Prev:=PrevItem;
     TimerItem.Next:=NextItem;
@@ -22630,7 +22652,7 @@ begin
       else
        begin
         NextItem.Prev:=TimerItem;
-       end;      
+       end;
      end
     else
      begin
@@ -22643,14 +22665,14 @@ begin
       else
        begin
         NextItem.Prev:=TimerItem;
-       end;      
+       end;
      end;
-    
+
     {Increment Count}
     Inc(TimerList.Count);
-    
-    {Return Result} 
-    Result:=ERROR_SUCCESS;       
+
+    {Return Result}
+    Result:=ERROR_SUCCESS;
    finally
     {Unlock the List}
     if (TimerList.Flags and LOCK_FLAG_IRQFIQ) <> 0 then
@@ -22669,12 +22691,12 @@ begin
      begin
       SpinUnlock(TimerList.Lock);
      end;
-   end;   
+   end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -22684,7 +22706,7 @@ function TimerDeleteKey(Timer:TTimerHandle):LongWord;
 {Timer: Handle of timer to be deleted}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 {Note: Caller must hold the lock on the timer}
-var 
+var
  ResultCode:LongWord;
  TimerItem:PTimerItem;
  PrevItem:PTimerItem;
@@ -22696,10 +22718,10 @@ begin
 
  {Check Timer}
  if Timer = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check the List}
  if TimerList = nil then Exit;
- 
+
  {Lock the List}
  if (TimerList.Flags and LOCK_FLAG_IRQFIQ) <> 0 then
   begin
@@ -22716,7 +22738,7 @@ begin
  else
   begin
    ResultCode:=SpinLock(TimerList.Lock);
-  end;    
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    try
@@ -22730,7 +22752,7 @@ begin
        end;
       TimerItem:=TimerItem.Next;
      end;
-     
+
     {Check Element}
     if TimerItem <> nil then
      begin
@@ -22750,7 +22772,7 @@ begin
         else
          begin
           NextItem.Prev:=nil;
-         end;    
+         end;
        end
       else
        begin
@@ -22764,29 +22786,29 @@ begin
          begin
           NextItem.Prev:=PrevItem;
          end;
-       end;  
- 
+       end;
+
       {Check Next}
       if NextItem <> nil then
        begin
         {Update Key}
         Inc(NextItem.Key,TimerItem.Key);
        end;
- 
+
       {Decrement Count}
       Dec(TimerList.Count);
- 
+
       {Release Element}
       {Check the Handle}
       TimerEntry:=PTimerEntry(Timer);
       if TimerEntry = nil then Exit;
       if TimerEntry.Signature <> TIMER_SIGNATURE then Exit;
-         
+
       {Set TimerList}
       TimerEntry.TimerList:=nil;
- 
-      {Return Result} 
-      Result:=ERROR_SUCCESS;       
+
+      {Return Result}
+      Result:=ERROR_SUCCESS;
      end;
    finally
     {Unlock the List}
@@ -22806,12 +22828,12 @@ begin
      begin
       SpinUnlock(TimerList.Lock);
      end;
-   end;   
+   end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -22825,10 +22847,10 @@ var
 begin
  {}
  Result:=TIMER_KEY_NONE;
- 
+
  {Check the List}
  if TimerList = nil then Exit;
- 
+
  {Lock the List}
  if (TimerList.Flags and LOCK_FLAG_IRQFIQ) <> 0 then
   begin
@@ -22845,7 +22867,7 @@ begin
  else
   begin
    ResultCode:=SpinLock(TimerList.Lock);
-  end;    
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    try
@@ -22858,7 +22880,7 @@ begin
        begin
         Dec(TimerItem.Key);
        end;
-      
+
       {Return Result}
       Result:=TimerItem.Key;
      end;
@@ -22880,12 +22902,12 @@ begin
      begin
       SpinUnlock(TimerList.Lock);
      end;
-   end;   
+   end;
   end
  else
   begin
    {Nothing}
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -22898,10 +22920,10 @@ var
 begin
  {}
  Result:=True; {Default to True}
- 
+
  {Check the List}
  if TimerList = nil then Exit;
- 
+
  {Lock the List}
  if (TimerList.Flags and LOCK_FLAG_IRQFIQ) <> 0 then
   begin
@@ -22918,13 +22940,13 @@ begin
  else
   begin
    ResultCode:=SpinLock(TimerList.Lock);
-  end;    
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    try
     {Check Empty}
     if TimerList.First = nil then Exit;
-  
+
     Result:=False;
    finally
     {Unlock the List}
@@ -22944,12 +22966,12 @@ begin
      begin
       SpinUnlock(TimerList.Lock);
      end;
-   end;   
+   end;
   end
  else
   begin
    {Nothing}
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -22962,10 +22984,10 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check the List}
  if TimerList = nil then Exit;
- 
+
  {Lock the List}
  if (TimerList.Flags and LOCK_FLAG_IRQFIQ) <> 0 then
   begin
@@ -22982,13 +23004,13 @@ begin
  else
   begin
    ResultCode:=SpinLock(TimerList.Lock);
-  end;    
+  end;
  if ResultCode = ERROR_SUCCESS then
   begin
    try
     {Check Empty}
     if TimerList.First = nil then Exit;
-  
+
     Result:=True;
    finally
     {Unlock the List}
@@ -23008,12 +23030,12 @@ begin
      begin
       SpinUnlock(TimerList.Lock);
      end;
-   end;   
+   end;
   end
  else
   begin
    {Nothing}
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -23032,22 +23054,22 @@ begin
  {Check the Handler}
  if Assigned(TimerCheckHandler) then
   begin
-   {Use the Handler method} 
+   {Use the Handler method}
    Result:=TimerCheckHandler;
   end
  else
-  begin 
+  begin
    {Use the Default method}
    {Setup Result}
    Result:=ERROR_NO_MORE_ITEMS;
- 
+
    {Check Timer List}
    if TimerDecrementKey <= 0 then
     begin
      Result:=ERROR_SUCCESS;
     end;
   end;
-end; 
+end;
 
 {==============================================================================}
 
@@ -23064,19 +23086,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check the Handler}
  if Assigned(TimerTriggerHandler) then
   begin
-   {Use the Handler method} 
+   {Use the Handler method}
    Result:=TimerTriggerHandler;
   end
  else
-  begin 
+  begin
    {Use the Default method}
    {Trigger Timers}
    FillChar(Message,SizeOf(TMessage),0);
-   while TimerFirstKeyEx(True,False) <= 0 do 
+   while TimerFirstKeyEx(True,False) <= 0 do
     begin
      {Dequeue Timer}
      Timer:=TimerDequeueEx(False,True);
@@ -23087,7 +23109,7 @@ begin
        if (TimerEntry <> nil) and (TimerEntry.Signature = TIMER_SIGNATURE) then
         begin
          Message.Msg:=PtrUInt(TimerEntry);
-      
+
          {Check the Flags}
          if (TimerEntry.Flags and TIMER_FLAG_PRIORITY) = 0 then
           begin
@@ -23096,17 +23118,17 @@ begin
          else
           begin
            MessageslotSend(TimerPriorityMessageslot,Message);
-          end;          
-        end; 
-      end; 
+          end;
+        end;
+      end;
     end;
    {Unlock List}
    TimerFirstKeyEx(False,True);
- 
+
    {Return Result}
    Result:=ERROR_SUCCESS;
-  end; 
-end; 
+  end;
+end;
 
 {==============================================================================}
 {==============================================================================}
@@ -23121,13 +23143,13 @@ function WorkerSchedule(Interval:LongWord;Task:TWorkerTask;Data:Pointer;Callback
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Task}
  if not Assigned(Task) then Exit;
- 
+
  {Check Data}
  {if Data = nil then Exit;} {May be nil}
- 
+
  {Check Callback}
  {if not Assigned(Callback) then Exit;}  {May be nil}
 
@@ -23154,27 +23176,27 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Task}
  if not Assigned(Task) then Exit;
- 
+
  {Check Data}
  {if Data = nil then Exit;} {May be nil}
- 
+
  {Check Callback}
  {if not Assigned(Callback) then Exit;}  {May be nil}
- 
+
  {Check Flags}
  if (Flags and WORKER_FLAG_INTERNAL) <> 0 then Exit;
- 
+
  {Get Size}
  Size:=SizeOf(TWorkerRequest);
  if ((Flags and WORKER_FLAG_RESCHEDULE) <> 0) and (Interval > 0) then Size:=SizeOf(TWorkerRequest) + SizeOf(TWorkerRequest);
- 
+
  {Create Worker Request}
  WorkerRequest:=AllocMem(Size);
  if WorkerRequest = nil then Exit;
- 
+
  {Setup Worker Request}
  WorkerRequest.Signature:=WORKER_SIGNATURE;
  WorkerRequest.Interval:=Interval;
@@ -23184,13 +23206,13 @@ begin
  WorkerRequest.Task:=Task;
  WorkerRequest.Data:=Data;
  WorkerRequest.Callback:=Callback;
- 
+
  {Check Flags}
  if ((Flags and WORKER_FLAG_RESCHEDULE) <> 0) and (Interval > 0) then
   begin
    {Get Initial/Repeat Request}
    InitialRequest:=PWorkerRequest(PtrUInt(WorkerRequest) + PtrUInt(SizeOf(TWorkerRequest)));
-   
+
    {Setup Initial/Repeat request}
    InitialRequest.Signature:=WORKER_SIGNATURE;
    InitialRequest.Interval:=0;
@@ -23201,7 +23223,7 @@ begin
    InitialRequest.Data:=Data;
    InitialRequest.Callback:=Callback;
   end;
- 
+
  {Check Interval}
  if Interval = 0 then
   begin
@@ -23216,21 +23238,21 @@ begin
        {Free Worker Request}
        FreeMem(WorkerRequest);
        Exit;
-      end; 
+      end;
     end
    else
-    begin   
+    begin
      if MessageslotSend(WorkerPriorityMessageslot,Message) <> ERROR_SUCCESS then
       begin
        {Free Worker Request}
        FreeMem(WorkerRequest);
        Exit;
-      end; 
-    end;  
-   
+      end;
+    end;
+
    {Return Result}
    Result:=TWorkerHandle(ERROR_SUCCESS);
-   
+
    {Worker Request will be freed by WorkerExecute/WorkerPriorityExecute}
   end
  else
@@ -23245,11 +23267,11 @@ begin
        {Free Worker Request}
        FreeMem(WorkerRequest);
        Exit;
-      end; 
-     
+      end;
+
      {Return Result}
      Result:=TWorkerHandle(ERROR_SUCCESS);
-     
+
      {Timer will be destroyed by WorkerTimer}
      {Worker Request will be freed by WorkerExecute/WorkerPriorityExecute}
     end
@@ -23274,11 +23296,11 @@ begin
           begin
            MessageslotSend(WorkerPriorityMessageslot,Message);
           end;
-       
+
          {Initial Request will NOT be freed by WorkerExecute/WorkerPriorityExecute}
         end;
       end;
-      
+
      {Create Lock}
      WorkerRequest.Lock:=SpinCreate;
      if WorkerRequest.Lock = INVALID_HANDLE_VALUE then
@@ -23286,29 +23308,29 @@ begin
        {Free Worker Request}
        FreeMem(WorkerRequest);
        Exit;
-      end; 
-      
+      end;
+
      {Create Timer (Repeating)}
      WorkerRequest.Timer:=TimerCreateEx(WorkerRequest.Interval,TIMER_STATE_ENABLED,TIMER_FLAG_RESCHEDULE,TTimerEvent(WorkerTimer),WorkerRequest);
      if WorkerRequest.Timer = INVALID_HANDLE_VALUE then
       begin
        {Free Request Lock}
        SpinDestroy(WorkerRequest.Lock);
-       
+
        {Free Worker Request}
        FreeMem(WorkerRequest);
        Exit;
-      end; 
-     
+      end;
+
      {Return Result}
      Result:=TWorkerHandle(WorkerRequest);
-     
+
      {Lock will be destroyed by WorkerTimer when request is cancelled}
      {Timer will be destroyed by WorkerTimer when request is cancelled}
      {Worker Request will be freed by WorkerTimer when request is cancelled}
      {Initial/Repeat Request will be freed by WorkerTimer when request is cancelled}
-    end; 
-  end;  
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -23322,37 +23344,37 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Worker}
  if Worker = INVALID_HANDLE_VALUE then Exit;
  if Worker = TWorkerHandle(ERROR_SUCCESS) then Exit;
- 
+
  {Check Request}
  WorkerRequest:=PWorkerRequest(Worker);
  if WorkerRequest = nil then Exit;
  if WorkerRequest.Signature <> WORKER_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if SpinLock(WorkerRequest.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Signature}
     if WorkerRequest.Signature <> WORKER_SIGNATURE then Exit;
-    
+
     {Set Cancelled}
     WorkerRequest.Flags:=WorkerRequest.Flags or WORKER_FLAG_CANCEL;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
     {Release the Lock}
     SpinUnlock(WorkerRequest.Lock);
-   end;   
+   end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -23387,22 +23409,22 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Task}
  if not Assigned(Task) then Exit;
- 
+
  {Check Data}
  {if Data = nil then Exit;} {May be nil}
- 
+
  {Check Callback}
  {if not Assigned(Callback) then Exit;}  {May be nil}
 
  {Check Flags (Excluded)}
  if (Flags and WORKER_FLAG_EXCLUDED_IRQ) <> 0 then Exit;
- 
+
  {Check Flags (Internal)}
  if (Flags and WORKER_FLAG_INTERNAL) <> 0 then Exit;
- 
+
  {Create Worker Request}
  WorkerRequest:=AllocIRQMem(SizeOf(TWorkerRequest),Affinity);
  if WorkerRequest = nil then
@@ -23410,7 +23432,7 @@ begin
    Result:=ERROR_NOT_ENOUGH_MEMORY;
    Exit;
   end;
- 
+
  {Setup Worker Request}
  WorkerRequest.Signature:=WORKER_SIGNATURE;
  WorkerRequest.Interval:=0;
@@ -23420,13 +23442,13 @@ begin
  WorkerRequest.Task:=Task;
  WorkerRequest.Data:=Data;
  WorkerRequest.Callback:=Callback;
- 
+
  {Flush Worker Request}
  if not(HEAP_IRQ_CACHE_COHERENT) then
   begin
    CleanDataCacheRange(PtrUInt(WorkerRequest),SizeOf(TWorkerRequest));
   end;
-  
+
  {Submit Worker Request}
  FillChar(Message,SizeOf(TMessage),0);
  Message.Msg:=PtrUInt(WorkerRequest);
@@ -23437,10 +23459,10 @@ begin
     begin
      {Free Worker Request}
      FreeIRQMem(WorkerRequest);
-     
-     Result:=ERROR_OPERATION_FAILED; 
+
+     Result:=ERROR_OPERATION_FAILED;
      Exit;
-    end; 
+    end;
   end
  else
   begin
@@ -23448,18 +23470,18 @@ begin
     begin
      {Free Worker Request}
      FreeIRQMem(WorkerRequest);
-     
-     Result:=ERROR_OPERATION_FAILED; 
+
+     Result:=ERROR_OPERATION_FAILED;
      Exit;
-    end; 
-  end;  
- 
+    end;
+  end;
+
  {Return Result}
  Result:=ERROR_SUCCESS;
- 
+
  {Worker Request will be freed by WorkerExecute/WorkerPriorityExecute}
 end;
- 
+
 {==============================================================================}
 
 function WorkerScheduleFIQ(Affinity:LongWord;Task:TWorkerTask;Data:Pointer;Callback:TWorkerCallback):LongWord; {$IFDEF WORKER_INLINE}inline;{$ENDIF}
@@ -23493,22 +23515,22 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Task}
  if not Assigned(Task) then Exit;
- 
+
  {Check Data}
  {if Data = nil then Exit;} {May be nil}
- 
+
  {Check Callback}
  {if not Assigned(Callback) then Exit;}  {May be nil}
- 
+
  {Check Flags (Excluded)}
  if (Flags and WORKER_FLAG_EXCLUDED_FIQ) <> 0 then Exit;
- 
+
  {Check Flags (Internal)}
  if (Flags and WORKER_FLAG_INTERNAL) <> 0 then Exit;
- 
+
  {Create Worker Request}
  WorkerRequest:=AllocFIQMem(SizeOf(TWorkerRequest),Affinity);
  if WorkerRequest = nil then
@@ -23516,7 +23538,7 @@ begin
    Result:=ERROR_NOT_ENOUGH_MEMORY;
    Exit;
   end;
- 
+
  {Setup Worker Request}
  WorkerRequest.Signature:=WORKER_SIGNATURE;
  WorkerRequest.Interval:=0;
@@ -23526,13 +23548,13 @@ begin
  WorkerRequest.Task:=Task;
  WorkerRequest.Data:=Data;
  WorkerRequest.Callback:=Callback;
- 
+
  {Flush Worker Request}
  if not(HEAP_FIQ_CACHE_COHERENT) then
   begin
    CleanDataCacheRange(PtrUInt(WorkerRequest),SizeOf(TWorkerRequest));
   end;
- 
+
  {Submit Worker Request}
  FillChar(Message,SizeOf(TMessage),0);
  Message.Msg:=PtrUInt(WorkerRequest);
@@ -23545,17 +23567,17 @@ begin
   begin
    MessageslotHandle:=WorkerPriorityMessageslot;
   end;
-  
+
  if SCHEDULER_FIQ_ENABLED then
   begin
    if MessageslotSend(MessageslotHandle,Message) <> ERROR_SUCCESS then
     begin
      {Free Worker Request}
      FreeFIQMem(WorkerRequest);
-       
-     Result:=ERROR_OPERATION_FAILED; 
+
+     Result:=ERROR_OPERATION_FAILED;
      Exit;
-    end; 
+    end;
   end
  else
   begin
@@ -23563,18 +23585,18 @@ begin
     begin
      {Free Worker Request}
      FreeFIQMem(WorkerRequest);
-     
-     Result:=ERROR_OPERATION_FAILED; 
+
+     Result:=ERROR_OPERATION_FAILED;
      Exit;
-    end; 
-  end;  
- 
+    end;
+  end;
+
  {Return Result}
  Result:=ERROR_SUCCESS;
- 
+
  {Worker Request will be freed by WorkerExecute/WorkerPriorityExecute}
 end;
- 
+
 {==============================================================================}
 
 function WorkerIncrease(Count:LongWord):LongWord; {$IFDEF WORKER_INLINE}inline;{$ENDIF}
@@ -23595,14 +23617,14 @@ function WorkerIncreaseEx(Count:LongWord;Priority:Boolean):LongWord;
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Counter:LongWord;
- Thread:TThreadHandle; 
+ Thread:TThreadHandle;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Count}
  if Count < 1 then Exit;
- 
+
  {Check Priority}
  if not Priority then
   begin
@@ -23610,17 +23632,17 @@ begin
    if SpinLock(WorkerThreadLock) = ERROR_SUCCESS then
     begin
      try
-      {Create Worker Threads} 
+      {Create Worker Threads}
       for Counter:=0 to Count - 1 do
        begin
         {Create Worker Thread}
         Thread:=BeginThread(WorkerExecute,nil,Thread,THREAD_STACK_DEFAULT_SIZE);
-        if Thread = INVALID_HANDLE_VALUE then 
+        if Thread = INVALID_HANDLE_VALUE then
          begin
           {$IFDEF THREAD_DEBUG}
           if THREAD_LOG_ENABLED then ThreadLogDebug('Failed to increase worker threads');
           {$ENDIF}
-          
+
           Result:=ERROR_OPERATION_FAILED;
           Exit;
          end;
@@ -23631,36 +23653,36 @@ begin
         ThreadSetPriority(Thread,WORKER_THREAD_PRIORITY);
         Inc(WorkerThreadNext);
        end;
-   
-      {Return Result} 
+
+      {Return Result}
       Result:=ERROR_SUCCESS;
      finally
       {Release Lock}
       SpinUnlock(WorkerThreadLock);
-     end;   
+     end;
     end
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
     end;
   end
- else 
+ else
   begin
    {Acquire Lock}
    if SpinLock(WorkerPriorityThreadLock) = ERROR_SUCCESS then
     begin
      try
-      {Create Worker Priority Threads} 
+      {Create Worker Priority Threads}
       for Counter:=0 to Count - 1 do
        begin
         {Create Worker Priority Thread}
         Thread:=BeginThread(WorkerPriorityExecute,nil,Thread,THREAD_STACK_DEFAULT_SIZE);
-        if Thread = INVALID_HANDLE_VALUE then 
+        if Thread = INVALID_HANDLE_VALUE then
          begin
           {$IFDEF THREAD_DEBUG}
           if THREAD_LOG_ENABLED then ThreadLogDebug('Failed to increase worker priority threads');
           {$ENDIF}
-          
+
           Result:=ERROR_OPERATION_FAILED;
           Exit;
          end;
@@ -23671,13 +23693,13 @@ begin
         ThreadSetPriority(Thread,WORKER_PRIORITY_THREAD_PRIORITY);
         Inc(WorkerPriorityThreadNext);
        end;
-   
-      {Return Result} 
+
+      {Return Result}
       Result:=ERROR_SUCCESS;
      finally
       {Release Lock}
       SpinUnlock(WorkerPriorityThreadLock);
-     end;   
+     end;
     end
    else
     begin
@@ -23711,10 +23733,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Count}
  if Count < 1 then Exit;
- 
+
  {Check Priority}
  if not Priority then
   begin
@@ -23725,14 +23747,14 @@ begin
       {Check Count}
       if WORKER_THREAD_COUNT > WorkerThreadCount then Exit;
       if Count > (WorkerThreadCount - WORKER_THREAD_COUNT) then Exit;
-      
-      {Terminate Worker Threads} 
+
+      {Terminate Worker Threads}
       for Counter:=0 to Count - 1 do
        begin
         {Create Worker Request}
         WorkerRequest:=AllocMem(SizeOf(TWorkerRequest));
         if WorkerRequest = nil then Exit;
-   
+
         {Setup Worker Request}
         WorkerRequest.Signature:=WORKER_SIGNATURE;
         WorkerRequest.Interval:=0;
@@ -23742,7 +23764,7 @@ begin
         WorkerRequest.Task:=nil;
         WorkerRequest.Data:=nil;
         WorkerRequest.Callback:=nil;
-     
+
         {Submit Worker Request}
         FillChar(Message,SizeOf(TMessage),0);
         Message.Msg:=PtrUInt(WorkerRequest);
@@ -23750,20 +23772,20 @@ begin
          begin
           {Free Worker Request}
           FreeMem(WorkerRequest);
-          
+
           Result:=ERROR_OPERATION_FAILED;
           Exit;
-         end; 
-         
-        {Worker Request will be freed by WorkerExecute} 
+         end;
+
+        {Worker Request will be freed by WorkerExecute}
        end;
-   
-      {Return Result} 
+
+      {Return Result}
       Result:=ERROR_SUCCESS;
      finally
       {Release Lock}
       SpinUnlock(WorkerThreadLock);
-     end;   
+     end;
     end
    else
     begin
@@ -23779,14 +23801,14 @@ begin
       {Check Count}
       if WORKER_PRIORITY_THREAD_COUNT > WorkerPriorityThreadCount then Exit;
       if Count > (WorkerPriorityThreadCount - WORKER_PRIORITY_THREAD_COUNT) then Exit;
-      
-      {Terminate Worker Priority Threads} 
+
+      {Terminate Worker Priority Threads}
       for Counter:=0 to Count - 1 do
        begin
         {Create Worker Request}
         WorkerRequest:=AllocMem(SizeOf(TWorkerRequest));
         if WorkerRequest = nil then Exit;
-   
+
         {Setup Worker Request}
         WorkerRequest.Signature:=WORKER_SIGNATURE;
         WorkerRequest.Interval:=0;
@@ -23796,7 +23818,7 @@ begin
         WorkerRequest.Task:=nil;
         WorkerRequest.Data:=nil;
         WorkerRequest.Callback:=nil;
-     
+
         {Submit Worker Request}
         FillChar(Message,SizeOf(TMessage),0);
         Message.Msg:=PtrUInt(WorkerRequest);
@@ -23804,26 +23826,26 @@ begin
          begin
           {Free Worker Request}
           FreeMem(WorkerRequest);
-          
+
           Result:=ERROR_OPERATION_FAILED;
           Exit;
-         end; 
-         
-        {Worker Request will be freed by WorkerPriorityExecute} 
+         end;
+
+        {Worker Request will be freed by WorkerPriorityExecute}
        end;
-   
-      {Return Result} 
+
+      {Return Result}
       Result:=ERROR_SUCCESS;
      finally
       {Release Lock}
       SpinUnlock(WorkerPriorityThreadLock);
-     end;   
+     end;
     end
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
     end;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -23840,16 +23862,16 @@ begin
  {Check Worker Request}
  if WorkerRequest = nil then Exit;
  if WorkerRequest.Signature <> WORKER_SIGNATURE then Exit;
- 
+
  {Check Reschedule}
  if (WorkerRequest.Flags and WORKER_FLAG_RESCHEDULE) = 0 then
   begin
    {Free Request Timer}
-   if WorkerRequest.Timer <> INVALID_HANDLE_VALUE then 
+   if WorkerRequest.Timer <> INVALID_HANDLE_VALUE then
     begin
      TimerDestroy(WorkerRequest.Timer);
-    end; 
-    
+    end;
+
    {Submit Worker Request}
    FillChar(Message,SizeOf(TMessage),0);
    Message.Msg:=PtrUInt(WorkerRequest);
@@ -23869,8 +23891,8 @@ begin
        {Free Worker Request}
        FreeMem(WorkerRequest);
       end;
-    end;    
-   
+    end;
+
    {Worker Request will be freed by WorkerExecute/WorkerPriorityExecute}
   end
  else
@@ -23886,21 +23908,21 @@ begin
         begin
          {Release the Lock}
          SpinUnlock(WorkerRequest.Lock);
-         
+
          Exit;
         end;
-        
+
        {Invalidate Worker Request}
        WorkerRequest.Signature:=0;
-       
+
        {Release the Lock}
        SpinUnlock(WorkerRequest.Lock);
-       
+
        {Free Request Timer}
-       if WorkerRequest.Timer <> INVALID_HANDLE_VALUE then 
+       if WorkerRequest.Timer <> INVALID_HANDLE_VALUE then
         begin
          TimerDestroy(WorkerRequest.Timer);
-        end; 
+        end;
 
        {Free Request Lock}
        SpinDestroy(WorkerRequest.Lock);
@@ -23917,7 +23939,7 @@ begin
        try
         {Check Signature}
         if WorkerRequest.Signature <> WORKER_SIGNATURE then Exit;
-        
+
         {Get Repeat Request}
         RepeatRequest:=PWorkerRequest(PtrUInt(WorkerRequest) + PtrUInt(SizeOf(TWorkerRequest)));
         if (RepeatRequest <> nil) and (RepeatRequest.Signature = WORKER_SIGNATURE) then
@@ -23933,17 +23955,17 @@ begin
           else
            begin
             MessageslotSend(WorkerPriorityMessageslot,Message);
-           end;           
-       
+           end;
+
           {Repeat Request will NOT be freed by WorkerExecute/WorkerPriorityExecute}
          end;
        finally
         {Release the Lock}
         SpinUnlock(WorkerRequest.Lock);
        end;
-      end;       
-    end;    
-  end;  
+      end;
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -23968,22 +23990,22 @@ begin
 
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Create Task}
  Task:=AllocFIQMem(SizeOf(TTaskerThreadSendMessage),CPU_AFFINITY_NONE);
  if Task = nil then Exit;
- 
+
  {Update Task}
  Task.Task:=TASKER_TASK_THREADSENDMESSAGE;
  Task.Thread:=Thread;
  Task.Message:=Message;
- 
+
  {Flush Task}
  if not(HEAP_FIQ_CACHE_COHERENT) then
   begin
    CleanDataCacheRange(PtrUInt(Task),SizeOf(TTaskerThreadSendMessage));
   end;
-  
+
  {Enqueue}
  Result:=TaskerEnqueue(PTaskerTask(Task));
  if Result <> ERROR_SUCCESS then
@@ -23991,7 +24013,7 @@ begin
    {Free Task}
    FreeFIQMem(Task)
   end;
- 
+
  {Task will be freed by TaskerTrigger}
 end;
 
@@ -24016,22 +24038,22 @@ begin
 
  {Check Messageslot}
  if Messageslot = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Create Task}
  Task:=AllocFIQMem(SizeOf(TTaskerMessageslotSend),CPU_AFFINITY_NONE);
  if Task = nil then Exit;
- 
+
  {Update Task}
  Task.Task:=TASKER_TASK_MESSAGESLOTSEND;
  Task.Messageslot:=Messageslot;
  Task.Message:=Message;
- 
+
  {Flush Task}
  if not(HEAP_FIQ_CACHE_COHERENT) then
   begin
    CleanDataCacheRange(PtrUInt(Task),SizeOf(TTaskerMessageslotSend));
   end;
-  
+
  {Enqueue}
  Result:=TaskerEnqueue(PTaskerTask(Task));
  if Result <> ERROR_SUCCESS then
@@ -24039,7 +24061,7 @@ begin
    {Free Task}
    FreeFIQMem(Task)
   end;
- 
+
  {Task will be freed by TaskerTrigger}
 end;
 
@@ -24064,22 +24086,22 @@ begin
 
  {Check Semaphore}
  if Semaphore = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Create Task}
  Task:=AllocFIQMem(SizeOf(TTaskerSemaphoreSignal),CPU_AFFINITY_NONE);
  if Task = nil then Exit;
- 
+
  {Update Task}
  Task.Task:=TASKER_TASK_SEMAPHORESIGNAL;
  Task.Semaphore:=Semaphore;
  Task.Count:=Count;
- 
+
  {Flush Task}
  if not(HEAP_FIQ_CACHE_COHERENT) then
   begin
    CleanDataCacheRange(PtrUInt(Task),SizeOf(TTaskerSemaphoreSignal));
   end;
-  
+
  {Enqueue}
  Result:=TaskerEnqueue(PTaskerTask(Task));
  if Result <> ERROR_SUCCESS then
@@ -24087,7 +24109,7 @@ begin
    {Free Task}
    FreeFIQMem(Task)
   end;
- 
+
  {Task will be freed by TaskerTrigger}
 end;
 
@@ -24201,13 +24223,13 @@ function TaskerEnqueue(Task:PTaskerTask):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check the Task}
  if Task = nil then Exit;
- 
+
  {Check the List}
  if TaskerList = nil then Exit;
- 
+
  {Lock the List}
  if SpinLockIRQFIQ(TaskerList.Lock) = ERROR_SUCCESS then
   begin
@@ -24226,22 +24248,22 @@ begin
       Task.Prev:=TaskerList.Last;
       TaskerList.Last.Next:=Task;
       TaskerList.Last:=Task;
-     end;  
- 
+     end;
+
     {Increment Count}
     Inc(TaskerList.Count);
-    
-    {Return Result} 
-    Result:=ERROR_SUCCESS;       
+
+    {Return Result}
+    Result:=ERROR_SUCCESS;
    finally
     {Unlock the List}
     SpinUnlockIRQFIQ(TaskerList.Lock);
-   end;   
+   end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -24257,7 +24279,7 @@ begin
 
  {Check the List}
  if TaskerList = nil then Exit;
- 
+
  {Lock the List}
  if SpinLockIRQFIQ(TaskerList.Lock) = ERROR_SUCCESS then
   begin
@@ -24277,18 +24299,18 @@ begin
        begin
         Task.Next.Prev:=nil;
        end;
-      
+
       {Decrement Count}
       Dec(TaskerList.Count);
-      
+
       {Return Result}
       Result:=Task;
      end;
    finally
     {Unlock the List}
     SpinUnlockIRQFIQ(TaskerList.Lock);
-   end;   
-  end;  
+   end;
+  end;
 end;
 
 {==============================================================================}
@@ -24304,26 +24326,26 @@ begin
  {Check the Handler}
  if Assigned(TaskerCheckHandler) then
   begin
-   {Use the Handler method} 
+   {Use the Handler method}
    Result:=TaskerCheckHandler;
   end
  else
-  begin 
+  begin
    {Use the Default method}
    {Check the List}
    if TaskerList = nil then Exit;
-   
+
    {Setup Result}
    Result:=ERROR_NO_MORE_ITEMS;
- 
+
    {Check Tasker List}
    if TaskerList.First <> nil then
     begin
      Result:=ERROR_SUCCESS;
-    end; 
-  end; 
+    end;
+  end;
 end;
- 
+
 {==============================================================================}
 
 function TaskerTrigger:LongWord;
@@ -24339,11 +24361,11 @@ begin
  {Check the Handler}
  if Assigned(TaskerTriggerHandler) then
   begin
-   {Use the Handler method} 
+   {Use the Handler method}
    Result:=TaskerTriggerHandler;
   end
  else
-  begin 
+  begin
    {Use the Default method}
    {Dequeue Task}
    Task:=TaskerDequeue;
@@ -24381,18 +24403,18 @@ begin
          end;
        end;
      end;
-     
+
      {Free Task}
      FreeFIQMem(Task);
-     
+
      {Dequeue Task}
      Task:=TaskerDequeue;
     end;
- 
+
    {Return Result}
    Result:=ERROR_SUCCESS;
-  end; 
-end; 
+  end;
+end;
 
 {==============================================================================}
 {==============================================================================}
@@ -24402,7 +24424,7 @@ procedure SysInitProc;
 begin
  {}
  SysInitializationCompleted:=True;
- 
+
  {Check Last InitProc}
  if Assigned(SysLastInitProc) then
   begin
@@ -24453,13 +24475,13 @@ begin
 
  {Allocate Thread Vars, this must be the first thing, because the exception management and IO depends on ThreadVars}
  SysAllocateThreadVars;
- 
+
  {Copy Thread Info Block to Stack}
  ThreadInfo:=PThreadInfo(Parameter)^;
- 
+
  {Free the Parameter}
  {FreeMem(Parameter);} {Moved below to allow for Idle/IRQ/FIQ Threads}
- 
+
  {Initialize Thread}
  InitThread(ThreadInfo.StackLength);
 
@@ -24470,27 +24492,27 @@ begin
  TextIOOpen(ErrOutput,TextIOWriteChar,TextIOReadChar,fmOutput,nil);
  TextIOOpen(StdOut,TextIOWriteChar,TextIOReadChar,fmOutput,nil);
  TextIOOpen(StdErr,TextIOWriteChar,TextIOReadChar,fmOutput,nil);
- 
+
  {Initialize InOutRes}
  {Note: Normally done by InitThread}
  InOutRes:=0;
- 
+
  {Initialize Stack Checking}
  {Note: Normally done by InitThread}
  {StackLength:=CheckInitialStkLen(ThreadInfo.StackLength);}
  {StackBottom:=Sptr - StackLength;}
- 
+
  {Start Thread Function}
  Result:=ThreadInfo.ThreadFunction(ThreadInfo.ThreadParameter);
- 
+
  {Free the Parameter}
- FreeMem(Parameter); 
- 
+ FreeMem(Parameter);
+
  {Finalize Thread}
  DoneThread;
- 
+
  {Thread Result}
- ThreadEnd(Result); 
+ ThreadEnd(Result);
 end;
 
 {==============================================================================}
@@ -24505,20 +24527,20 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Initialization}
  if ThreadVarBlockSize = 0 then
   begin
    InitThreadVars(@SysRelocateThreadVar);
    IsMultiThread:=True;
   end;
- 
+
  {Create the Thread Info Block}
  ThreadInfo:=AllocMem(SizeOf(TThreadInfo));
  ThreadInfo.ThreadFunction:=ThreadFunction;
  ThreadInfo.ThreadParameter:=ThreadParameter;
  ThreadInfo.StackLength:=StackSize;
- 
+
  {Create the Thread}
  ThreadId:=ThreadCreate(ThreadMain,StackSize,THREAD_PRIORITY_DEFAULT,PChar(THREAD_NAME_DEFAULT),ThreadInfo);
  if ThreadId <> INVALID_HANDLE_VALUE then
@@ -24526,15 +24548,15 @@ begin
    if (CreationFlags and THREAD_CREATE_SUSPENDED) = 0 then
     begin
      ThreadReady(ThreadId,False);
-    end; 
+    end;
   end
- else 
+ else
   begin
    FreeMem(ThreadInfo);
-   ThreadId:=INVALID_HANDLE_VALUE; 
+   ThreadId:=INVALID_HANDLE_VALUE;
   end;
 
- Result:=ThreadId;  
+ Result:=ThreadId;
 end;
 
 {==============================================================================}
@@ -24549,20 +24571,20 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Initialization}
  if ThreadVarBlockSize = 0 then
   begin
    InitThreadVars(@SysRelocateThreadVar);
    IsMultiThread:=True;
   end;
- 
+
  {Create the Thread Info Block}
  ThreadInfo:=AllocMem(SizeOf(TThreadInfo));
  ThreadInfo.ThreadFunction:=ThreadFunction;
  ThreadInfo.ThreadParameter:=ThreadParameter;
  ThreadInfo.StackLength:=StackSize;
- 
+
  {Create the Thread}
  ThreadId:=ThreadCreateEx(ThreadMain,StackSize,Priority,Affinity,CPU,Name,ThreadInfo);
  if ThreadId <> INVALID_HANDLE_VALUE then
@@ -24570,15 +24592,15 @@ begin
    if (CreationFlags and THREAD_CREATE_SUSPENDED) = 0 then
     begin
      ThreadReady(ThreadId,False);
-    end; 
+    end;
   end
- else 
+ else
   begin
    FreeMem(ThreadInfo);
-   ThreadId:=INVALID_HANDLE_VALUE; 
+   ThreadId:=INVALID_HANDLE_VALUE;
   end;
 
- Result:=ThreadId;  
+ Result:=ThreadId;
 end;
 
 {==============================================================================}
@@ -24590,7 +24612,7 @@ procedure SysEndThread(ExitCode:DWORD);
 begin
  {}
  DoneThread;
- ThreadEnd(ExitCode); 
+ ThreadEnd(ExitCode);
 end;
 
 {==============================================================================}
@@ -24651,7 +24673,7 @@ begin
  else
   begin
    Result:=ERROR_WAIT_TIMEOUT;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -24662,7 +24684,7 @@ var
 begin
  {}
  Value:=THREAD_PRIORITY_NORMAL;
- 
+
  {Map the RTL priority to Ultibo priority}
  case Priority of
   -15,-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3:Value:=THREAD_PRIORITY_IDLE;
@@ -24673,7 +24695,7 @@ begin
   2:Value:=THREAD_PRIORITY_HIGHEST;
   3,4,5,6,7,8,9,10,11,12,13,14,15:Value:=THREAD_PRIORITY_CRITICAL;
  end;
- 
+
  {Set Priority}
  Result:=(ThreadSetPriority(ThreadHandle,Value) <> LongWord(INVALID_HANDLE_VALUE));
 end;
@@ -24686,17 +24708,17 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Get Priority}
  Value:=ThreadGetPriority(ThreadHandle);
- 
+
  {Map the Ultibo priority to RTL priority}
  case Value of
   THREAD_PRIORITY_IDLE:Result:=-15;
   THREAD_PRIORITY_LOWEST:Result:=-2;
   THREAD_PRIORITY_LOWER:Result:=-1;
   THREAD_PRIORITY_NORMAL:Result:=0;
-  THREAD_PRIORITY_HIGHER:Result:=1; 
+  THREAD_PRIORITY_HIGHER:Result:=1;
   THREAD_PRIORITY_HIGHEST:Result:=2;
   THREAD_PRIORITY_CRITICAL:Result:=15;
  end;
@@ -24753,7 +24775,7 @@ end;
 {==============================================================================}
 
 function SysTryEnterCriticalSection(var CriticalSection):LongInt;
-{The return value is zero if another thread owns the critical section, or nonzero 
+{The return value is zero if another thread owns the critical section, or nonzero
  if the current thread already owns or succesfully obtained the critical section}
 begin
  {}
@@ -24769,7 +24791,7 @@ end;
 procedure SysLeaveCriticalSection(var CriticalSection);
 begin
  {}
- CriticalSectionUnlock(TCriticalSectionHandle(TRTLCriticalSection(CriticalSection).__m_owner)); 
+ CriticalSectionUnlock(TCriticalSectionHandle(TRTLCriticalSection(CriticalSection).__m_owner));
 end;
 
 {==============================================================================}
@@ -24798,7 +24820,7 @@ begin
  {}
  Result:=nil;
  if Offset > ThreadVarBlockSize then Exit;
- 
+
  TlsPointer:=ThreadGetTlsPointer(ThreadGetCurrent);
  if TlsPointer <> nil then
   begin
@@ -24871,7 +24893,7 @@ const
  wrTimeout   = 1;
  wrAbandoned = 2;
  wrError     = 3;
- 
+
 var
  Status:LongWord;
 begin
@@ -24965,7 +24987,7 @@ end;
 procedure SysSemaphoreWait(const Semaphore:Pointer);
 begin
  {}
- SemaphoreWaitEx(TSemaphoreHandle(Semaphore),INFINITE); 
+ SemaphoreWaitEx(TSemaphoreHandle(Semaphore),INFINITE);
 end;
 
 {==============================================================================}
@@ -25084,18 +25106,18 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Stack Size}
  if StackSize = 0 then Exit;
- 
+
  {Check Stack Guard}
  if THREAD_STACK_GUARD_ENABLED then
   begin
    {Check Page Size}
    if MEMORY_PAGE_SIZE = 0 then Exit;
-   
+
    {Allocate Memory}
-   StackMemory:=AllocAlignedMem(StackSize + MEMORY_PAGE_SIZE,STACK_MIN_ALIGNMENT); 
+   StackMemory:=AllocAlignedMem(StackSize + MEMORY_PAGE_SIZE,STACK_MIN_ALIGNMENT);
    if StackMemory = nil then Exit;
 
    {Get Page}
@@ -25106,7 +25128,7 @@ begin
      PageTableEntry.Size:=MEMORY_PAGE_SIZE;
      PageTableSetEntry(PageTableEntry);
     end;
-    
+
    {Get Next Page}
    PageTableGetEntry(PtrUInt(StackMemory + MEMORY_PAGE_SIZE),PageTableEntry);
    if PageTableEntry.Size <> MEMORY_PAGE_SIZE then
@@ -25114,35 +25136,35 @@ begin
      {Map Page}
      PageTableEntry.Size:=MEMORY_PAGE_SIZE;
      PageTableSetEntry(PageTableEntry);
-    end; 
+    end;
 
    {Check Page}
    PageTableGetEntry(PtrUInt(StackMemory),PageTableEntry);
    if PageTableEntry.Size <> MEMORY_PAGE_SIZE then
     begin
      FreeMem(StackMemory);
-     Exit;     
-    end; 
-   
+     Exit;
+    end;
+
    {Clean Guard Page}
    CleanDataCacheRange(PtrUInt(StackMemory),MEMORY_PAGE_SIZE);
-   
+
    {Map Guard Page (No Access)}
    PageTableEntry.Flags:=PageTableEntry.Flags and not(PAGE_TABLE_FLAG_READONLY or PAGE_TABLE_FLAG_READWRITE or PAGE_TABLE_FLAG_CACHEABLE or PAGE_TABLE_FLAG_WRITEBACK or PAGE_TABLE_FLAG_WRITETHROUGH or PAGE_TABLE_FLAG_WRITEALLOCATE);
    PageTableSetEntry(PageTableEntry);
-   
+
    {Return Top Address}
    Result:=StackMemory + (StackSize + MEMORY_PAGE_SIZE);
   end
  else
-  begin 
+  begin
    {Allocate Memory}
-   StackMemory:=AllocAlignedMem(StackSize,STACK_MIN_ALIGNMENT); 
+   StackMemory:=AllocAlignedMem(StackSize,STACK_MIN_ALIGNMENT);
    if StackMemory = nil then Exit;
-   
+
    {Return Top Address}
    Result:=StackMemory + StackSize;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -25160,7 +25182,7 @@ begin
  {}
  {Check Stack Address}
  if StackBase = nil then Exit;
- 
+
  {Check Stack Size}
  if StackSize = 0 then Exit;
 
@@ -25169,28 +25191,28 @@ begin
   begin
    {Get Base Address}
    StackMemory:=StackBase - (StackSize + MEMORY_PAGE_SIZE);
-   
+
    {Get Next Page}
    PageTableGetEntry(PtrUInt(StackMemory + MEMORY_PAGE_SIZE),PageTableEntry);
-   
+
    {Get Guard Page}
    PageTableGetEntry(PtrUInt(StackMemory),GuardPageEntry);
-   
-   {Unmap Guard Page (Normal Access)} 
+
+   {Unmap Guard Page (Normal Access)}
    GuardPageEntry.Flags:=PageTableEntry.Flags;
    PageTableSetEntry(GuardPageEntry);
-   
+
    {Free Memory}
    FreeMem(StackMemory,StackSize + MEMORY_PAGE_SIZE);
   end
  else
-  begin 
+  begin
    {Get Base Address}
    StackMemory:=StackBase - StackSize;
- 
+
    {Free Memory}
    FreeMem(StackMemory,StackSize);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -25205,7 +25227,7 @@ begin
  else
   begin
    Result:=nil;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -25219,18 +25241,18 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Acquire Lock}
  if SpinLock(ThreadTableLock) = ERROR_SUCCESS then
-  begin                                                    
+  begin
    try
     {Check Count}
     if ThreadTableCount = 0 then Exit;
-    
+
     {Allocate Snapshot}
     Snapshot:=AllocMem(SizeOf(TThreadSnapshot) * ThreadTableCount);
     if Snapshot = nil then Exit;
-    
+
     {Setup Start}
     Current:=Snapshot;
     Previous:=nil;
@@ -25243,38 +25265,38 @@ begin
       Current.Handle:=TThreadHandle(ThreadEntry);
       Current.State:=ThreadEntry.State;
       Current.Flags:=ThreadEntry.Flags;
-      Current.CPU:=ThreadEntry.CurrentCPU; 
+      Current.CPU:=ThreadEntry.CurrentCPU;
       Current.Priority:=ThreadEntry.Priority;
       Current.Affinity:=ThreadEntry.Affinity;
       Current.StackBase:=ThreadEntry.StackBase;
       Current.StackSize:=ThreadEntry.StackSize;
       Current.StackPointer:=ThreadEntry.StackPointer;
       StrLCopy(Current.Name,ThreadEntry.Name,THREAD_NAME_LENGTH - 1);
-      Current.Parent:=ThreadEntry.Parent; 
-      Current.ExitCode:=ThreadEntry.ExitCode;  
-      Current.LastError:=ThreadEntry.LastError; 
-      Current.Locale:=ThreadEntry.Locale;        
-      Current.TargetCPU:=ThreadEntry.TargetCPU; 
+      Current.Parent:=ThreadEntry.Parent;
+      Current.ExitCode:=ThreadEntry.ExitCode;
+      Current.LastError:=ThreadEntry.LastError;
+      Current.Locale:=ThreadEntry.Locale;
+      Current.TargetCPU:=ThreadEntry.TargetCPU;
       Current.TargetPriority:=ThreadEntry.TargetPriority;
       Current.CreateTime:=ThreadEntry.CreateTime;
       Current.ExitTime:=ThreadEntry.ExitTime;
       Current.KernelTime:=ThreadEntry.KernelTime;
       Current.SwitchCount:=ThreadEntry.SwitchCount;
-      
+
       {Add Next}
       if Previous <> nil then Previous.Next:=Current;
       Previous:=Current;
       Current:=PThreadSnapshot(PtrUInt(Previous) + SizeOf(TThreadSnapshot));
-      
+
       {Get Next Thread}
       ThreadEntry:=ThreadEntry.Next;
      end;
-    
+
     {Return Result}
     Result:=Snapshot;
    finally
-    SpinUnlock(ThreadTableLock); 
-   end;                                              
+    SpinUnlock(ThreadTableLock);
+   end;
   end;
 end;
 
@@ -25284,13 +25306,13 @@ function ThreadSnapshotDestroy(ASnapshot:PThreadSnapshot):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Snapshot}
  if ASnapshot = nil then Exit;
- 
+
  {Free Snapshot}
  FreeMem(ASnapshot);
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -25365,10 +25387,10 @@ function TaskerGetCount:LongWord;
 begin
  {}
  Result:=0;
- 
+
  {Check List}
  if TaskerList = nil then Exit;
- 
+
  Result:=TaskerList.Count;
 end;
 
@@ -25378,7 +25400,7 @@ function ListTypeToString(ListType:LongWord):String;
 begin
  {}
  Result:='';
- 
+
  case ListType of
   LIST_TYPE_NOT_SPECIFIED:Result:='LIST_TYPE_NOT_SPECIFIED';
   LIST_TYPE_WAIT_SECTION:Result:='LIST_TYPE_WAIT_SECTION';
@@ -25399,7 +25421,7 @@ function QueueTypeToString(QueueType:LongWord):String;
 begin
  {}
  Result:='';
- 
+
  case QueueType of
   QUEUE_TYPE_NOT_SPECIFIED:Result:='QUEUE_TYPE_NOT_SPECIFIED';
   QUEUE_TYPE_SCHEDULE_SLEEP:Result:='QUEUE_TYPE_SCHEDULE_SLEEP';
@@ -25422,7 +25444,7 @@ function ThreadTypeToString(ThreadType:LongWord):String;
 begin
  {}
  Result:='';
- 
+
  case ThreadType of
   THREAD_TYPE_NORMAL:Result:='THREAD_TYPE_NORMAL';
   THREAD_TYPE_IDLE:Result:='THREAD_TYPE_IDLE';
@@ -25438,7 +25460,7 @@ function ThreadStateToString(ThreadState:LongWord):String;
 begin
  {}
  Result:='';
- 
+
  case ThreadState of
   THREAD_STATE_RUNNING:Result:='THREAD_STATE_RUNNING';
   THREAD_STATE_READY:Result:='THREAD_STATE_READY';
@@ -25459,7 +25481,7 @@ function ThreadPriorityToString(ThreadPriority:LongWord):String;
 begin
  {}
  Result:='';
- 
+
  case ThreadPriority of
   THREAD_PRIORITY_NONE:Result:='THREAD_PRIORITY_NONE';
   THREAD_PRIORITY_IDLE:Result:='THREAD_PRIORITY_IDLE';
@@ -25481,7 +25503,7 @@ begin
  {}
  {Check Level}
  if Level < THREAD_DEFAULT_LOG_LEVEL then Exit;
- 
+
  WorkBuffer:='';
  {Check Level}
  if Level = THREAD_LOG_LEVEL_DEBUG then
@@ -25496,11 +25518,11 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
   end;
- 
+
  {Add Prefix}
  WorkBuffer:=WorkBuffer + 'Threads: ';
- 
- {Output Logging} 
+
+ {Output Logging}
  LoggingOutputEx(LOGGING_FACILITY_THREADS,LogLevelToLoggingSeverity(Level),'Threads',WorkBuffer + AText);
 end;
 
@@ -25546,7 +25568,7 @@ var
 begin
  {}
  Result:=LIST_FLAG_NONE;
- 
+
  {Get IRQ/FIQ}
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -25569,8 +25591,8 @@ begin
   LIST_TYPE_WAIT_MESSAGESLOT:Result:=Flags;
   LIST_TYPE_WAIT_OTHER:Result:=Flags;  {Other type of wait list requires the same behaviour as all synchronisation objects}
  end;
-end; 
- 
+end;
+
 {==============================================================================}
 
 function SchedulerGetQueueFlags(QueueType:LongWord):LongWord;
@@ -25580,7 +25602,7 @@ var
 begin
  {}
  Result:=QUEUE_FLAG_NONE;
- 
+
  {Get IRQ/FIQ}
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -25590,7 +25612,7 @@ begin
   begin
    Flags:=QUEUE_FLAG_IRQ;
   end;
-  
+
  {Check Queue Type}
  case QueueType of
   QUEUE_TYPE_SCHEDULE_SLEEP:Result:=Flags or QUEUE_FLAG_DELTA;
@@ -25599,10 +25621,10 @@ begin
   QUEUE_TYPE_SCHEDULE_NONE:Result:=Flags or QUEUE_FLAG_DESCENDING;
   QUEUE_TYPE_SCHEDULE_IDLE:Result:=Flags or QUEUE_FLAG_DESCENDING;
   QUEUE_TYPE_SCHEDULE_LOWEST:Result:=Flags or QUEUE_FLAG_DESCENDING;
-  QUEUE_TYPE_SCHEDULE_LOWER:Result:=Flags or QUEUE_FLAG_DESCENDING; 
-  QUEUE_TYPE_SCHEDULE_NORMAL:Result:=Flags or QUEUE_FLAG_DESCENDING; 
-  QUEUE_TYPE_SCHEDULE_HIGHER:Result:=Flags or QUEUE_FLAG_DESCENDING; 
-  QUEUE_TYPE_SCHEDULE_HIGHEST:Result:=Flags or QUEUE_FLAG_DESCENDING; 
+  QUEUE_TYPE_SCHEDULE_LOWER:Result:=Flags or QUEUE_FLAG_DESCENDING;
+  QUEUE_TYPE_SCHEDULE_NORMAL:Result:=Flags or QUEUE_FLAG_DESCENDING;
+  QUEUE_TYPE_SCHEDULE_HIGHER:Result:=Flags or QUEUE_FLAG_DESCENDING;
+  QUEUE_TYPE_SCHEDULE_HIGHEST:Result:=Flags or QUEUE_FLAG_DESCENDING;
   QUEUE_TYPE_SCHEDULE_CRITICAL:Result:=Flags or QUEUE_FLAG_DESCENDING;
  end;
 end;
@@ -25614,10 +25636,10 @@ function SchedulerGetQueueHandle(CPUID:LongWord;QueueType:LongWord):TQueueHandle
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check CPU}
  if CPUID > (SCHEDULER_CPU_COUNT - 1) then Exit;
- 
+
  {Check Queue Type}
  case QueueType of
   QUEUE_TYPE_SCHEDULE_SLEEP:Result:=SchedulerSleepQueue[CPUID];
@@ -25628,9 +25650,9 @@ begin
   QUEUE_TYPE_SCHEDULE_LOWEST:Result:=SchedulerLowestQueue[CPUID];
   QUEUE_TYPE_SCHEDULE_LOWER:Result:=SchedulerLowerQueue[CPUID];
   QUEUE_TYPE_SCHEDULE_NORMAL:Result:=SchedulerNormalQueue[CPUID];
-  QUEUE_TYPE_SCHEDULE_HIGHER:Result:=SchedulerHigherQueue[CPUID]; 
-  QUEUE_TYPE_SCHEDULE_HIGHEST:Result:=SchedulerHighestQueue[CPUID]; 
-  QUEUE_TYPE_SCHEDULE_CRITICAL:Result:=SchedulerCriticalQueue[CPUID];   
+  QUEUE_TYPE_SCHEDULE_HIGHER:Result:=SchedulerHigherQueue[CPUID];
+  QUEUE_TYPE_SCHEDULE_HIGHEST:Result:=SchedulerHighestQueue[CPUID];
+  QUEUE_TYPE_SCHEDULE_CRITICAL:Result:=SchedulerCriticalQueue[CPUID];
  end;
 end;
 
@@ -25641,10 +25663,10 @@ function SchedulerGetQueueHandleEx(CPUID:LongWord;Priority:LongWord):TQueueHandl
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check CPU}
  if CPUID > (SCHEDULER_CPU_COUNT - 1) then Exit;
- 
+
  {Check Priority Type}
  case Priority of
   THREAD_PRIORITY_NONE:Result:=SchedulerNoneQueue[CPUID];
@@ -25730,10 +25752,10 @@ function SchedulerGetPriorityQuantum(Priority:LongWord):LongWord;
 begin
  {}
  Result:=LongWord(INVALID_HANDLE_VALUE);
- 
+
  {Check Priority}
  if Priority > THREAD_PRIORITY_CRITICAL then Exit;
- 
+
  {Get Priority Quantum}
  Result:=SCHEDULER_PRIORITY_QUANTUM[Priority];
 end;
@@ -25745,13 +25767,13 @@ function SchedulerSetPriorityQuantum(Priority,Quantum:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Priority}
  if Priority > THREAD_PRIORITY_CRITICAL then Exit;
- 
+
  {Set Priority Quantum}
  SCHEDULER_PRIORITY_QUANTUM[Priority]:=Quantum;
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -25834,7 +25856,7 @@ function SchedulerMigrationToString(Migration:LongWord):String;
 begin
  {}
  Result:='';
- 
+
  case Migration of
   SCHEDULER_MIGRATION_DISABLED:Result:='SCHEDULER_MIGRATION_DISABLED';
   SCHEDULER_MIGRATION_ENABLED:Result:='SCHEDULER_MIGRATION_ENABLED';
@@ -25847,7 +25869,7 @@ function SchedulerPreemptToString(Preempt:LongWord):String;
 begin
  {}
  Result:='';
- 
+
  case Preempt of
   SCHEDULER_PREEMPT_DISABLED:Result:='SCHEDULER_PREEMPT_DISABLED';
   SCHEDULER_PREEMPT_ENABLED:Result:='SCHEDULER_PREEMPT_ENABLED';
@@ -25860,7 +25882,7 @@ function SchedulerAllocationToString(Allocation:LongWord):String;
 begin
  {}
  Result:='';
- 
+
  case Allocation of
   SCHEDULER_ALLOCATION_DISABLED:Result:='SCHEDULER_ALLOCATION_DISABLED';
   SCHEDULER_ALLOCATION_ENABLED:Result:='SCHEDULER_ALLOCATION_ENABLED';
@@ -25923,7 +25945,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Tasker Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -25932,12 +25954,12 @@ initialization
  SetThreadManager(MyThreadManager);
  {Set the Main Thread ID again because initialization of the system unit (InitSystemThreads) sets it to ThreadID(1)}
  ThreadID:=ThreadGetCurrent;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
-  
+
 {==============================================================================}
 {==============================================================================}
 

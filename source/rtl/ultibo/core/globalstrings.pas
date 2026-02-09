@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -38,7 +38,9 @@ Global Strings
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit GlobalStrings; 
+{$IFNDEF FPC_DOTTEDUNITS}
+unit GlobalStrings;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
@@ -53,7 +55,7 @@ const
  STRING_DATA_ABORT = 'Data abort';
  STRING_PREFETCH_ABORT = 'Prefetch abort';
  STRING_UNDEFINED_INSTRUCTION = 'Undefined Instruction';
- 
+
 {==============================================================================}
 {==============================================================================}
 

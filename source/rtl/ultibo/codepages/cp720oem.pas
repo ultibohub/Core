@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -39,16 +39,30 @@ CP720 OEM (Arabic)
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit CP720OEM;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Locale;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Locale;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
-        
+
 {==============================================================================}
 {const}
  {CP720OEM specific constants}
@@ -64,19 +78,25 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
 {==============================================================================}
 {Initialization Functions}
 procedure CP720OEMInit;
- 
+
 {==============================================================================}
 {CP720OEM Functions}
- 
+
 {==============================================================================}
 {CP720OEM Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
 implementation
 
-uses CP1256ANSI;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  CodePages.CP1256ANSI;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  CP1256ANSI;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {==============================================================================}
@@ -124,7 +144,7 @@ var
   $2261,$064B,$064C,$064D,$064E,$064F,$0650,$2248,
   $00B0,$2219,$00B7,$221A,$207F,$00B2,$25A0,$00A0)
  );
- 
+
  CP720TO1256:TTransTable = (
   TransID:1256;
   Values:(
@@ -145,7 +165,7 @@ var
   $D6,$D8,$D9,$DA,$DB,$DD,$B5,$DE,$DF,$E1,$E3,$E4,$E5,$E6,$EC,$ED,
   $5F,$F0,$F1,$F2,$F3,$F5,$F6,$5F,$B0,$5F,$B7,$5F,$5F,$B2,$5F,$A0)
  );
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -175,9 +195,9 @@ end;
 
 initialization
  CP720OEMInit;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

@@ -27,7 +27,7 @@ begin
  else
   begin
    InOutRes:=3;
-  end; 
+  end;
 end;
 
 procedure do_rmdir(const s: rawbytestring);
@@ -39,7 +39,7 @@ begin
  else
   begin
    InOutRes:=3;
-  end; 
+  end;
 end;
 
 procedure do_chdir(const s: rawbytestring);
@@ -51,7 +51,7 @@ begin
  else
   begin
    InOutRes:=3;
-  end; 
+  end;
 end;
 
 procedure do_GetDir (DriveNr: byte; var Dir: RawByteString);
@@ -63,7 +63,7 @@ begin
  else
   begin
    InOutRes:=3;
-  end; 
+  end;
 end;
 
 {$else FPC_HAS_FEATURE_ANSISTRINGS}

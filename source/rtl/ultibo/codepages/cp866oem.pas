@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -39,16 +39,30 @@ CP866 OEM (Russian)
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit CP866OEM;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Locale;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Locale;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
-        
+
 {==============================================================================}
 {const}
  {CP866OEM specific constants}
@@ -64,19 +78,25 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
 {==============================================================================}
 {Initialization Functions}
 procedure CP866OEMInit;
- 
+
 {==============================================================================}
 {CP866OEM Functions}
- 
+
 {==============================================================================}
 {CP866OEM Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
 implementation
 
-uses CP1251ANSI;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  CodePages.CP1251ANSI;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  CP1251ANSI;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {==============================================================================}
@@ -124,7 +144,7 @@ var
   $0401,$0451,$0404,$0454,$0407,$0457,$040E,$045E,
   $00B0,$2219,$00B7,$221A,$2116,$00A4,$25A0,$00A0)
  );
- 
+
  CP866TO1251:TTransTable = (
   TransID:1251;
   Values:(
@@ -145,7 +165,7 @@ var
   $F0,$F1,$F2,$F3,$F4,$F5,$F6,$F7,$F8,$F9,$FA,$FB,$FC,$FD,$FE,$FF,
   $A8,$B8,$AA,$BA,$AF,$BF,$A1,$A2,$B0,$95,$B7,$76,$B9,$A4,$A6,$A0)
  );
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -175,9 +195,9 @@ end;
 
 initialization
  CP866OEMInit;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

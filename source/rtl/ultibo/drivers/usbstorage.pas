@@ -73,11 +73,37 @@ USB Mass Storage Devices
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit USBStorage;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB,Storage,SCSI,SysUtils;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  Core.USB,
+  Core.Storage,
+  Core.SCSI,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  USB,
+  Storage,
+  SCSI,
+  SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do               //USB Storage Read Protect / Write Protect
                       //USB Storage CBI Transport
@@ -102,7 +128,7 @@ const
  USB_STORAGE_REQUEST_BBB_GET_MAX_LUN = $FE;
 
  {Command Block Wrapper constants}
- USB_STORAGE_CBW_SIGNATURE	= $43425355;
+ USB_STORAGE_CBW_SIGNATURE    = $43425355;
 
  USB_STORAGE_CBW_FLAGS_OUT  = $00;
  USB_STORAGE_CBW_FLAGS_IN   = $80;

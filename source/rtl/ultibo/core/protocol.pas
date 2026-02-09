@@ -17,17 +17,17 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
- 
- 
+
+
 References
 ==========
 
- 
+
 Network Protocol
 ================
 
@@ -46,36 +46,68 @@ Network Protocol
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit Protocol;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,Devices,SysUtils,Classes,Network,Transport,Ultibo,UltiboClasses;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.GlobalSock,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  System.SysUtils,
+  System.Classes,
+  Core.Network,
+  Core.Transport,
+  Core.Ultibo,
+  Core.UltiboClasses;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  GlobalSock,
+  Platform,
+  Threads,
+  Devices,
+  SysUtils,
+  Classes,
+  Network,
+  Transport,
+  Ultibo,
+  UltiboClasses;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-  
+
 {==============================================================================}
 {const}
  {Protocol specific constants}
- 
+
 const
  {Generic Protocol}
  PROTOCOL_THREAD_NAME     = 'Network Protocol';     {Thread name for Network protocol threads}
  PROTOCOL_THREAD_PRIORITY = THREAD_PRIORITY_HIGHER; {Thread priority for Network protocol threads}
- 
+
  {Protocol Timer}
  {Key Values}
  SOCKET_TIMER_KEY_NONE = TIMER_KEY_NONE;
  SOCKET_TIMER_KEY_MAX = TIMER_KEY_MAX;
  SOCKET_TIMER_KEY_MIN = TIMER_KEY_MIN;
- 
+
  {Flag Values}
- SOCKET_TIMER_FLAG_NONE    = $00000000; 
+ SOCKET_TIMER_FLAG_NONE    = $00000000;
  SOCKET_TIMER_FLAG_ACTIVE  = $00000001; {The socket timer item is active in a timer}
  SOCKET_TIMER_FLAG_DYNAMIC = $00000002; {The socket timer item was allocated dynamically}
- 
+
  {UDP Protocol}
 
  {TCP Protocol}
@@ -137,14 +169,14 @@ const
  {RAW Protocol}
 
  {ICMP6 Protocol}
- 
+
 {==============================================================================}
 type
  {Protocol specific types}
  {Generic Protocol}
  PProtocolStatistics = ^TProtocolStatistics;
  TProtocolStatistics = record
-  PacketsIn:Int64; 
+  PacketsIn:Int64;
   PacketsOut:Int64;
   BytesIn:Int64;
   BytesOut:Int64;
@@ -162,7 +194,7 @@ type
   Prev:PSocketTimerItem;      {Previous item in timer list}
   Next:PSocketTimerItem;      {Next item in timer list}
  end;
- 
+
  {UDP Protocol}
 
  {TCP Protocol}
@@ -174,19 +206,19 @@ type
  {RAW Protocol}
 
  {ICMP6 Protocol}
- 
+
 {==============================================================================}
 type
  {Protocol specific classes}
  TNetworkProtocol = class;
  TProtocolCallback = function(AProtocol:TNetworkProtocol):Boolean of object;
- 
+
  TNetworkFilter = class;
  TFilterCallback = function(AFilter:TNetworkFilter):Boolean of object;
- 
+
  TNetworkConfig = class;
  TConfigCallback = function(AConfig:TNetworkConfig):Boolean of object;
- 
+
  TProtocolSocket = class;
  TProtocolManager = class(TObject)
    constructor Create(ASettings:TNetworkSettings;ATransports:TTransportManager);
@@ -196,13 +228,13 @@ type
    FLock:TSynchronizerHandle;
    FSettings:TNetworkSettings;
    FTransports:TTransportManager;
-   
+
    {Status Variables}
    FProtocols:TNetworkList;   {List of TNetworkProtocol objects}
-   FFilters:TNetworkList;     {List of TNetworkFilter objects} 
+   FFilters:TNetworkList;     {List of TNetworkFilter objects}
    FConfigs:TNetworkList;     {List of TNetworkConfig objects}
    //FClients //To Do
-   
+
    {Event Variables}
 
    {Internal Methods}
@@ -214,78 +246,78 @@ type
    {Public Properties}
    property Settings:TNetworkSettings read FSettings;
    property Transports:TTransportManager read FTransports;
-   
+
    {Public Methods}
    function AddProtocol(AProtocol:TNetworkProtocol):Boolean;
    function RemoveProtocol(AProtocol:TNetworkProtocol):Boolean;
-   
+
    function GetProtocolByName(const AName:String;ALock:Boolean;AState:LongWord):TNetworkProtocol;
    function GetProtocolByType(AProtocol,ASocketType:Word;ALock:Boolean;AState:LongWord):TNetworkProtocol;
    function GetProtocolByProtocol(AProtocol:TNetworkProtocol;ALock:Boolean;AState:LongWord):TNetworkProtocol;
    function GetProtocolBySocket(ASocket:TProtocolSocket;ALock:Boolean;AState:LongWord):TNetworkProtocol;
    function GetProtocolByNext(APrevious:TNetworkProtocol;ALock,AUnlock:Boolean;AState:LongWord):TNetworkProtocol;
-   
+
    function AddFilter(AFilter:TNetworkFilter):Boolean;
    function RemoveFilter(AFilter:TNetworkFilter):Boolean;
-   
+
    function GetFilterByProtocol(AProtocol:Word;ALock:Boolean;AState:LongWord):TNetworkFilter;
    function GetFilterByFilter(AFilter:TNetworkFilter;ALock:Boolean;AState:LongWord):TNetworkFilter;
    function GetFilterByNext(APrevious:TNetworkFilter;ALock,AUnlock:Boolean;AState:LongWord):TNetworkFilter;
-   
+
    function AddConfig(AConfig:TNetworkConfig):Boolean;
    function RemoveConfig(AConfig:TNetworkConfig):Boolean;
-   
+
    function GetConfigByType(AConfigType:Word;ALock:Boolean;AState:LongWord):TNetworkConfig;
    function GetConfigByConfig(AConfig:TNetworkConfig;ALock:Boolean;AState:LongWord):TNetworkConfig;
    function GetConfigByNext(APrevious:TNetworkConfig;ALock,AUnlock:Boolean;AState:LongWord):TNetworkConfig;
-   
+
    function SetConfigByType(AConfigType:Word;AInitDelay,ARetryCount,ARetryTimeout:LongWord):Boolean;
-   
+
    //AddClient //To Do ? //TNetworkProtocol as well ? //Transport as well ?
    //RemoveClient
-   
+
    //GetClientBy //To Do ? //TNetworkProtocol as well ? //Transport as well ?
    //GetClientBy
    //GetClientByNext
-   
+
    function StartProtocols:Boolean;
    function StopProtocols:Boolean;
    function ProcessProtocols:Boolean;
 
    function ProcessSockets:Boolean;
-   
+
    function EnumerateProtocols(ACallback:TProtocolCallback):Boolean;
-   
+
    function BindProtocols(ATransport:TNetworkTransport):Boolean;
    function UnbindProtocols(ATransport:TNetworkTransport):Boolean;
-   
+
    function StartFilters:Boolean;
    function StopFilters:Boolean;
    function ProcessFilters:Boolean;
 
    function EnumerateFilters(ACallback:TFilterCallback):Boolean;
-   
+
    function BindFilters(ATransport:TNetworkTransport):Boolean;
    function UnbindFilters(ATransport:TNetworkTransport):Boolean;
-   
+
    function StartConfigs:Boolean;
    function StopConfigs:Boolean;
    function ProcessConfigs:Boolean;
 
    function EnumerateConfigs(ACallback:TConfigCallback):Boolean;
-   
+
    function BindConfigs(ATransport:TNetworkTransport):Boolean;
    function UnbindConfigs(ATransport:TNetworkTransport):Boolean;
-   
+
    //StartClients  //To Do
    //StopClients
    //ProcessClients
-   
+
    //EnumerateClients
-   
+
    //BindClients
    //UnbindClients
-   
+
    {Public Methods}
    function CheckSocket(ASocket:TSocket;ALock:Boolean;AState:LongWord):Boolean;
 
@@ -305,7 +337,7 @@ type
    Handle:THandle;               //To Do //Do these need lock protection ?
    Protocol:Word;
    Transport:TNetworkTransport;
-   
+
    {Public Methods}
    function ReaderLock:Boolean;
    function ReaderUnlock:Boolean;
@@ -327,7 +359,7 @@ type
    {Internal Variables}
    FManager:TProtocolManager;
    FName:String;
-   
+
    {Status Variables}
    FProtocol:Word;
    FSocketType:Word;
@@ -344,17 +376,17 @@ type
 
    {Internal Methods}
    function GetName:String;
-   
+
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
-   
+
    {Protected Methods}
    function OpenPort(ASocket:TProtocolSocket;APort:Word):Boolean; virtual;
    function ClosePort(ASocket:TProtocolSocket):Boolean; virtual;
    function FindPort(APort:Word;AWrite,ALock:Boolean):TProtocolPort; virtual;
 
    function SelectGet(AReadfds,AWritefds,AExceptfds:PFDSet;var ACode:Integer):TProtocolSocket; virtual;
-   
+
    function SelectStart(ASource,ADest:PFDSet):Boolean; virtual;
    function SelectCheck(ASource,ADest:PFDSet;ACode:Integer):Integer; virtual;
    function SelectWait(ASocket:TProtocolSocket;ACode:Integer;ATimeout:LongWord):Integer; virtual;
@@ -364,7 +396,7 @@ type
    {Public Properties}
    property Manager:TProtocolManager read FManager;
    property Name:String read GetName;
-   
+
    property Protocol:Word read FProtocol;
    property SocketType:Word read FSocketType;
 
@@ -392,40 +424,40 @@ type
    function ReaderUnlock:Boolean;
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
-   
+
    function GetStatistics:TProtocolStatistics; virtual;
 
    function GetTransportByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TProtocolTransport;
    function GetTransportByFamily(AFamily:Word;ALock:Boolean;AState:LongWord):TProtocolTransport;
    function GetTransportByTransport(ATransport:TNetworkTransport;ALock:Boolean;AState:LongWord):TProtocolTransport;
    function GetTransportByNext(APrevious:TProtocolTransport;ALock,AUnlock:Boolean;AState:LongWord):TProtocolTransport;
-   
+
    function AddTransport(ATransport:TNetworkTransport):Boolean; virtual;
    function RemoveTransport(ATransport:TNetworkTransport):Boolean; virtual;
-   
+
    function GetSocketByNext(APrevious:TProtocolSocket;ALock,AUnlock:Boolean;AState:LongWord):TProtocolSocket;
    function CheckSocket(ASocket:TProtocolSocket;ALock:Boolean;AState:LongWord):Boolean; virtual;
    function FindSocket(AFamily,AStruct,AProtocol:Word;ALocalAddress,ARemoteAddress:Pointer;ALocalPort,ARemotePort:Word;ABroadcast,AListen,ALock:Boolean;AState:LongWord):TProtocolSocket; virtual;
    procedure FlushSockets(All:Boolean); virtual;
-   
+
    function StartProtocol:Boolean; virtual;
    function StopProtocol:Boolean; virtual;
    function ProcessProtocol:Boolean; virtual;
 
    function ProcessSockets:Boolean; virtual;
    function ProcessSocket(ASocket:TProtocolSocket):Boolean; virtual;
-   
+
    function BindProtocol(ATransport:TNetworkTransport):Boolean; virtual;
    function UnbindProtocol(ATransport:TNetworkTransport):Boolean; virtual;
-   
+
    function CheckTimer:Boolean; virtual;
    function ProcessTimer:Boolean; virtual;
-   
+
    function SendSocket(ASocket:TProtocolSocket):Boolean; virtual;
-   
+
    function ScheduleSocket(ASocket:TProtocolSocket;ATimeout:LongWord):Boolean; virtual;
    function UnscheduleSocket(ASocket:TProtocolSocket):Boolean; virtual;
-   
+
    function ScheduleSocketItem(ASocket:TProtocolSocket;AItem:PSocketTimerItem;ATimeout:LongWord):Boolean; virtual;
    function UnscheduleSocketItem(ASocket:TProtocolSocket;AItem:PSocketTimerItem):Boolean; virtual;
  end;
@@ -436,61 +468,61 @@ type
   protected
    {Internal Variables}
    FProtocol:TNetworkProtocol;
-   
+
    FLock:TMutexHandle;
    FInterval:LongWord;
    FCheckTimer:TTimerHandle;
    FProcessSemaphore:TSemaphoreHandle;
-   
+
    FCount:LongWord;
    FMaxCount:LongWord;
-   
+
    FFirst:PSocketTimerItem;
    FLast:PSocketTimerItem;
-   
+
    {Internal Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
-   
+
    function Dequeue(AMax:Integer):TProtocolSocket;
-   
+
    function FirstKey:Integer;
    function InsertKey(ASocket:TProtocolSocket;AItem:PSocketTimerItem;AKey:Integer):Boolean;
    function DeleteKey(ASocket:TProtocolSocket;AItem:PSocketTimerItem):Boolean;
    function DecrementKey:Integer;
-  public   
+  public
    {Public Properties}
    property Count:LongWord read FCount;
    property MaxCount:LongWord read FMaxCount;
-   
+
    {Public Methods}
    function StartTimer(AInterval:LongWord):Boolean; virtual;
    function StopTimer:Boolean; virtual;
-   
+
    function CheckTimer:Boolean; virtual;
    function ProcessTimer:Boolean; virtual;
-   
+
    function ScheduleSocket(ASocket:TProtocolSocket;ATimeout:LongWord):Boolean; virtual;
    function UnscheduleSocket(ASocket:TProtocolSocket):Boolean;  virtual;
-   
+
    function ScheduleSocketItem(ASocket:TProtocolSocket;AItem:PSocketTimerItem;ATimeout:LongWord):Boolean; virtual;
    function UnscheduleSocketItem(ASocket:TProtocolSocket;AItem:PSocketTimerItem):Boolean; virtual;
  end;
- 
+
  TSocketThread = class(TThread)
    constructor Create(AProtocol:TNetworkProtocol);
    destructor Destroy; override;
   protected
    {Internal Variables}
    FProtocol:TNetworkProtocol;
-   
+
    {Internal Methods}
    procedure Execute; override;
-  public   
+  public
    {Public Methods}
    function SendSocket(ASocket:TProtocolSocket):Boolean;
  end;
- 
+
  TProtocolPort = class(TListObject)
    constructor Create;
    destructor Destroy; override;
@@ -501,7 +533,7 @@ type
    {Status Variables}
    Port:Word;     //To Do //Do these need lock protection ? //Probably should be a read only property with APort passed to create !!
    Sockets:TList; //To Do //Should this be something better than a TList ?
-   
+
    {Public Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
@@ -509,7 +541,7 @@ type
 
  TProtocolState = class;
  TProtocolOptions = class;
- TProtocolSocket = class(TTransportSocket) 
+ TProtocolSocket = class(TTransportSocket)
    constructor Create(AProtocol:TNetworkProtocol;ATransport:TNetworkTransport);
    destructor Destroy; override;
   private
@@ -520,13 +552,13 @@ type
    FProtocol:TNetworkProtocol;
 
    FScheduled:Boolean;
-   
+
    {Protocol Layer Variables}
    FProtocolState:TProtocolState;
    FProtocolOptions:TProtocolOptions;
-   
+
    {Internal Methods}
-   function CheckSocket(ASocket:TProtocolSocket;ALock:Boolean;AState:LongWord):Boolean; 
+   function CheckSocket(ASocket:TProtocolSocket;ALock:Boolean;AState:LongWord):Boolean;
   public
    {Protocol Layer Properties}
    property ProtocolState:TProtocolState read FProtocolState;
@@ -536,17 +568,17 @@ type
    property Protocol:TNetworkProtocol read FProtocol;
 
    property Scheduled:Boolean read FScheduled write FScheduled;
-   
+
    {Public Methods}
    function WaitChange:Boolean;
    function WaitChangeEx(ATimeout:LongWord):Boolean;
    function SignalChange:Boolean;
-   
+
    function SendSocket:Boolean; virtual;
-   
+
    function ScheduleSocket(ATimeout:LongWord):Boolean; virtual;
    function UnscheduleSocket:Boolean;  virtual;
-   
+
    function ScheduleSocketItem(AItem:PSocketTimerItem;ATimeout:LongWord):Boolean; virtual;
    function UnscheduleSocketItem(AItem:PSocketTimerItem):Boolean; virtual;
  end;
@@ -561,11 +593,11 @@ type
    {Internal Variables}
    FLocalPort:Word;
    FRemotePort:Word;
-   
+
    {Internal Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
-   
+
    procedure SetLocalPort(ALocalPort:Word);
    procedure SetRemotePort(ARemotePort:Word);
   public
@@ -582,13 +614,13 @@ type
    FLock:TCriticalSectionHandle;
   protected
    {Internal Variables}
-   
+
    {Internal Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
   public
    {Status Variables}
-   
+
  end;
 
  TFilterTransport = class(TListObject) {Downstream}
@@ -627,7 +659,7 @@ type
    {Event Methods}
 
    {Internal Methods}
-   
+
   public
    {Public Properties}
    property Manager:TProtocolManager read FManager;
@@ -638,7 +670,7 @@ type
    function ReaderUnlock:Boolean;
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
-   
+
    function GetTransportByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TFilterTransport;
    function GetTransportByFamily(AFamily:Word;ALock:Boolean;AState:LongWord):TFilterTransport;
    function GetTransportByTransport(ATransport:TNetworkTransport;ALock:Boolean;AState:LongWord):TFilterTransport;
@@ -646,7 +678,7 @@ type
 
    function AddTransport(ATransport:TNetworkTransport):Boolean; virtual;
    function RemoveTransport(ATransport:TNetworkTransport):Boolean; virtual;
-   
+
    function StartFilter:Boolean; virtual;
    function StopFilter:Boolean; virtual;
    function ProcessFilter:Boolean; virtual;
@@ -694,7 +726,7 @@ type
    {Event Methods}
 
    {Internal Methods}
-   
+
   public
    {Public Properties}
    property Manager:TProtocolManager read FManager;
@@ -708,7 +740,7 @@ type
    function ReaderUnlock:Boolean;
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
-   
+
    function GetTransportByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TConfigTransport;
    function GetTransportByFamily(AFamily:Word;ALock:Boolean;AState:LongWord):TConfigTransport;
    function GetTransportByTransport(ATransport:TNetworkTransport;ALock:Boolean;AState:LongWord):TConfigTransport;
@@ -716,19 +748,19 @@ type
 
    function AddTransport(ATransport:TNetworkTransport):Boolean; virtual;
    function RemoveTransport(ATransport:TNetworkTransport):Boolean; virtual;
-   
+
    function StartConfig:Boolean; virtual;
    function StopConfig:Boolean; virtual;
    function ProcessConfig:Boolean; virtual;
 
    function BindConfig(ATransport:TNetworkTransport):Boolean; virtual;
    function UnbindConfig(ATransport:TNetworkTransport):Boolean; virtual;
-   
+
    function SetConfig(AInitDelay,ARetryCount,ARetryTimeout:LongWord):Boolean; virtual;
  end;
 
  //To Do //TClientProtocol = class(TListObject) {Downstream}
- 
+
  TNetworkClient = class(TListObject) {eg DNS/WINS}
    constructor Create(AProtocol:TNetworkProtocol); //To Do //AManager instead ?
    destructor Destroy; override;
@@ -741,41 +773,41 @@ type
 
    {Status Variables}
    //FThread //To Do ?
-   
+
    {Event Methods}
 
    {Internal Methods}
    //GetProtocolBy //To Do ?
    //GetProtocolBy //To Do ?
    //GetProtocolBy //To Do ?
-   
+
    {Protected Methods}
    //AddProtocol //To Do ?
    //RemoveProtocol //To Do ?
   public
    {Public Properties}
    property Protocol:TNetworkProtocol read FProtocol;
-   
+
    {Public Methods}
    function ReaderLock:Boolean;
    function ReaderUnlock:Boolean;
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
-   
+
    function StartClient:Boolean; virtual;
    function StopClient:Boolean; virtual;
-   
+
    //BindClient(AProtocol //To Do ?
    //UnbindClient //To Do ?
  end;
- 
+
  //To Do //TClientThread  (For DNS etc)
- 
+
 {==============================================================================}
 var
  {Protocol specific variables}
  ProtocolManager:TProtocolManager;
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure ProtocolInit;
@@ -784,7 +816,7 @@ function ProtocolStop:LongWord;
 
 {==============================================================================}
 {Protocol Functions}
- 
+
 {==============================================================================}
 {Protocol Helper Functions}
 procedure ProtocolCheckTimer(Data:Pointer);
@@ -811,7 +843,7 @@ begin
  FLock:=SynchronizerCreate;
  FSettings:=ASettings;
  FTransports:=ATransports;
- 
+
  FProtocols:=TNetworkList.Create;
  FFilters:=TNetworkList.Create;
  FConfigs:=TNetworkList.Create;
@@ -830,7 +862,7 @@ begin
   FSettings:=nil;
   FTransports:=nil;
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -884,13 +916,13 @@ begin
   try
    {Add Protocol}
    Result:=FProtocols.Add(AProtocol);
-  finally 
+  finally
    {Release Lock}
    FProtocols.WriterUnlock;
-  end; 
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -909,13 +941,13 @@ begin
   try
    {Remove Protocol}
    Result:=FProtocols.Remove(AProtocol);
-  finally 
+  finally
    {Release Lock}
    FProtocols.WriterUnlock;
-  end; 
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -928,10 +960,10 @@ begin
  FProtocols.ReaderLock;
  try
   Result:=nil;
-  
+
   {Check Name}
   if Length(AName) = 0 then Exit;
-  
+
   {Get Protocol}
   Protocol:=TNetworkProtocol(FProtocols.First);
   while Protocol <> nil do
@@ -939,20 +971,20 @@ begin
     {Check Protocol}
     if Uppercase(Protocol.Name) = Uppercase(AName) then
      begin
-      {Lock Protocol} 
+      {Lock Protocol}
       if ALock then if AState = NETWORK_LOCK_READ then Protocol.ReaderLock else Protocol.WriterLock;
-      
+
       {Return Result}
       Result:=Protocol;
       Exit;
      end;
-     
+
     {Get Next}
     Protocol:=TNetworkProtocol(Protocol.Next);
    end;
- finally 
+ finally
   FProtocols.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -965,7 +997,7 @@ begin
  FProtocols.ReaderLock;
  try
   Result:=nil;
-  
+
   {Get Protocol}
   Protocol:=TNetworkProtocol(FProtocols.First);
   while Protocol <> nil do
@@ -973,20 +1005,20 @@ begin
     {Check Protocol}
     if (Protocol.Protocol = AProtocol) and (Protocol.SocketType = ASocketType) then
      begin
-      {Lock Protocol} 
+      {Lock Protocol}
       if ALock then if AState = NETWORK_LOCK_READ then Protocol.ReaderLock else Protocol.WriterLock;
-      
+
       {Return Result}
       Result:=Protocol;
       Exit;
      end;
-     
+
     {Get Next}
     Protocol:=TNetworkProtocol(Protocol.Next);
    end;
- finally 
+ finally
   FProtocols.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -999,7 +1031,7 @@ begin
  FProtocols.ReaderLock;
  try
   Result:=nil;
-  
+
   {Get Protocol}
   Protocol:=TNetworkProtocol(FProtocols.First);
   while Protocol <> nil do
@@ -1007,20 +1039,20 @@ begin
     {Check Protocol}
     if Protocol = AProtocol then
      begin
-      {Lock Protocol} 
+      {Lock Protocol}
       if ALock then if AState = NETWORK_LOCK_READ then Protocol.ReaderLock else Protocol.WriterLock;
-      
+
       {Return Result}
       Result:=Protocol;
       Exit;
      end;
-     
-    {Get Next} 
+
+    {Get Next}
     Protocol:=TNetworkProtocol(Protocol.Next);
    end;
- finally 
+ finally
   FProtocols.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1030,14 +1062,14 @@ var
  Protocol:TNetworkProtocol;
 begin
  Result:=nil;
- 
+
  {Check Socket}
  if not CheckSocket(TSocket(ASocket),True,NETWORK_LOCK_READ) then Exit;
  try
   FProtocols.ReaderLock;
   try
    Result:=nil;
-   
+
    {Get Protocol}
    Protocol:=TNetworkProtocol(FProtocols.First);
    while Protocol <> nil do
@@ -1045,20 +1077,20 @@ begin
      {Check Protocol}
      if Protocol = ASocket.Protocol then
       begin
-       {Lock Protocol} 
+       {Lock Protocol}
        if ALock then if AState = NETWORK_LOCK_READ then Protocol.ReaderLock else Protocol.WriterLock;
-       
+
        {Return Result}
        Result:=Protocol;
        Exit;
       end;
-      
-     {Get Next} 
+
+     {Get Next}
      Protocol:=TNetworkProtocol(Protocol.Next);
     end;
-  finally 
+  finally
    FProtocols.ReaderUnlock;
-  end; 
+  end;
  finally
   {Unlock Socket}
   ASocket.ReaderUnlock;
@@ -1075,7 +1107,7 @@ begin
  FProtocols.ReaderLock;
  try
   Result:=nil;
-  
+
   {Check Previous}
   if APrevious = nil then
    begin
@@ -1085,7 +1117,7 @@ begin
      begin
       {Lock Protocol}
       if ALock then if AState = NETWORK_LOCK_READ then Protocol.ReaderLock else Protocol.WriterLock;
-      
+
       {Return Result}
       Result:=Protocol;
      end;
@@ -1098,17 +1130,17 @@ begin
      begin
       {Lock Protocol}
       if ALock then if AState = NETWORK_LOCK_READ then Protocol.ReaderLock else Protocol.WriterLock;
-      
+
       {Return Result}
       Result:=Protocol;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
- finally 
+   end;
+ finally
   FProtocols.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1127,13 +1159,13 @@ begin
   try
    {Add Filter}
    Result:=FFilters.Add(AFilter);
-  finally 
+  finally
    {Release Lock}
    FFilters.WriterUnlock;
-  end; 
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1152,13 +1184,13 @@ begin
   try
    {Remove Filter}
    Result:=FFilters.Remove(AFilter);
-  finally 
+  finally
    {Release Lock}
    FFilters.WriterUnlock;
-  end; 
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1171,7 +1203,7 @@ begin
  FFilters.ReaderLock;
  try
   Result:=nil;
-  
+
   {Get Filter}
   Filter:=TNetworkFilter(FFilters.First);
   while Filter <> nil do
@@ -1179,20 +1211,20 @@ begin
     {Check Filter}
     if Filter.Protocol = AProtocol then
      begin
-      {Lock Filter} 
+      {Lock Filter}
       if ALock then if AState = NETWORK_LOCK_READ then Filter.ReaderLock else Filter.WriterLock;
-      
+
       {Return Result}
       Result:=Filter;
       Exit;
      end;
-     
-    {Get Next} 
+
+    {Get Next}
     Filter:=TNetworkFilter(Filter.Next);
    end;
- finally 
+ finally
   FFilters.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1205,7 +1237,7 @@ begin
  FFilters.ReaderLock;
  try
   Result:=nil;
-  
+
   {Get Filter}
   Filter:=TNetworkFilter(FFilters.First);
   while Filter <> nil do
@@ -1213,20 +1245,20 @@ begin
     {Check Filter}
     if Filter = AFilter then
      begin
-      {Lock Filter} 
+      {Lock Filter}
       if ALock then if AState = NETWORK_LOCK_READ then Filter.ReaderLock else Filter.WriterLock;
-      
+
       {Return Result}
       Result:=Filter;
       Exit;
      end;
-     
-    {Get Next} 
+
+    {Get Next}
     Filter:=TNetworkFilter(Filter.Next);
    end;
- finally 
+ finally
   FFilters.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1239,7 +1271,7 @@ begin
  FFilters.ReaderLock;
  try
   Result:=nil;
-  
+
   {Check Previous}
   if APrevious = nil then
    begin
@@ -1249,7 +1281,7 @@ begin
      begin
       {Lock Filter}
       if ALock then if AState = NETWORK_LOCK_READ then Filter.ReaderLock else Filter.WriterLock;
-      
+
       {Return Result}
       Result:=Filter;
      end;
@@ -1262,17 +1294,17 @@ begin
      begin
       {Lock Filter}
       if ALock then if AState = NETWORK_LOCK_READ then Filter.ReaderLock else Filter.WriterLock;
-      
+
       {Return Result}
       Result:=Filter;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
- finally 
+   end;
+ finally
   FFilters.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1291,13 +1323,13 @@ begin
   try
    {Add Config}
    Result:=FConfigs.Add(AConfig);
-  finally 
+  finally
    {Release Lock}
    FConfigs.WriterUnlock;
-  end; 
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1316,13 +1348,13 @@ begin
   try
    {Remove Config}
    Result:=FConfigs.Remove(AConfig);
-  finally 
+  finally
    {Release Lock}
    FConfigs.WriterUnlock;
-  end; 
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1335,7 +1367,7 @@ begin
  FConfigs.ReaderLock;
  try
   Result:=nil;
-  
+
   {Get Config}
   Config:=TNetworkConfig(FConfigs.First);
   while Config <> nil do
@@ -1343,20 +1375,20 @@ begin
     {Check Config}
     if Config.ConfigType = AConfigType then
      begin
-      {Lock Config} 
+      {Lock Config}
       if ALock then if AState = NETWORK_LOCK_READ then Config.ReaderLock else Config.WriterLock;
-      
+
       {Return Result}
       Result:=Config;
       Exit;
      end;
-     
-    {Get Next} 
+
+    {Get Next}
     Config:=TNetworkConfig(Config.Next);
    end;
- finally 
+ finally
   FConfigs.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1369,7 +1401,7 @@ begin
  FConfigs.ReaderLock;
  try
   Result:=nil;
-  
+
   {Get Config}
   Config:=TNetworkConfig(FConfigs.First);
   while Config <> nil do
@@ -1377,20 +1409,20 @@ begin
     {Check Config}
     if Config = AConfig then
      begin
-      {Lock Config} 
+      {Lock Config}
       if ALock then if AState = NETWORK_LOCK_READ then Config.ReaderLock else Config.WriterLock;
-      
+
       {Return Result}
       Result:=Config;
       Exit;
      end;
-     
-    {Get Next} 
+
+    {Get Next}
     Config:=TNetworkConfig(Config.Next);
    end;
- finally 
+ finally
   FConfigs.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1403,7 +1435,7 @@ begin
  FConfigs.ReaderLock;
  try
   Result:=nil;
-  
+
   {Check Previous}
   if APrevious = nil then
    begin
@@ -1413,7 +1445,7 @@ begin
      begin
       {Lock Config}
       if ALock then if AState = NETWORK_LOCK_READ then Config.ReaderLock else Config.WriterLock;
-      
+
       {Return Result}
       Result:=Config;
      end;
@@ -1426,17 +1458,17 @@ begin
      begin
       {Lock Config}
       if ALock then if AState = NETWORK_LOCK_READ then Config.ReaderLock else Config.WriterLock;
-      
+
       {Return Result}
       Result:=Config;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
- finally 
+   end;
+ finally
   FConfigs.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1449,20 +1481,20 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {Get Config}
-  Config:=GetConfigByType(AConfigType,True,NETWORK_LOCK_WRITE); 
+  Config:=GetConfigByType(AConfigType,True,NETWORK_LOCK_WRITE);
   if Config <> nil then
    begin
     {Set Config}
     Result:=Config.SetConfig(AInitDelay,ARetryCount,ARetryTimeout);
-   
+
     {Unlock Config}
     Config.WriterUnlock;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1475,24 +1507,24 @@ begin
  ReaderLock;
  try
   Result:=True;
-  
+
   {$IFDEF PROTOCOL_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: StartProtocols');
   {$ENDIF}
-  
+
   {Get Protocol}
   Protocol:=TNetworkProtocol(GetProtocolByNext(nil,True,False,NETWORK_LOCK_READ));
   while Protocol <> nil do
    begin
     {Start Protocol}
     if not(Protocol.StartProtocol) then Result:=False;
-    
+
     {Get Next}
     Protocol:=TNetworkProtocol(GetProtocolByNext(Protocol,True,True,NETWORK_LOCK_READ));
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1505,24 +1537,24 @@ begin
  ReaderLock;
  try
   Result:=True;
-  
+
   {$IFDEF PROTOCOL_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: StopProtocols');
   {$ENDIF}
-  
+
   {Get Protocol}
   Protocol:=TNetworkProtocol(GetProtocolByNext(nil,True,False,NETWORK_LOCK_READ));
   while Protocol <> nil do
    begin
     {Stop Protocol}
     if not(Protocol.StopProtocol) then Result:=False;
-    
+
     {Get Next}
     Protocol:=TNetworkProtocol(GetProtocolByNext(Protocol,True,True,NETWORK_LOCK_READ));
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1535,24 +1567,24 @@ begin
  ReaderLock;
  try
   Result:=True;
-  
+
   {$IFDEF PROTOCOL_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: ProcessProtocols');
   {$ENDIF}
-  
+
   {Get Protocol}
   Protocol:=TNetworkProtocol(GetProtocolByNext(nil,True,False,NETWORK_LOCK_READ));
   while Protocol <> nil do
    begin
     {Process Protocol}
     if not(Protocol.ProcessProtocol) then Result:=False;
-    
+
     {Get Next}
     Protocol:=TNetworkProtocol(GetProtocolByNext(Protocol,True,False,NETWORK_LOCK_READ));
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1565,24 +1597,24 @@ begin
  ReaderLock;
  try
   Result:=True;
-  
+
   {$IFDEF PROTOCOL_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: ProcessSockets');
   {$ENDIF}
-  
+
   {Get Protocol}
   Protocol:=TNetworkProtocol(GetProtocolByNext(nil,True,False,NETWORK_LOCK_READ));
   while Protocol <> nil do
    begin
     {Process Sockets}
     if not(Protocol.ProcessSockets) then Result:=False;
-    
+
     {Get Next}
     Protocol:=TNetworkProtocol(GetProtocolByNext(Protocol,True,False,NETWORK_LOCK_READ));
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1595,29 +1627,29 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {Check Callback}
   if not Assigned(ACallback) then Exit;
 
   Result:=True;
-  
+
   {$IFDEF PROTOCOL_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: EnumerateProtocols');
   {$ENDIF}
-  
+
   {Get Protocol}
   Protocol:=TNetworkProtocol(GetProtocolByNext(nil,True,False,NETWORK_LOCK_READ));
   while Protocol <> nil do
    begin
     {Enumerate Protocol}
     if not(ACallback(Protocol)) then Result:=False;
-    
+
     {Get Next}
     Protocol:=TNetworkProtocol(GetProtocolByNext(Protocol,True,True,NETWORK_LOCK_READ));
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1630,7 +1662,7 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF PROTOCOL_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: BindProtocols');
   {$ENDIF}
@@ -1640,30 +1672,30 @@ begin
    begin
     {Check Transports}
     if FTransports = nil then Exit;
-    
+
     {Enumerate Transports}
     Result:=FTransports.EnumerateTransports(BindProtocols);
    end
   else
    begin
     Result:=True;
-  
+
     {Get Protocol}
     Protocol:=TNetworkProtocol(GetProtocolByNext(nil,True,False,NETWORK_LOCK_READ));
     while Protocol <> nil do
      begin
       {Bind Protocol}
       if not(Protocol.BindProtocol(ATransport)) then Result:=False;
-    
+
       {Get Next}
       Protocol:=TNetworkProtocol(GetProtocolByNext(Protocol,True,True,NETWORK_LOCK_READ));
      end;
-   end;  
- finally 
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
 
 function TProtocolManager.UnbindProtocols(ATransport:TNetworkTransport):Boolean;
@@ -1674,7 +1706,7 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF PROTOCOL_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: UnbindProtocols');
   {$ENDIF}
@@ -1684,28 +1716,28 @@ begin
    begin
     {Check Transports}
     if FTransports = nil then Exit;
-    
+
     {Enumerate Transports}
     Result:=FTransports.EnumerateTransports(UnbindProtocols);
    end
   else
    begin
     Result:=True;
-  
+
     {Get Protocol}
     Protocol:=TNetworkProtocol(GetProtocolByNext(nil,True,False,NETWORK_LOCK_READ));
     while Protocol <> nil do
      begin
       {Unbind Protocol}
       if not(Protocol.UnbindProtocol(ATransport)) then Result:=False;
-    
+
       {Get Next}
       Protocol:=TNetworkProtocol(GetProtocolByNext(Protocol,True,True,NETWORK_LOCK_READ));
      end;
-   end;  
- finally 
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1718,24 +1750,24 @@ begin
  ReaderLock;
  try
   Result:=True;
-  
+
   {$IFDEF PROTOCOL_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: StartFilters');
   {$ENDIF}
-  
+
   {Get Filter}
   Filter:=TNetworkFilter(GetFilterByNext(nil,True,False,NETWORK_LOCK_READ));
   while Filter <> nil do
    begin
     {Start Filter}
     if not(Filter.StartFilter) then Result:=False;
-    
+
     {Get Next}
     Filter:=TNetworkFilter(GetFilterByNext(Filter,True,True,NETWORK_LOCK_READ));
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1748,24 +1780,24 @@ begin
  ReaderLock;
  try
   Result:=True;
-  
+
   {$IFDEF PROTOCOL_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: StopFilters');
   {$ENDIF}
-  
+
   {Get Filter}
   Filter:=TNetworkFilter(GetFilterByNext(nil,True,False,NETWORK_LOCK_READ));
   while Filter <> nil do
    begin
     {Stop Filter}
     if not(Filter.StopFilter) then Result:=False;
-    
+
     {Get Next}
     Filter:=TNetworkFilter(GetFilterByNext(Filter,True,True,NETWORK_LOCK_READ));
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1778,24 +1810,24 @@ begin
  ReaderLock;
  try
   Result:=True;
-  
+
   {$IFDEF PROTOCOL_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: ProcessFilters');
   {$ENDIF}
-  
+
   {Get Filter}
   Filter:=TNetworkFilter(GetFilterByNext(nil,True,False,NETWORK_LOCK_READ));
   while Filter <> nil do
    begin
     {Process Filter}
     if not(Filter.ProcessFilter) then Result:=False;
-    
+
     {Get Next}
     Filter:=TNetworkFilter(GetFilterByNext(Filter,True,True,NETWORK_LOCK_READ));
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1808,29 +1840,29 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {Check Callback}
   if not Assigned(ACallback) then Exit;
 
   Result:=True;
-  
+
   {$IFDEF PROTOCOL_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: EnumerateFilters');
   {$ENDIF}
-  
+
   {Get Filter}
   Filter:=TNetworkFilter(GetFilterByNext(nil,True,False,NETWORK_LOCK_READ));
   while Filter <> nil do
    begin
     {Enumerate Filter}
     if not(ACallback(Filter)) then Result:=False;
-    
+
     {Get Next}
     Filter:=TNetworkFilter(GetFilterByNext(Filter,True,True,NETWORK_LOCK_READ));
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1843,7 +1875,7 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF PROTOCOL_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: BindFilters');
   {$ENDIF}
@@ -1853,28 +1885,28 @@ begin
    begin
     {Check Transports}
     if FTransports = nil then Exit;
-    
+
     {Enumerate Transports}
     Result:=FTransports.EnumerateTransports(BindFilters);
    end
   else
    begin
     Result:=True;
-  
+
     {Get Filter}
     Filter:=TNetworkFilter(GetFilterByNext(nil,True,False,NETWORK_LOCK_READ));
     while Filter <> nil do
      begin
       {Bind Filter}
       if not(Filter.BindFilter(ATransport)) then Result:=False;
-    
+
       {Get Next}
       Filter:=TNetworkFilter(GetFilterByNext(Filter,True,True,NETWORK_LOCK_READ));
      end;
-   end;  
- finally 
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1887,7 +1919,7 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF PROTOCOL_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: UnbindFilters');
   {$ENDIF}
@@ -1897,28 +1929,28 @@ begin
    begin
     {Check Transports}
     if FTransports = nil then Exit;
-    
+
     {Enumerate Transports}
     Result:=FTransports.EnumerateTransports(UnbindFilters);
    end
   else
    begin
     Result:=True;
-  
+
     {Get Filter}
     Filter:=TNetworkFilter(GetFilterByNext(nil,True,False,NETWORK_LOCK_READ));
     while Filter <> nil do
      begin
       {Unbind Filter}
       if not(Filter.UnbindFilter(ATransport)) then Result:=False;
-    
+
       {Get Next}
       Filter:=TNetworkFilter(GetFilterByNext(Filter,True,True,NETWORK_LOCK_READ));
      end;
-   end;  
- finally 
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1931,24 +1963,24 @@ begin
  ReaderLock;
  try
   Result:=True;
-  
+
   {$IFDEF PROTOCOL_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: StartConfigs');
   {$ENDIF}
-  
+
   {Get Config}
   Config:=TNetworkConfig(GetConfigByNext(nil,True,False,NETWORK_LOCK_READ));
   while Config <> nil do
    begin
     {Start Config}
     if not(Config.StartConfig) then Result:=False;
-    
+
     {Get Next}
     Config:=TNetworkConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1961,24 +1993,24 @@ begin
  ReaderLock;
  try
   Result:=True;
-  
+
   {$IFDEF PROTOCOL_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: StopConfigs');
   {$ENDIF}
-  
+
   {Get Config}
   Config:=TNetworkConfig(GetConfigByNext(nil,True,False,NETWORK_LOCK_READ));
   while Config <> nil do
    begin
     {Stop Config}
     if not(Config.StopConfig) then Result:=False;
-    
+
     {Get Next}
     Config:=TNetworkConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1991,24 +2023,24 @@ begin
  ReaderLock;
  try
   Result:=True;
-  
+
   {$IFDEF PROTOCOL_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: ProcessConfigs');
   {$ENDIF}
-  
+
   {Get Config}
   Config:=TNetworkConfig(GetConfigByNext(nil,True,False,NETWORK_LOCK_READ));
   while Config <> nil do
    begin
     {Process Config}
     if not(Config.ProcessConfig) then Result:=False;
-    
+
     {Get Next}
     Config:=TNetworkConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2021,29 +2053,29 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {Check Callback}
   if not Assigned(ACallback) then Exit;
 
   Result:=True;
-  
+
   {$IFDEF PROTOCOL_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: EnumerateConfigs');
   {$ENDIF}
-  
+
   {Get Config}
   Config:=TNetworkConfig(GetConfigByNext(nil,True,False,NETWORK_LOCK_READ));
   while Config <> nil do
    begin
     {Enumerate Config}
     if not(ACallback(Config)) then Result:=False;
-    
+
     {Get Next}
     Config:=TNetworkConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2056,7 +2088,7 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF PROTOCOL_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: BindConfigs');
   {$ENDIF}
@@ -2066,28 +2098,28 @@ begin
    begin
     {Check Transports}
     if FTransports = nil then Exit;
-    
+
     {Enumerate Transports}
     Result:=FTransports.EnumerateTransports(BindConfigs);
    end
   else
    begin
     Result:=True;
-  
+
     {Get Config}
     Config:=TNetworkConfig(GetConfigByNext(nil,True,False,NETWORK_LOCK_READ));
     while Config <> nil do
      begin
       {Bind Config}
       if not(Config.BindConfig(ATransport)) then Result:=False;
-    
+
       {Get Next}
       Config:=TNetworkConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
      end;
-   end;  
- finally 
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2100,7 +2132,7 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF PROTOCOL_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ProtocolManager: UnbindConfigs');
   {$ENDIF}
@@ -2110,28 +2142,28 @@ begin
    begin
     {Check Transports}
     if FTransports = nil then Exit;
-    
+
     {Enumerate Transports}
     Result:=FTransports.EnumerateTransports(UnbindConfigs);
    end
   else
    begin
     Result:=True;
-  
+
     {Get Config}
     Config:=TNetworkConfig(GetConfigByNext(nil,True,False,NETWORK_LOCK_READ));
     while Config <> nil do
      begin
       {Unbind Config}
       if not(Config.UnbindConfig(ATransport)) then Result:=False;
-    
+
       {Get Next}
       Config:=TNetworkConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
      end;
-   end;  
- finally 
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2144,7 +2176,7 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {Get Protocol}
   Protocol:=TNetworkProtocol(GetProtocolByNext(nil,True,False,NETWORK_LOCK_READ));
   while Protocol <> nil do
@@ -2157,13 +2189,13 @@ begin
       Protocol.ReaderUnlock;
       Exit;
      end;
-    
+
     {Get Next}
     Protocol:=TNetworkProtocol(GetProtocolByNext(Protocol,True,True,NETWORK_LOCK_READ));
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2176,13 +2208,13 @@ begin
  {}
  Result:=SOCKET_ERROR;
  NetworkSetLastError(WSAENOTSOCK);
- 
+
  if not ReaderLock then Exit;
  try
   {Setup Defaults}
   Socket:=nil;
   Protocol:=nil;
-  
+
   {Check Sets}
   if (AReadfds <> nil) and (AReadfds.fd_count > 0) then
    begin
@@ -2199,8 +2231,8 @@ begin
     {Get Socket}
     Socket:=TProtocolSocket(AExceptfds.fd_array[0]);
    end;
-    
-  {Check Socket}  
+
+  {Check Socket}
   if Socket = nil then Exit;
 
   {Get Protocol}
@@ -2209,12 +2241,12 @@ begin
 
   {Select Socket}
   Result:=Protocol.Select(ANfds,AReadfds,AWritefds,AExceptfds,ATimeout);
-      
+
   {Unlock Protocol}
   Protocol.ReaderUnlock;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2226,10 +2258,10 @@ begin
  {}
  Result:=INVALID_SOCKET;
  NetworkSetLastError(WSAEPROTONOSUPPORT);
- 
+
  if not ReaderLock then Exit;
  try
-  {Get Protocol}  
+  {Get Protocol}
   Protocol:=TNetworkProtocol(GetProtocolByNext(nil,True,False,NETWORK_LOCK_READ));
   while Protocol <> nil do
    begin
@@ -2245,13 +2277,13 @@ begin
         Exit;
        end;
      end;
-     
-    {Get Next} 
+
+    {Get Next}
     Protocol:=TNetworkProtocol(GetProtocolByNext(Protocol,True,True,NETWORK_LOCK_READ));
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2262,7 +2294,7 @@ begin
  {}
  inherited Create;
  FLock:=SynchronizerCreate;
- 
+
  Handle:=INVALID_HANDLE_VALUE;
  Protocol:=IPPROTO_IP;
  Transport:=nil;
@@ -2277,7 +2309,7 @@ begin
  try
   Transport:=nil;
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -2324,10 +2356,10 @@ begin
  inherited Create;
  FLock:=SynchronizerCreate;
  FLocalLock:=MutexCreate;
- 
+
  FManager:=AManager;
  FName:=AName;
- 
+
  FProtocol:=IPPROTO_IP;
  FSocketType:=SOCK_RAW;
  FTransports:=TNetworkList.Create;
@@ -2356,7 +2388,7 @@ begin
   FManager:=nil;
   MutexDestroy(FLocalLock);
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -2368,15 +2400,15 @@ function TNetworkProtocol.GetName:String;
 begin
  {}
  Result:='';
-   
+
  if not AcquireLock then Exit;
-   
+
  Result:=FName;
  UniqueString(Result);
-   
+
  ReleaseLock;
 end;
-   
+
 {==============================================================================}
 
 function TNetworkProtocol.AcquireLock:Boolean;
@@ -2425,23 +2457,23 @@ function TNetworkProtocol.SelectGet(AReadfds,AWritefds,AExceptfds:PFDSet;var ACo
 begin
  {}
  Result:=nil;
- 
+
  {Setup Defaults}
  ACode:=SELECT_UNKNOWN;
- 
+
  {Check Sets}
  if (AReadfds <> nil) and (AReadfds.fd_count = 1) then
   begin
    {Check Write}
    if (AWritefds <> nil) and (AWritefds.fd_count > 0) then Exit;
-   
+
    {Check Except}
    if (AExceptfds <> nil) and (AExceptfds.fd_count > 0) then Exit;
-   
+
    {Get Socket}
    Result:=TProtocolSocket(AReadfds.fd_array[0]);
    if Result = nil then Exit;
-   
+
    {Return Code}
    ACode:=SELECT_READ;
   end
@@ -2449,14 +2481,14 @@ begin
   begin
    {Check Read}
    if (AReadfds <> nil) and (AReadfds.fd_count > 0) then Exit;
-   
+
    {Check Except}
    if (AExceptfds <> nil) and (AExceptfds.fd_count > 0) then Exit;
-   
+
    {Get Socket}
    Result:=TProtocolSocket(AWritefds.fd_array[0]);
    if Result = nil then Exit;
-   
+
    {Return Code}
    ACode:=SELECT_WRITE;
   end
@@ -2464,14 +2496,14 @@ begin
   begin
    {Check Read}
    if (AReadfds <> nil) and (AReadfds.fd_count > 0) then Exit;
-   
+
    {Check Write}
    if (AWritefds <> nil) and (AWritefds.fd_count > 0) then Exit;
-   
+
    {Get Socket}
    Result:=TProtocolSocket(AExceptfds.fd_array[0]);
    if Result = nil then Exit;
-   
+
    {Return Code}
    ACode:=SELECT_ERROR;
   end;
@@ -2486,13 +2518,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Dest}
  if ADest = nil then Exit;
- 
+
  {Clear Dest Set}
  FD_ZERO(ADest^);
- 
+
  {Check Source}
  if ASource <> nil then
   begin
@@ -2502,12 +2534,12 @@ begin
     begin
      ADest.fd_array[Count]:=ASource.fd_array[Count];
     end;
-    
+
    {Clear Source Set}
    FD_ZERO(ASource^);
   end;
 
- {Return Result}  
+ {Return Result}
  Result:=True;
 end;
 
@@ -2522,7 +2554,7 @@ end;
 
 {==============================================================================}
 
-function TNetworkProtocol.SelectWait(ASocket:TProtocolSocket;ACode:Integer;ATimeout:LongWord):Integer; 
+function TNetworkProtocol.SelectWait(ASocket:TProtocolSocket;ACode:Integer;ATimeout:LongWord):Integer;
 {Socket is the single socket to check, Code is the type of check, Timeout is how long to wait}
 begin
  {Virtual Base Method}
@@ -2640,29 +2672,29 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF PROTOCOL_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Protocol: Select');
   {$ENDIF}
-  
+
   {Check the Parameters}
   NetworkSetLastError(WSAEINVAL);
   if not Assigned(AReadfds) and not Assigned(AWritefds) and not Assigned(AExceptfds) then Exit;
-  
+
   {Setup the Sets}
   if not SelectStart(AReadfds,@Readfds) then Exit;
   if not SelectStart(AWritefds,@Writefds) then Exit;
   if not SelectStart(AExceptfds,@Exceptfds) then Exit;
-  
+
   {Get the Timeout}
   Timeout:=INFINITE;
   if ATimeout <> nil then
    begin
     Timeout:=(ATimeout.tv_sec * 1000) + (ATimeout.tv_usec div 1000);
    end;
-   
+
   {Get the Socket and Code if the select is for a single socket and set}
   Socket:=SelectGet(@Readfds,@Writefds,@Exceptfds,Code);
   if Socket <> nil then
@@ -2678,11 +2710,11 @@ begin
        SELECT_READ:FD_SET(TSocket(Socket),AReadfds^);
        SELECT_WRITE:FD_SET(TSocket(Socket),AWritefds^);
        SELECT_ERROR:FD_SET(TSocket(Socket),AExceptfds^);
-      end;  
-     end; 
+      end;
+     end;
    end
   else
-   begin 
+   begin
     {Multiple Sockets or Multiple Sets}
     {Poll the sets until one matches}
     NetworkSetLastError(WSAENOTSOCK);
@@ -2695,88 +2727,90 @@ begin
       if Result > 0 then
        begin
         Count:=Result;
-        
+
         {Check Write Sockets}
         Result:=SelectCheck(@Writefds,AWritefds,SELECT_WRITE);
         if Result = SOCKET_ERROR then Exit;
         Inc(Count,Result);
-        
+
         {Check Error Sockets}
         Result:=SelectCheck(@Exceptfds,AExceptfds,SELECT_ERROR);
         if Result = SOCKET_ERROR then Exit;
         Inc(Count,Result);
-        
+
         {Return Result}
         Result:=Count;
         Exit;
        end;
-      
+
       {Check Write Sockets}
       Result:=SelectCheck(@Writefds,AWritefds,SELECT_WRITE);
       if Result = SOCKET_ERROR then Exit;
       if Result > 0 then
        begin
         Count:=Result;
-        
+
         {Check Read Sockets}
         Result:=SelectCheck(@Readfds,AReadfds,SELECT_READ);
         if Result = SOCKET_ERROR then Exit;
         Inc(Count,Result);
-        
+
         {Check Error Sockets}
         Result:=SelectCheck(@Exceptfds,AExceptfds,SELECT_ERROR);
         if Result = SOCKET_ERROR then Exit;
         Inc(Count,Result);
-        
+
         {Return Result}
         Result:=Count;
         Exit;
        end;
-       
+
       {Check Error Sockets}
       Result:=SelectCheck(@Exceptfds,AExceptfds,SELECT_ERROR);
       if Result = SOCKET_ERROR then Exit;
       if Result > 0 then
        begin
         Count:=Result;
-        
+
         {Check Read Sockets}
         Result:=SelectCheck(@Readfds,AReadfds,SELECT_READ);
         if Result = SOCKET_ERROR then Exit;
         Inc(Count,Result);
-        
+
         {Check Write Sockets}
         Result:=SelectCheck(@Writefds,AWritefds,SELECT_WRITE);
         if Result = SOCKET_ERROR then Exit;
         Inc(Count,Result);
-        
+
         {Return Result}
         Result:=Count;
         Exit;
        end;
-      
+
       {Check Timeout}
       if Timeout <> INFINITE then
        begin
         if Timeout = 0 then
          begin
+          {Return Zero}
           Result:=0;
           Exit;
          end;
         if GetTickCount64 > (StartTime + Timeout) then
-         begin                                     
+         begin
+          {Return Zero}
           Result:=0;
           Exit;
          end;
        end;
-      
-      {Yield}   
-      Sleep(0); 
+
+      {Yield}
+      Sleep(0);
      end;
-   end;  
- finally 
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2869,7 +2903,7 @@ begin
  FTransports.ReaderLock;
  try
   Result:=nil;
-  
+
   {Get Transport}
   Transport:=TProtocolTransport(FTransports.First);
   while Transport <> nil do
@@ -2877,20 +2911,20 @@ begin
     {Check Transport}
     if Transport.Handle = AHandle then
      begin
-      {Lock Transport} 
+      {Lock Transport}
       if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
 
       {Return Result}
       Result:=Transport;
       Exit;
      end;
-     
-    {Get Next} 
+
+    {Get Next}
     Transport:=TProtocolTransport(Transport.Next);
    end;
- finally 
+ finally
   FTransports.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2903,7 +2937,7 @@ begin
  FTransports.ReaderLock;
  try
   Result:=nil;
-  
+
   {Get Transport}
   Transport:=TProtocolTransport(FTransports.First);
   while Transport <> nil do
@@ -2911,20 +2945,20 @@ begin
     {Check Transport}
     if Transport.Transport.Family = AFamily then
      begin
-      {Lock Transport} 
+      {Lock Transport}
       if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
 
       {Return Result}
       Result:=Transport;
       Exit;
      end;
-     
-    {Get Next} 
+
+    {Get Next}
     Transport:=TProtocolTransport(Transport.Next);
    end;
- finally 
+ finally
   FTransports.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2937,7 +2971,7 @@ begin
  FTransports.ReaderLock;
  try
   Result:=nil;
-  
+
   {Get Transport}
   Transport:=TProtocolTransport(FTransports.First);
   while Transport <> nil do
@@ -2945,20 +2979,20 @@ begin
     {Check Transport}
     if Transport.Transport = ATransport then
      begin
-      {Lock Transport} 
+      {Lock Transport}
       if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
 
       {Return Result}
       Result:=Transport;
       Exit;
      end;
-    
-    {Get Next}     
+
+    {Get Next}
     Transport:=TProtocolTransport(Transport.Next);
    end;
- finally 
+ finally
   FTransports.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2971,7 +3005,7 @@ begin
  FTransports.ReaderLock;
  try
   Result:=nil;
-  
+
   {Check Previous}
   if APrevious = nil then
    begin
@@ -2981,7 +3015,7 @@ begin
      begin
       {Lock Transport}
       if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
-      
+
       {Return Result}
       Result:=Transport;
      end;
@@ -2994,17 +3028,17 @@ begin
      begin
       {Lock Transport}
       if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
-      
+
       {Return Result}
       Result:=Transport;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
- finally 
+   end;
+ finally
   FTransports.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3033,7 +3067,7 @@ begin
  FSockets.ReaderLock;
  try
   Result:=nil;
-  
+
   {Check Previous}
   if APrevious = nil then
    begin
@@ -3043,7 +3077,7 @@ begin
      begin
       {Lock Socket}
       if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
-      
+
       {Return Result}
       Result:=Socket;
      end;
@@ -3056,17 +3090,17 @@ begin
      begin
       {Lock Socket}
       if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
-      
+
       {Return Result}
       Result:=Socket;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
- finally 
+   end;
+ finally
   FSockets.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3079,7 +3113,7 @@ begin
  FSockets.ReaderLock;
  try
   Result:=False;
-  
+
   {Get Socket}
   Socket:=TProtocolSocket(FSockets.First);
   while Socket <> nil do
@@ -3089,18 +3123,18 @@ begin
      begin
       {Lock Socket}
       if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
-      
+
       {Return Result}
       Result:=True;
       Exit;
      end;
-     
-    {Get Next} 
+
+    {Get Next}
     Socket:=TProtocolSocket(Socket.Next);
    end;
- finally 
+ finally
   FSockets.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3160,7 +3194,7 @@ end;
 
 {==============================================================================}
 
-function TNetworkProtocol.BindProtocol(ATransport:TNetworkTransport):Boolean; 
+function TNetworkProtocol.BindProtocol(ATransport:TNetworkTransport):Boolean;
 begin
  {Virtual Base Method}
  Result:=False;
@@ -3168,7 +3202,7 @@ end;
 
 {==============================================================================}
 
-function TNetworkProtocol.UnbindProtocol(ATransport:TNetworkTransport):Boolean; 
+function TNetworkProtocol.UnbindProtocol(ATransport:TNetworkTransport):Boolean;
 begin
  {Virtual Base Method}
  Result:=False;
@@ -3176,11 +3210,11 @@ end;
 
 {==============================================================================}
 
-function TNetworkProtocol.CheckTimer:Boolean; 
+function TNetworkProtocol.CheckTimer:Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Timer}
  if FTimer = nil then Exit;
 
@@ -3190,11 +3224,11 @@ end;
 
 {==============================================================================}
 
-function TNetworkProtocol.ProcessTimer:Boolean; 
+function TNetworkProtocol.ProcessTimer:Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Timer}
  if FTimer = nil then Exit;
 
@@ -3204,17 +3238,17 @@ end;
 
 {==============================================================================}
 
-function TNetworkProtocol.SendSocket(ASocket:TProtocolSocket):Boolean; 
+function TNetworkProtocol.SendSocket(ASocket:TProtocolSocket):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Timer}
  if FTimer = nil then Exit;
 
  {Check Socket}
  {if ASocket = nil then Exit;} {Do not check, used by StopProtocol to release waiting thread}
- 
+
  {Send Socket}
  Result:=FTimer.ScheduleSocket(ASocket,0);
 end;
@@ -3225,30 +3259,30 @@ function TNetworkProtocol.ScheduleSocket(ASocket:TProtocolSocket;ATimeout:LongWo
 begin
  {}
  Result:=False;
- 
+
  {Check Timer}
  if FTimer = nil then Exit;
- 
+
  {Check Socket}
  {if ASocket = nil then Exit;} {Do not check}
- 
+
  {Schedule Socket}
  Result:=FTimer.ScheduleSocket(ASocket,ATimeout);
 end;
 
 {==============================================================================}
 
-function TNetworkProtocol.UnscheduleSocket(ASocket:TProtocolSocket):Boolean; 
+function TNetworkProtocol.UnscheduleSocket(ASocket:TProtocolSocket):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Timer}
  if FTimer = nil then Exit;
- 
+
  {Check Socket}
  {if ASocket = nil then Exit;} {Do not check}
- 
+
  {Unschedule Socket}
  Result:=FTimer.UnscheduleSocket(ASocket);
 end;
@@ -3259,16 +3293,16 @@ function TNetworkProtocol.ScheduleSocketItem(ASocket:TProtocolSocket;AItem:PSock
 begin
  {}
  Result:=False;
- 
+
  {Check Timer}
  if FTimer = nil then Exit;
- 
+
  {Check Socket}
  {if ASocket = nil then Exit;} {Do not check}
 
  {Check Item}
  {if AItem = nil then Exit;} {Do not check}
- 
+
  {Schedule Socket Item}
  Result:=FTimer.ScheduleSocketItem(ASocket,AItem,ATimeout);
 end;
@@ -3279,16 +3313,16 @@ function TNetworkProtocol.UnscheduleSocketItem(ASocket:TProtocolSocket;AItem:PSo
 begin
  {}
  Result:=False;
- 
+
  {Check Timer}
  if FTimer = nil then Exit;
- 
+
  {Check Socket}
  {if ASocket = nil then Exit;} {Do not check}
- 
+
  {Check Item}
  {if AItem = nil then Exit;} {Do not check}
- 
+
  {Unschedule Socket Item}
  Result:=FTimer.UnscheduleSocketItem(ASocket,AItem);
 end;
@@ -3301,22 +3335,22 @@ begin
  {}
  inherited Create;
  FProtocol:=AProtocol;
- 
+
  FLock:=MutexCreate;
  FInterval:=0;
  FCheckTimer:=INVALID_HANDLE_VALUE;
  FProcessSemaphore:=INVALID_HANDLE_VALUE;
- 
+
  FCount:=0;
  FMaxCount:=0;
- 
+
  FFirst:=nil;
  FLast:=nil;
 end;
 
 {==============================================================================}
 
-destructor TSocketTimer.Destroy; 
+destructor TSocketTimer.Destroy;
 begin
  {}
  AcquireLock;
@@ -3325,14 +3359,14 @@ begin
   FProcessSemaphore:=INVALID_HANDLE_VALUE;
   if FCheckTimer <> INVALID_HANDLE_VALUE then TimerDestroy(FCheckTimer);
   FCheckTimer:=INVALID_HANDLE_VALUE;
-  
+
   FFirst:=nil;
   FLast:=nil;
   inherited Destroy;
- finally 
-  ReleaseLock; {Cannot destroy Mutex while holding lock} 
+ finally
+  ReleaseLock; {Cannot destroy Mutex while holding lock}
   MutexDestroy(FLock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3374,7 +3408,7 @@ begin
      begin
       {Remove First}
       FFirst:=Item.Next;
-      
+
       {Check Next}
       if Item.Next = nil then
        begin
@@ -3384,26 +3418,26 @@ begin
        begin
         Item.Next.Prev:=nil;
        end;
-      
+
       {Check First}
       if FFirst <> nil then
        begin
         {Update Key}
         Inc(FFirst.Key,Item.Key);
        end;
-      
+
       {Decrement Count}
       Dec(FCount);
-      
+
       {Return Result}
       Result:=TProtocolSocket(Item.Socket);
-      
+
       {Check Scheduled}
       if (Result <> nil) and (Result.Scheduled) then
        begin
         Result.Scheduled:=False;
        end;
-      
+
       {Check Item}
       if (Item.Flags and SOCKET_TIMER_FLAG_DYNAMIC) <> 0 then
        begin
@@ -3414,12 +3448,12 @@ begin
        begin
         {Update Item}
         Item.Flags:=Item.Flags and not(SOCKET_TIMER_FLAG_ACTIVE);
-       end;       
+       end;
      end;
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3432,7 +3466,7 @@ var
 begin
  {}
  Result:=SOCKET_TIMER_KEY_NONE;
- 
+
  if not AcquireLock then Exit;
  try
   {Get Item (First)}
@@ -3444,7 +3478,7 @@ begin
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3463,7 +3497,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Key}
  if AKey = SOCKET_TIMER_KEY_NONE then Exit;
 
@@ -3473,32 +3507,32 @@ begin
   if (AKey = 0) and (ASocket <> nil) then
    begin
     if ASocket.Scheduled then Exit;
-    
+
     ASocket.Scheduled:=True;
    end;
- 
+
   {Check Item}
   if AItem <> nil then
    begin
     {Check Flags}
     if (AItem.Flags and SOCKET_TIMER_FLAG_ACTIVE) <> 0 then Exit;
-    
+
     {Get Item}
     Item:=AItem;
-    
+
     {Set Flags}
     Item.Flags:=Item.Flags or SOCKET_TIMER_FLAG_ACTIVE;
    end
   else
-   begin  
+   begin
     {Get Item}
     Item:=GetMem(SizeOf(TSocketTimerItem));
     if Item = nil then Exit;
-    
+
     {Set Flags}
     Item.Flags:=SOCKET_TIMER_FLAG_ACTIVE or SOCKET_TIMER_FLAG_DYNAMIC;
-   end; 
-   
+   end;
+
   {Find Position}
   Offset:=0;
   Prev:=nil;
@@ -3509,24 +3543,24 @@ begin
     if AKey < (Offset + Next.Key) then
      begin
       Dec(Next.Key,(AKey - Offset));
-      Break; 
+      Break;
      end;
-    Inc(Offset,Next.Key);  
+    Inc(Offset,Next.Key);
     Prev:=Next;
-    Next:=Next.Next; 
+    Next:=Next.Next;
    end;
-  
+
   {Insert Item}
   Item.Key:=(AKey - Offset);
   Item.Socket:=ASocket;
   Item.Prev:=Prev;
   Item.Next:=Next;
-  
+
   {Check Prev}
   if Prev = nil then
    begin
     FFirst:=Item;
-    
+
     {Check Next}
     if Next = nil then
      begin
@@ -3535,12 +3569,12 @@ begin
     else
      begin
       Next.Prev:=Item;
-     end;      
+     end;
    end
   else
    begin
     Prev.Next:=Item;
-    
+
     {Check Next}
     if Next = nil then
      begin
@@ -3549,18 +3583,18 @@ begin
     else
      begin
       Next.Prev:=Item;
-     end;      
+     end;
    end;
-  
+
   {Increment Count}
   Inc(FCount);
   if FCount > FMaxCount then FMaxCount:=FCount;
-  
-  {Return Result} 
-  Result:=True;       
+
+  {Return Result}
+  Result:=True;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3585,12 +3619,12 @@ begin
    begin
     {Check Flags}
     if (AItem.Flags and SOCKET_TIMER_FLAG_ACTIVE) = 0 then Exit;
-   
+
     {Get Item}
     Item:=AItem;
    end
   else
-   begin  
+   begin
     {Find Item}
     Item:=FFirst;
     while Item <> nil do
@@ -3599,11 +3633,11 @@ begin
        begin
         Break;
        end;
-       
+
       Item:=Item.Next;
      end;
    end;
-   
+
   {Check Item}
   if Item <> nil then
    begin
@@ -3615,7 +3649,7 @@ begin
     if Prev = nil then
      begin
       FFirst:=Next;
-      
+
       {Check Next}
       if Next = nil then
        begin
@@ -3624,12 +3658,12 @@ begin
       else
        begin
         Next.Prev:=nil;
-       end;    
+       end;
      end
     else
      begin
       Prev.Next:=Next;
-      
+
       {Check Next}
       if Next = nil then
        begin
@@ -3639,24 +3673,24 @@ begin
        begin
         Next.Prev:=Prev;
        end;
-     end;  
-     
+     end;
+
     {Check Next}
     if Next <> nil then
      begin
       {Update Key}
       Inc(Next.Key,Item.Key);
      end;
-     
+
     {Decrement Count}
     Dec(FCount);
-    
+
     {Check Scheduled}
     if (Item.Socket <> nil) and (TProtocolSocket(Item.Socket).Scheduled) then
      begin
       TProtocolSocket(Item.Socket).Scheduled:=False;
      end;
-     
+
     {Check Item}
     if (Item.Flags and SOCKET_TIMER_FLAG_DYNAMIC) <> 0 then
      begin
@@ -3667,14 +3701,14 @@ begin
      begin
       {Update Item}
       Item.Flags:=Item.Flags and not(SOCKET_TIMER_FLAG_ACTIVE);
-     end;       
-    
-    {Return Result} 
-    Result:=True;       
-   end; 
+     end;
+
+    {Return Result}
+    Result:=True;
+   end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3687,7 +3721,7 @@ var
 begin
  {}
  Result:=SOCKET_TIMER_KEY_NONE;
- 
+
  if not AcquireLock then Exit;
  try
   {Get Item (First)}
@@ -3699,13 +3733,13 @@ begin
      begin
       Dec(Item.Key,FInterval);
      end;
-         
+
     {Return Result}
     Result:=Item.Key;
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3714,26 +3748,26 @@ function TSocketTimer.StartTimer(AInterval:LongWord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {Check Protocol}
   if FProtocol = nil then Exit;
-  
+
   {Check Interval}
   if AInterval < 1 then Exit;
-  
+
   {Check Timer/Semaphore}
   if FCheckTimer <> INVALID_HANDLE_VALUE then Exit;
   if FProcessSemaphore <> INVALID_HANDLE_VALUE then Exit;
-  
+
   {Set Interval}
   FInterval:=AInterval;
-  
+
   {Create Process Semaphore}
   FProcessSemaphore:=SemaphoreCreate(0);
   if FProcessSemaphore = INVALID_HANDLE_VALUE then Exit;
-  
+
   {Create Check Timer}
   FCheckTimer:=TimerCreateEx(FInterval,TIMER_STATE_ENABLED,TIMER_FLAG_RESCHEDULE or TIMER_FLAG_PRIORITY,TTimerEvent(ProtocolCheckTimer),FProtocol); {Rescheduled Automatically}
   if FCheckTimer = INVALID_HANDLE_VALUE then
@@ -3741,15 +3775,15 @@ begin
     {Destroy Process Semaphore}
     SemaphoreDestroy(FProcessSemaphore);
     FProcessSemaphore:=INVALID_HANDLE_VALUE;
-    
+
     Exit;
-   end; 
- 
+   end;
+
   {Return Result}
   Result:=True;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3758,13 +3792,13 @@ function TSocketTimer.StopTimer:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {Check Timer/Semaphore}
   if FCheckTimer = INVALID_HANDLE_VALUE then Exit;
   if FProcessSemaphore = INVALID_HANDLE_VALUE then Exit;
-  
+
   {Destroy Check Timer}
   if TimerDestroy(FCheckTimer) <> ERROR_SUCCESS then Exit;
   FCheckTimer:=INVALID_HANDLE_VALUE;
@@ -3772,19 +3806,19 @@ begin
   {Destroy Process Semaphore}
   if SemaphoreDestroy(FProcessSemaphore) <> ERROR_SUCCESS then Exit;
   FProcessSemaphore:=INVALID_HANDLE_VALUE;
-  
+
   {Reset Interval}
   FInterval:=0;
-  
+
   {Return Result}
   Result:=True;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
-   
+
 function TSocketTimer.CheckTimer:Boolean;
 begin
  {}
@@ -3799,7 +3833,7 @@ begin
 end;
 
 {==============================================================================}
-   
+
 function TSocketTimer.ProcessTimer:Boolean;
 var
  Socket:TProtocolSocket;
@@ -3809,7 +3843,7 @@ begin
 
  {Check Protocol}
  if FProtocol = nil then Exit;
- 
+
  {Wait Semaphore}
  if SemaphoreWait(FProcessSemaphore) = ERROR_SUCCESS then
   begin
@@ -3820,10 +3854,10 @@ begin
      {Process Socket}
      Result:=FProtocol.ProcessSocket(Socket);
      if not Result then Exit;
-      
+
      {Yield}
      Sleep(0);
-     
+
      {Dequeue Socket}
      Socket:=Dequeue(0);
     end;
@@ -3832,7 +3866,7 @@ end;
 
 {==============================================================================}
 
-function TSocketTimer.ScheduleSocket(ASocket:TProtocolSocket;ATimeout:LongWord):Boolean; 
+function TSocketTimer.ScheduleSocket(ASocket:TProtocolSocket;ATimeout:LongWord):Boolean;
 begin
  {}
  Result:=False;
@@ -3840,7 +3874,7 @@ begin
  {Check Socket}
  {if ASocket = nil then Exit;} {Do not check}
 
- {Check Timeout} 
+ {Check Timeout}
  if ATimeout < 1 then
   begin
    {Insert Key (Immediate)}
@@ -3850,23 +3884,23 @@ begin
   begin
    {Insert Key (Scheduled)}
    Result:=InsertKey(ASocket,nil,ATimeout + FInterval); {Allow one extra interval to account for first decrement}
-  end;  
+  end;
 end;
 
 {==============================================================================}
 
-function TSocketTimer.UnscheduleSocket(ASocket:TProtocolSocket):Boolean; 
+function TSocketTimer.UnscheduleSocket(ASocket:TProtocolSocket):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Socket}
  {if ASocket = nil then Exit;} {Do not check}
 
  {Delete Key}
  Result:=DeleteKey(ASocket,nil);
-end; 
- 
+end;
+
 {==============================================================================}
 
 function TSocketTimer.ScheduleSocketItem(ASocket:TProtocolSocket;AItem:PSocketTimerItem;ATimeout:LongWord):Boolean;
@@ -3879,8 +3913,8 @@ begin
 
  {Check Item}
  {if AItem = nil then Exit;} {Do not check}
- 
- {Check Timeout} 
+
+ {Check Timeout}
  if ATimeout < 1 then
   begin
    {Insert Key (Immediate)}
@@ -3890,7 +3924,7 @@ begin
   begin
    {Insert Key (Scheduled)}
    Result:=InsertKey(ASocket,AItem,ATimeout + FInterval); {Allow one extra interval to account for first decrement}
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -3899,17 +3933,17 @@ function TSocketTimer.UnscheduleSocketItem(ASocket:TProtocolSocket;AItem:PSocket
 begin
  {}
  Result:=False;
- 
+
  {Check Socket}
  {if ASocket = nil then Exit;} {Do not check}
 
  {Check Item}
  {if AItem = nil then Exit;} {Do not check}
- 
+
  {Delete Key}
  Result:=DeleteKey(ASocket,AItem);
-end; 
- 
+end;
+
 {==============================================================================}
 {==============================================================================}
 {TSocketThread}
@@ -3922,7 +3956,7 @@ end;
 
 {==============================================================================}
 
-destructor TSocketThread.Destroy; 
+destructor TSocketThread.Destroy;
 begin
  {}
  inherited Destroy;
@@ -3930,7 +3964,7 @@ end;
 
 {==============================================================================}
 
-procedure TSocketThread.Execute; 
+procedure TSocketThread.Execute;
 var
  WorkBuffer:String;
 begin
@@ -3939,13 +3973,13 @@ begin
   {Get Name}
   WorkBuffer:=PROTOCOL_THREAD_NAME;
   if FProtocol <> nil then WorkBuffer:=WorkBuffer + ' (' + FProtocol.Name + ')';
- 
+
   {Set Name}
   ThreadSetName(GetCurrentThreadID,WorkBuffer);
-  
+
   {Set Priority}
   ThreadSetPriority(GetCurrentThreadID,PROTOCOL_THREAD_PRIORITY);
-  
+
   while not(Terminated) do
    begin
     {Check Protocol}
@@ -3954,13 +3988,13 @@ begin
       {Process Timer}
       FProtocol.ProcessTimer;
      end;
-   end;  
+   end;
  except
   on E: Exception do
    begin
     if NETWORK_LOG_ENABLED then NetworkLogError(nil,'SocketThread: Exception: ' + E.Message + ' at ' + PtrToHex(ExceptAddr));
    end;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3969,13 +4003,13 @@ function TSocketThread.SendSocket(ASocket:TProtocolSocket):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Protocol}
  if FProtocol = nil then Exit;
- 
+
  {Check Socket}
  {if ASocket = nil then Exit;} {Do not check, used by StopProtocol to release waiting thread}
- 
+
  {Send Socket}
  Result:=FProtocol.SendSocket(ASocket);
 end;
@@ -3988,7 +4022,7 @@ begin
  {}
  inherited Create;
  FLock:=MutexCreate;
- 
+
  Port:=IPPORT_ANY;
  Sockets:=TList.Create;
 end;
@@ -4002,8 +4036,8 @@ begin
  try
   Sockets.Free;
   inherited Destroy;
- finally 
-  ReleaseLock; {Cannot destroy Mutex while holding lock} 
+ finally
+  ReleaseLock; {Cannot destroy Mutex while holding lock}
   MutexDestroy(FLock);
  end;
 end;
@@ -4034,10 +4068,10 @@ begin
  FSocketChange:=EventCreate(True,False);
 
  FProtocol:=AProtocol;
- 
+
  {Set Socket Type}
  if FProtocol <> nil then FStruct:=FProtocol.SocketType;
- 
+
  {Set Protocol Type}
  if FProtocol <> nil then FProto:=FProtocol.Protocol;
 
@@ -4056,24 +4090,24 @@ begin
   FProtocolState:=nil;
 
   FProtocol:=nil;
-  
+
   EventDestroy(FSocketChange);
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TProtocolSocket.CheckSocket(ASocket:TProtocolSocket;ALock:Boolean;AState:LongWord):Boolean; 
+function TProtocolSocket.CheckSocket(ASocket:TProtocolSocket;ALock:Boolean;AState:LongWord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Protocol}
  if FProtocol = nil then Exit;
- 
+
  {Check Socket}
  Result:=FProtocol.CheckSocket(ASocket,ALock,AState);
 end;
@@ -4096,7 +4130,7 @@ begin
  {}
  {Check Timeout}
  if ATimeout = 0 then ATimeout:=INFINITE;
- 
+
  {Wait Event}
  Status:=EventWaitEx(FSocketChange,ATimeout);
  Result:=(Status = ERROR_SUCCESS) or ((ATimeout <> INFINITE) and (Status = ERROR_WAIT_TIMEOUT));
@@ -4109,7 +4143,7 @@ begin
  {}
  {Signal Event}
  Result:=(EventPulse(FSocketChange) = ERROR_SUCCESS);
-    
+
  {Reset Event (Manual Reset)}
  {Result:=Result and (EventReset(FSocketChange) = ERROR_SUCCESS);} {Not required, reset by EventPulse}
 end;
@@ -4120,10 +4154,10 @@ function TProtocolSocket.SendSocket:Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Protocol}
  if FProtocol = nil then Exit;
- 
+
  {Send Socket}
  Result:=FProtocol.SendSocket(Self);
 end;
@@ -4134,24 +4168,24 @@ function TProtocolSocket.ScheduleSocket(ATimeout:LongWord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Protocol}
  if FProtocol = nil then Exit;
- 
+
  {Schedule Socket}
  Result:=FProtocol.ScheduleSocket(Self,ATimeout);
 end;
 
 {==============================================================================}
 
-function TProtocolSocket.UnscheduleSocket:Boolean; 
+function TProtocolSocket.UnscheduleSocket:Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Protocol}
  if FProtocol = nil then Exit;
- 
+
  {Unschedule Socket}
  Result:=FProtocol.UnscheduleSocket(Self);
 end;
@@ -4162,10 +4196,10 @@ function TProtocolSocket.ScheduleSocketItem(AItem:PSocketTimerItem;ATimeout:Long
 begin
  {}
  Result:=False;
- 
+
  {Check Protocol}
  if FProtocol = nil then Exit;
- 
+
  {Schedule Socket Item}
  Result:=FProtocol.ScheduleSocketItem(Self,AItem,ATimeout);
 end;
@@ -4176,10 +4210,10 @@ function TProtocolSocket.UnscheduleSocketItem(AItem:PSocketTimerItem):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Protocol}
  if FProtocol = nil then Exit;
- 
+
  {Unschedule Socket Item}
  Result:=FProtocol.UnscheduleSocketItem(Self,AItem);
 end;
@@ -4192,7 +4226,7 @@ begin
  {}
  inherited Create;
  FLock:=CriticalSectionCreate;
- 
+
  FLocalPort:=IPPORT_ANY;
  FRemotePort:=IPPORT_ANY;
 end;
@@ -4205,8 +4239,8 @@ begin
  AcquireLock;
  try
   inherited Destroy;
- finally 
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+ finally
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   CriticalSectionDestroy(FLock);
  end;
 end;
@@ -4269,8 +4303,8 @@ begin
  AcquireLock;
  try
   inherited Destroy;
- finally 
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+ finally
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   CriticalSectionDestroy(FLock);
  end;
 end;
@@ -4299,7 +4333,7 @@ begin
  {}
  inherited Create;
  FLock:=SynchronizerCreate;
- 
+
  Handle:=INVALID_HANDLE_VALUE;
  Protocol:=IPPROTO_IP;
  Transport:=nil;
@@ -4314,7 +4348,7 @@ begin
  try
   Transport:=nil;
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -4360,7 +4394,7 @@ begin
  {}
  inherited Create;
  FLock:=SynchronizerCreate;
- 
+
  FManager:=AManager;
  FProtocol:=IPPROTO_IP;
  FTransports:=TNetworkList.Create;
@@ -4379,7 +4413,7 @@ begin
   FProtocol:=IPPROTO_IP;
   FManager:=nil;
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -4427,28 +4461,28 @@ begin
  FTransports.ReaderLock;
  try
   Result:=nil;
-  
-  {Get Transport} 
+
+  {Get Transport}
   Transport:=TFilterTransport(FTransports.First);
   while Transport <> nil do
    begin
     {Check Transport}
     if Transport.Handle = AHandle then
      begin
-      {Lock Transport} 
+      {Lock Transport}
       if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
-      
+
       {Return Result}
       Result:=Transport;
       Exit;
      end;
-    
+
     {Get Next}
     Transport:=TFilterTransport(Transport.Next);
    end;
- finally 
+ finally
   FTransports.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4461,28 +4495,28 @@ begin
  FTransports.ReaderLock;
  try
   Result:=nil;
-  
-  {Get Transport} 
+
+  {Get Transport}
   Transport:=TFilterTransport(FTransports.First);
   while Transport <> nil do
    begin
     {Check Transport}
     if Transport.Transport.Family = AFamily then
      begin
-      {Lock Transport} 
+      {Lock Transport}
       if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
 
       {Return Result}
       Result:=Transport;
       Exit;
      end;
-     
+
     {Get Next}
     Transport:=TFilterTransport(Transport.Next);
    end;
- finally 
+ finally
   FTransports.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4495,28 +4529,28 @@ begin
  FTransports.ReaderLock;
  try
   Result:=nil;
-  
-  {Get Transport} 
+
+  {Get Transport}
   Transport:=TFilterTransport(FTransports.First);
   while Transport <> nil do
    begin
     {Check Transport}
     if Transport.Transport = ATransport then
      begin
-      {Lock Transport} 
+      {Lock Transport}
       if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
 
       {Return Result}
       Result:=Transport;
       Exit;
      end;
-     
+
     {Get Next}
     Transport:=TFilterTransport(Transport.Next);
    end;
- finally 
+ finally
   FTransports.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4529,7 +4563,7 @@ begin
  FTransports.ReaderLock;
  try
   Result:=nil;
-  
+
   {Check Previous}
   if APrevious = nil then
    begin
@@ -4539,7 +4573,7 @@ begin
      begin
       {Lock Transport}
       if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
-      
+
       {Return Result}
       Result:=Transport;
      end;
@@ -4552,17 +4586,17 @@ begin
      begin
       {Lock Transport}
       if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
-      
+
       {Return Result}
       Result:=Transport;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
- finally 
+   end;
+ finally
   FTransports.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4607,7 +4641,7 @@ end;
 
 {==============================================================================}
 
-function TNetworkFilter.BindFilter(ATransport:TNetworkTransport):Boolean; 
+function TNetworkFilter.BindFilter(ATransport:TNetworkTransport):Boolean;
 begin
  {Virtual Base Method}
  Result:=False;
@@ -4615,7 +4649,7 @@ end;
 
 {==============================================================================}
 
-function TNetworkFilter.UnbindFilter(ATransport:TNetworkTransport):Boolean; 
+function TNetworkFilter.UnbindFilter(ATransport:TNetworkTransport):Boolean;
 begin
  {Virtual Base Method}
  Result:=False;
@@ -4629,7 +4663,7 @@ begin
  {}
  inherited Create;
  FLock:=SynchronizerCreate;
- 
+
  Handle:=INVALID_HANDLE_VALUE;
  ConfigType:=CONFIG_TYPE_AUTO;
  Transport:=nil;
@@ -4644,7 +4678,7 @@ begin
  try
   Transport:=nil;
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -4690,7 +4724,7 @@ begin
  {}
  inherited Create;
  FLock:=SynchronizerCreate;
- 
+
  FManager:=AManager;
  FConfigType:=CONFIG_TYPE_AUTO;
  FInitDelay:=0;
@@ -4712,7 +4746,7 @@ begin
   FConfigType:=CONFIG_TYPE_AUTO;
   FManager:=nil;
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -4760,7 +4794,7 @@ begin
  FTransports.ReaderLock;
  try
   Result:=nil;
-  
+
   {Get Transport}
   Transport:=TConfigTransport(FTransports.First);
   while Transport <> nil do
@@ -4768,20 +4802,20 @@ begin
     {Check Transport}
     if Transport.Handle = AHandle then
      begin
-      {Lock Transport} 
+      {Lock Transport}
       if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
 
       {Return Result}
       Result:=Transport;
       Exit;
      end;
-     
-    {Get Next} 
+
+    {Get Next}
     Transport:=TConfigTransport(Transport.Next);
    end;
- finally 
+ finally
   FTransports.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4794,7 +4828,7 @@ begin
  FTransports.ReaderLock;
  try
   Result:=nil;
-  
+
   {Get Transport}
   Transport:=TConfigTransport(FTransports.First);
   while Transport <> nil do
@@ -4802,20 +4836,20 @@ begin
     {Check Transport}
     if Transport.Transport.Family = AFamily then
      begin
-      {Lock Transport} 
+      {Lock Transport}
       if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
 
       {Return Result}
       Result:=Transport;
       Exit;
      end;
-     
-    {Get Next} 
+
+    {Get Next}
     Transport:=TConfigTransport(Transport.Next);
    end;
- finally 
+ finally
   FTransports.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4828,7 +4862,7 @@ begin
  FTransports.ReaderLock;
  try
   Result:=nil;
-  
+
   {Get Transport}
   Transport:=TConfigTransport(FTransports.First);
   while Transport <> nil do
@@ -4836,20 +4870,20 @@ begin
     {Check Transport}
     if Transport.Transport = ATransport then
      begin
-      {Lock Transport} 
+      {Lock Transport}
       if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
 
       {Return Result}
       Result:=Transport;
       Exit;
      end;
-     
-    {Get Next} 
+
+    {Get Next}
     Transport:=TConfigTransport(Transport.Next);
    end;
- finally 
+ finally
   FTransports.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4862,7 +4896,7 @@ begin
  FTransports.ReaderLock;
  try
   Result:=nil;
-  
+
   {Check Previous}
   if APrevious = nil then
    begin
@@ -4872,7 +4906,7 @@ begin
      begin
       {Lock Transport}
       if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
-      
+
       {Return Result}
       Result:=Transport;
      end;
@@ -4885,17 +4919,17 @@ begin
      begin
       {Lock Transport}
       if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
-      
+
       {Return Result}
       Result:=Transport;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
- finally 
+   end;
+ finally
   FTransports.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4940,7 +4974,7 @@ end;
 
 {==============================================================================}
 
-function TNetworkConfig.BindConfig(ATransport:TNetworkTransport):Boolean; 
+function TNetworkConfig.BindConfig(ATransport:TNetworkTransport):Boolean;
 begin
  {Virtual Base Method}
  Result:=False;
@@ -4948,7 +4982,7 @@ end;
 
 {==============================================================================}
 
-function TNetworkConfig.UnbindConfig(ATransport:TNetworkTransport):Boolean; 
+function TNetworkConfig.UnbindConfig(ATransport:TNetworkTransport):Boolean;
 begin
  {Virtual Base Method}
  Result:=False;
@@ -4973,7 +5007,7 @@ begin
  {}
  inherited Create;
  FLock:=SynchronizerCreate;
- 
+
  FProtocol:=AProtocol;
 end;
 
@@ -4986,7 +5020,7 @@ begin
  try
   FProtocol:=nil;
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -5026,7 +5060,7 @@ end;
 
 {==============================================================================}
 
-function TNetworkClient.StartClient:Boolean; 
+function TNetworkClient.StartClient:Boolean;
 begin
  {Virtual Base Method}
  Result:=False;
@@ -5034,7 +5068,7 @@ end;
 
 {==============================================================================}
 
-function TNetworkClient.StopClient:Boolean; 
+function TNetworkClient.StopClient:Boolean;
 begin
  {Virtual Base Method}
  Result:=False;
@@ -5051,25 +5085,25 @@ begin
 
  {Create Protocol Manager}
  ProtocolManager:=TProtocolManager.Create(NetworkSettings,TransportManager);
- 
+
  ProtocolInitialized:=True;
 end;
 
 {==============================================================================}
- 
+
 function ProtocolStart:LongWord;
 begin
  {}
  Result:=ERROR_SUCCESS;
- 
+
  {Check Started}
  if ProtocolStarted then Exit;
- 
+
  Result:=ERROR_INVALID_PARAMETER;
 
  {Check Manager}
  if ProtocolManager = nil then Exit;
- 
+
  {Start Protocols}
  if not ProtocolManager.StartProtocols then
   begin
@@ -5081,19 +5115,19 @@ begin
   begin
    if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to start one or more network filters');
   end;
-  
+
  {Start Configs}
  if not ProtocolManager.StartConfigs then
   begin
    if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to start one or more network configs');
   end;
-  
+
  //To Do //Clients
- 
- {Set Started} 
+
+ {Set Started}
  ProtocolStarted:=True;
- 
- {Return Result} 
+
+ {Return Result}
  Result:=ERROR_SUCCESS;
 end;
 
@@ -5103,17 +5137,17 @@ function ProtocolStop:LongWord;
 begin
  {}
  Result:=ERROR_SUCCESS;
- 
+
  {Check Started}
  if not(ProtocolStarted) then Exit;
- 
+
  Result:=ERROR_INVALID_PARAMETER;
 
  {Check Manager}
  if ProtocolManager = nil then Exit;
- 
+
  //To Do //Clients
- 
+
  {Stop Configs}
  if not ProtocolManager.StopConfigs then
   begin
@@ -5125,7 +5159,7 @@ begin
   begin
    if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to stop one or more network filters');
   end;
-  
+
  {Stop Protocols}
  if not ProtocolManager.StopProtocols then
   begin
@@ -5133,16 +5167,16 @@ begin
   end;
 
  {Set Started}
- ProtocolStarted:=False;    
- 
- {Return Result} 
+ ProtocolStarted:=False;
+
+ {Return Result}
  Result:=ERROR_SUCCESS;
 end;
 
 {==============================================================================}
 {==============================================================================}
 {Protocol Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 {Protocol Helper Functions}
@@ -5153,14 +5187,14 @@ begin
  {}
  {Check Data}
  if Data = nil then Exit;
- 
+
  {Get Protocol}
  Protocol:=TNetworkProtocol(Data);
- 
+
  {Check Timer}
  Protocol.CheckTimer;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -5168,7 +5202,7 @@ initialization
  ProtocolInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

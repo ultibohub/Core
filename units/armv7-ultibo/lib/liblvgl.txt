@@ -10,7 +10,7 @@ Licence
 -------
 
 MIT licence
-Copyright (c) 2021 LVGL Kft
+Copyright (c) 2025 LVGL Kft
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -21,21 +21,21 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 Version
 -------
 
- 9.2.2
+ 9.4.0
 
 Download
 --------
 
- https://github.com/lvgl/lvgl/releases/tag/v9.2.2
+ https://github.com/lvgl/lvgl/releases/tag/v9.4.0
 
 Build
 -----
 
- mkdir $HOME/libraries/lvgl-9.2.2
+ mkdir $HOME/libraries/lvgl-9.4.0
 
- Extract contents of download to $HOME/libraries/lvgl-9.2.2/lvgl
+ Extract contents of download to $HOME/libraries/lvgl-9.4.0/lvgl
 
- Copy lv_conf.h and Makefile from $API_PATH/libs/lvgl to $HOME/libraries/lvgl-9.2.2/lvgl
+ Copy lv_conf.h and Makefile from $API_PATH/libs/lvgl to $HOME/libraries/lvgl-9.4.0/lvgl
 
 
 ARMv6
@@ -45,15 +45,15 @@ ARMv6
  Extracted to folder $HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi
 
 
- cd $HOME/libraries/lvgl-9.2.2
+ cd $HOME/libraries/lvgl-9.4.0
 
- mkdir $HOME/libraries/lvgl-9.2.2/armv6
+ mkdir $HOME/libraries/lvgl-9.4.0/armv6
 
  export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin:$PATH
 
  make all BOARD_TYPE=rpib ARCH_TYPE=arm
 
- copy liblvgl.a to $HOME/libraries/lvgl-9.2.2/armv6
+ copy liblvgl.a to $HOME/libraries/lvgl-9.4.0/armv6
 
 
 ARMv7
@@ -63,15 +63,15 @@ ARMv7
  Extracted to folder $HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi
 
 
- cd $HOME/libraries/lvgl-9.2.2
+ cd $HOME/libraries/lvgl-9.4.0
 
- mkdir $HOME/libraries/lvgl-9.2.2/armv7
+ mkdir $HOME/libraries/lvgl-9.4.0/armv7
 
  export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin:$PATH
- 
+
  make all BOARD_TYPE=rpi3b ARCH_TYPE=arm
 
- copy liblvgl.a to $HOME/libraries/lvgl-9.2.2/armv7
+ copy liblvgl.a to $HOME/libraries/lvgl-9.4.0/armv7
 
 
 ARMv8
@@ -81,12 +81,12 @@ ARMv8
  Extracted to folder $HOME/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf
 
 
- cd $HOME/libraries/lvgl-9.2.2
+ cd $HOME/libraries/lvgl-9.4.0
 
- mkdir $HOME/libraries/lvgl-9.2.2/armv8
+ mkdir $HOME/libraries/lvgl-9.4.0/armv8
 
  export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf/bin:$PATH
 
  make all BOARD_TYPE=rpi4b ARCH_TYPE=aarch64
- 
- copy liblvgl.a to $HOME/libraries/lvgl-9.2.2/armv8
+
+ copy liblvgl.a to $HOME/libraries/lvgl-9.4.0/armv8

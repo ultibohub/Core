@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -37,11 +37,33 @@ iSCSI
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit iSCSI;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Storage,Winsock2;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  Core.Storage,
+  Core.Winsock2;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  Storage,
+  Winsock2;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
@@ -51,9 +73,9 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Storage,Winso
 //const
  {iSCSI specific constants}
 
-//To Do //A generic iSCSI unit 
-                           
-              
+//To Do //A generic iSCSI unit
+
+
 {==============================================================================}
 //type
  {iSCSI specific types}
@@ -65,7 +87,7 @@ var
  iSCSIInitialized:Boolean;
 
  //To Do
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure iSCSIInit;
@@ -87,9 +109,9 @@ begin
  {}
  {Check Initialized}
  if iSCSIInitialized then Exit;
- 
+
  //To Do
- 
+
  iSCSIInitialized:=True;
 end;
 
@@ -105,7 +127,7 @@ initialization
  iSCSIInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

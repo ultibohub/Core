@@ -1,7 +1,7 @@
 {
 Ultibo Services interface unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -17,75 +17,112 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
- 
+
  Ping
- 
+
   RFC792 - Internet Control Message Protocol - https://www.rfc-editor.org/rfc/rfc792
- 
+
  NTP
-  
+
   RFC1305 - Network Time Protocol (Version 3) - https://tools.ietf.org/html/rfc1305
   RFC5905 - Network Time Protocol (Version 4) - https://tools.ietf.org/html/rfc5905
   RFC4330 - Simple Network Time Protocol (SNTP) Version 4 - https://tools.ietf.org/html/rfc4330
-  
+
  Telnet
- 
+
   RFC????
-  
+
   ANSI Escape Sequences - http://ascii-table.com/ansi-escape-sequences.php
   VT100 Escape Sequences - http://ascii-table.com/ansi-escape-sequences-vt-100.php
-  
+
  SSH
- 
+
   RFC????
-  
+
  UPnP
- 
+
   RFC????
- 
- SysLog
- 
+
+ Syslog
+
   RFC3164 - The BSD syslog Protocol - https://tools.ietf.org/html/rfc3164
   RFC5424 - The Syslog Protocol - https://tools.ietf.org/html/rfc5424
   RFC5426 - Transmission of Syslog Messages over UDP - https://tools.ietf.org/html/rfc5426
   RFC6587 - Transmission of Syslog Messages over TCP - https://tools.ietf.org/html/rfc6587
- 
+
 Services
 ========
 
  Ping
- 
+
  NTP
 
  Telnet
- 
+
  SSH
- 
+
  UPnP
- 
- SysLog
- 
+
+ Syslog
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit Services;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Logging,SysUtils,
-     Classes,Ultibo,UltiboClasses,Winsock2,Protocol,ICMP,Crypto,Authentication;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  Core.Logging,
+  System.SysUtils,
+  System.Classes,
+  Core.Ultibo,
+  Core.UltiboClasses,
+  Core.Winsock2,
+  Core.Protocol,
+  Core.ICMP,
+  Core.Crypto,
+  Core.Authentication;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  Logging,
+  SysUtils,
+  Classes,
+  Ultibo,
+  UltiboClasses,
+  Winsock2,
+  Protocol,
+  ICMP,
+  Crypto,
+  Authentication;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
@@ -94,37 +131,42 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Logging,SysUt
 {==============================================================================}
 const
  {Services specific constants}
- 
+
  {Ping constants}
- PING_DEFAULT_SIZE = 32;      {Default number of bytes of data to send with echo (Ping) request} 
- PING_MAXIMUM_SIZE = 65500;   {Maximum number of bytes of data to send with echo (Ping) request} 
+ PING_DEFAULT_SIZE = 32;      {Default number of bytes of data to send with echo (Ping) request}
+ PING_MAXIMUM_SIZE = 65500;   {Maximum number of bytes of data to send with echo (Ping) request}
  PING_DEFAULT_COUNT = 4;      {Default number of echo (ping) requests to send in a sequence}
- PING_DEFAULT_TIMEOUT = 3000; {Default time to wait for echo (Ping) response (Milliseconds)} 
- 
+ PING_DEFAULT_TIMEOUT = 3000; {Default time to wait for echo (Ping) response (Milliseconds)}
+
  {NTP constants}
+ NTP_LISTENER_THREAD_NAME = 'NTP Listener'; {Thread name for NTP listener threads}
+ NTP_SERVER_THREAD_NAME = 'NTP Server';     {Thread name for NTP server threads}
+
+ {NTP Version}
  NTP_VERSION_1 = 1;
  NTP_VERSION_2 = 2;
  NTP_VERSION_3 = 3;
  NTP_VERSION_4 = 4;
- 
+
  NTP_VERSION_MASK = $07; {shl 3}
- 
+
  NTP_VERSION = NTP_VERSION_4;      {Current NTP/SNTP version}
  NTP_MIN_VERSION = NTP_VERSION_2;  {Minimum acceptable NTP/SNTP version}
  NTP_MAX_VERSION = NTP_VERSION_4;  {Maximum acceptable NTP/SNTP version}
- 
+
  NTP_PACKET_SIZE = 48; {SizeOf(TNTPPacket)}
 
- NTP_TIMESTAMP_START = 94354848000000000; {Offset between 1/1/1601 (Ultibo) and 1/1/1900 (NTP Timestamp)}
-                       
+ NTP_TIMESTAMP_START     =  94354848000000000; {Offset between 1/1/1601 (Ultibo) and 1/1/1900 00:00:00 (NTP Timestamp)}
+ NTP_TIMESTAMP_EXT_START = 137304520960000000; {Offset between 1/1/1601 (Ultibo) and 7/2/2036 06:28:16 (NTP Extended Timestamp)(MSB of timestamp seconds = 0)}
+
  {NTP Leap Indicator}
  NTP_LEAP_NONE    = 0;
  NTP_LEAP_LAST_61 = 1;
  NTP_LEAP_LAST_59 = 2;
  NTP_LEAP_ALARM   = 3;
- 
+
  NTP_LEAP_MASK    = $03; {shl 6}
- 
+
  {NTP Mode}
  NTP_MODE_RESERVED          = 0; {Reserved}
  NTP_MODE_SYMMETRIC_ACTIVE  = 1; {Symmetric active}
@@ -136,7 +178,7 @@ const
  NTP_MODE_PRIVATE           = 7; {Reserved for private use}
 
  NTP_MODE_MASK              = $07; {shl 0}
- 
+
  {NTP Stratum}
  NTP_STRATUM_INVALID       = 0;  {unspecified or invalid}
  NTP_STRATUM_PRIMARY       = 1;  {primary server (e.g., equipped with a GPS receiver)}
@@ -156,7 +198,11 @@ const
  NTP_STRATUM_SECONDARY15   = 15; {secondary server (via NTP)}
  NTP_STRATUM_UNSYNCRONIZED = 16; {unsynchronized}
  NTP_STRATUM_RESERVED      = 17; {reserved}
- 
+
+ {Telnet constants}
+ TELNET_LISTENER_THREAD_NAME = 'Telnet Listener'; {Thread name for TELNET listener threads}
+ TELNET_SERVER_THREAD_NAME = 'Telnet Server';     {Thread name for TELNET server threads}
+
  {Telnet character constants}
  TELNET_CHAR_NUL       = #0;
  TELNET_CHAR_CR        = #13;
@@ -165,33 +211,33 @@ const
  TELNET_CHAR_TAB       = #9;
  TELNET_CHAR_ESC       = #27;
  TELNET_CHAR_BACKSPACE = #127;
- 
+
  {Telnet escape sequences}
  TELNET_SEQUENCE_UP_ARROW    = #27#91#65; {ESC[A}
  TELNET_SEQUENCE_DOWN_ARROW  = #27#91#66; {ESC[B}
  TELNET_SEQUENCE_RIGHT_ARROW = #27#91#67; {ESC[C}
  TELNET_SEQUENCE_LEFT_ARROW  = #27#91#68; {ESC[D}
- 
+
  TELNET_SEQUENCE_HOME        = #27#91#49#126; {ESC[1~}
  TELNET_SEQUENCE_INSERT      = #27#91#50#126; {ESC[2~}
  TELNET_SEQUENCE_DELETE      = #27#91#51#126; {ESC[3~}
  TELNET_SEQUENCE_END         = #27#91#52#126; {ESC[4~}
  TELNET_SEQUENCE_PGUP        = #27#91#53#126; {ESC[5~}
  TELNET_SEQUENCE_PGDN        = #27#91#54#126; {ESC[6~}
- 
- TELNET_SEQUENCE_F1          = #27#91#49#49#126; {ESC[11~} 
- TELNET_SEQUENCE_F2          = #27#91#49#50#126; {ESC[12~} 
- TELNET_SEQUENCE_F3          = #27#91#49#51#126; {ESC[13~} 
- TELNET_SEQUENCE_F4          = #27#91#49#52#126; {ESC[14~} 
- TELNET_SEQUENCE_F5          = #27#91#49#53#126; {ESC[15~} 
- TELNET_SEQUENCE_F6          = #27#91#49#55#126; {ESC[17~} 
- TELNET_SEQUENCE_F7          = #27#91#49#56#126; {ESC[18~} 
- TELNET_SEQUENCE_F8          = #27#91#49#57#126; {ESC[19~} 
- TELNET_SEQUENCE_F9          = #27#91#50#48#126; {ESC[20~} 
- TELNET_SEQUENCE_F10         = #27#91#50#49#126; {ESC[21~} 
- 
+
+ TELNET_SEQUENCE_F1          = #27#91#49#49#126; {ESC[11~}
+ TELNET_SEQUENCE_F2          = #27#91#49#50#126; {ESC[12~}
+ TELNET_SEQUENCE_F3          = #27#91#49#51#126; {ESC[13~}
+ TELNET_SEQUENCE_F4          = #27#91#49#52#126; {ESC[14~}
+ TELNET_SEQUENCE_F5          = #27#91#49#53#126; {ESC[15~}
+ TELNET_SEQUENCE_F6          = #27#91#49#55#126; {ESC[17~}
+ TELNET_SEQUENCE_F7          = #27#91#49#56#126; {ESC[18~}
+ TELNET_SEQUENCE_F8          = #27#91#49#57#126; {ESC[19~}
+ TELNET_SEQUENCE_F9          = #27#91#50#48#126; {ESC[20~}
+ TELNET_SEQUENCE_F10         = #27#91#50#49#126; {ESC[21~}
+
  TELNET_BUFFER_SIZE = SIZE_2K;
- 
+
  {Telnet State constants}
  TELNET_STATE_NONE            = $00000000;
  TELNET_STATE_TRANSMIT_BINARY = $00000001;
@@ -201,7 +247,7 @@ const
  TELNET_STATE_WINDOW_SIZE     = $00000010;
  TELNET_STATE_TERMINAL_SPEED  = $00000020;
  TELNET_STATE_NEW_ENVIRONMENT = $00000040;
- 
+
  {Telnet Commands}
  TELNET_COMMAND_EOR    =  239; {0xEF end of record command}
  TELNET_COMMAND_SE     =  240; {0xF0 end of subnegotiations command}
@@ -220,7 +266,7 @@ const
  TELNET_COMMAND_DO     =  253; {0xFD request other party enables option}
  TELNET_COMMAND_DONT   =  254; {0xFE request other party doesn't enable option}
  TELNET_COMMAND_IAC    =  255; {0xFF interpret as command}
- 
+
  {Telnet Options}
  TELNET_OPTION_TRANSMIT_BINARY  = 0;  {0x00 transmit binary option}
  TELNET_OPTION_ECHO             = 1;  {0x01 echo option}
@@ -229,16 +275,36 @@ const
  TELNET_OPTION_WINDOW_SIZE      = 31; {0x1F negotiate window size}
  TELNET_OPTION_TERMINAL_SPEED   = 32; {0x20 terminal speed}
  TELNET_OPTION_NEW_ENVIRONMENT  = 39; {0x27 new environment}
- 
+
  {SSH constants}
- //To do
- 
+
  {UPnP constants}
- 
- {SysLog constants}
- SYSLOG_LOGGING_DESCRIPTION = 'SysLog Logging';
- 
- {SysLog Facility codes}
+
+ {Syslog constants}
+ SYSLOG_LOGGING_DESCRIPTION = 'Syslog Logging';
+
+ SYSLOG_LISTENER_THREAD_NAME = 'Syslog Listener'; {Thread name for Syslog listener threads}
+ SYSLOG_SERVER_THREAD_NAME = 'Syslog Server';     {Thread name for Syslog server threads}
+
+ SYSLOG_MESSAGE_MAX = 2048;
+ SYSLOG_BSD_MESSAGE_MAX = 1024;
+
+ {Syslog Header}
+ SYSLOG_VERSION = '1';
+ SYSLOG_MSG_BOM:array[1..3] of Byte = ($EF, $BB, $BF); {UTF-8 BOM 0xEF, 0xBB, 0xBF}
+ SYSLOG_NIL_VALUE = '-';
+ SYSLOG_PRI_START = '<';
+ SYSLOG_PRI_END = '>';
+ SYSLOG_DATA_START = '[';
+ SYSLOG_DATA_END = ']';
+ SYSLOG_TAG_CHARS = ['a'..'z','A'..'Z','0'..'9'];
+ SYSLOG_SEPARATOR = ' ';
+
+ {Syslog Timestamps}
+ SYSLOG_TIMESTAMP = 'yyyy-mm-ddThh:nn:ss.zzzZ';
+ SYSLOG_BSD_TIMESTAMP = 'mmm dd hh:nn:ss';
+
+ {Syslog Facility codes}
  SYSLOG_FACILITY_KERNEL   = 0;  {kernel messages}
  SYSLOG_FACILITY_USER     = 1;  {user-level messages}
  SYSLOG_FACILITY_MAIL     = 2;  {mail system}
@@ -263,8 +329,8 @@ const
  SYSLOG_FACILITY_LOCAL5   = 21; {local use 5 (local5)}
  SYSLOG_FACILITY_LOCAL6   = 22; {local use 6 (local6)}
  SYSLOG_FACILITY_LOCAL7   = 23; {local use 7 (local7)}
- 
- {SysLog Severity codes}
+
+ {Syslog Severity codes}
  SYSLOG_SEVERITY_EMERGENCY   = 0; {Emergency: system is unusable}
  SYSLOG_SEVERITY_ALERT       = 1; {Alert: action must be taken immediately}
  SYSLOG_SEVERITY_CRITICAL    = 2; {Critical: critical conditions}
@@ -273,7 +339,7 @@ const
  SYSLOG_SEVERITY_NOTICE      = 5; {Notice: normal but significant condition}
  SYSLOG_SEVERITY_INFORMATION = 6; {Informational: informational messages}
  SYSLOG_SEVERITY_DEBUG       = 7; {Debug: debug-level messages}
- 
+
  {Service logging}
  SERVICE_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Service debugging messages}
  SERVICE_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Service informational messages, such as a service being created or destroyed}
@@ -281,32 +347,32 @@ const
  SERVICE_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {Service error messages}
  SERVICE_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Service messages}
 
-var 
- SERVICE_DEFAULT_LOG_LEVEL:LongWord = SERVICE_LOG_LEVEL_DEBUG; {Minimum level for Service messages.  Only messages with level greater than or equal to this will be printed} 
- 
-var 
+var
+ SERVICE_DEFAULT_LOG_LEVEL:LongWord = SERVICE_LOG_LEVEL_DEBUG; {Minimum level for Service messages.  Only messages with level greater than or equal to this will be printed}
+
+var
  {Service logging}
- SERVICE_LOG_ENABLED:Boolean; 
- 
+ SERVICE_LOG_ENABLED:Boolean;
+
 {==============================================================================}
 type
  {Services specific types}
- 
+
  {Ping types}
- 
+
  {NTP types}
  PNTPShort = ^TNTPShort;
  TNTPShort = packed record {NTP Short Format}
   Seconds:Word;       {Seconds}
   Fraction:Word;      {Fraction}
  end;
- 
+
  PNTPTimestamp = ^TNTPTimestamp;
  TNTPTimestamp = packed record {NTP Timestamp Format}
   Seconds:LongWord;   {Seconds}
   Fraction:LongWord;  {Seconds Fraction (0-padded)}
  end;
- 
+
  {NTP Date Format}
  PNTPDate = ^TNTPDate;
  TNTPDate = packed record
@@ -314,7 +380,7 @@ type
   EraOffset:LongWord;  {Era Offset}
   Fraction:Int64;      {Fraction}
  end;
- 
+
  PNTPPacket = ^TNTPPacket;
  TNTPPacket = packed record
   LeapVersionMode:Byte;                    {Leap Indicator (2 bits) / Version (3 bits) / Mode (3 bits)}
@@ -327,24 +393,23 @@ type
   ReferenceTimestamp:TNTPTimestamp;        {This field is the time the system clock was last set or corrected, in 64-bit timestamp format}
   OriginateTimestamp:TNTPTimestamp;        {This is the time at which the request departed the client for the server, in 64-bit timestamp format}
   ReceiveTimestamp:TNTPTimestamp;          {This is the time at which the request arrived at the server or the reply arrived at the client, in 64-bit timestamp format}
-  TransmitTimestamp:TNTPTimestamp;         {This is the time at which the request departed the client or the reply departed the server, in 64-bit timestamp format} 
+  TransmitTimestamp:TNTPTimestamp;         {This is the time at which the request departed the client or the reply departed the server, in 64-bit timestamp format}
   {KeyIdentifier:LongWord;}                {Optional for NTP authentication}
   {MessageDigest:array[0..15] of Byte;}    {Optional for NTP authentication}
  end;
 
  {Telnet types}
- 
+
  {SSH types}
- //To do
- 
+
  {UPnP types}
- 
- {SysLog types}
- 
+
+ {Syslog types}
+
 {==============================================================================}
 type
  {Services specific classes}
- 
+
  {Ping classes}
  TPingClient = class(TWinsock2RAWClient)
  public
@@ -427,46 +492,46 @@ type
  private
   {Internal Variables}
   FLock:TMutexHandle;
-  
+
   FPollInterval:LongWord;        {How often to poll the server (in seconds)}
   FPollTimeout:LongWord;         {How long before receive or send timeout occurs (in milliseconds)}
   FPollRetries:LongWord;         {How many times to retry a poll}
-  
+
   FRetryTimeout:LongWord;        {How long to wait between poll retries (in milliseconds)}
-  
+
   FUseClockOffset:Boolean;       {Use the calculated NTP clock offset to update the local time}
   FClockTolerance:LongWord;      {Milliseconds difference between local and remote to trigger a clock set}
-  
+
   FInitialClockGet:Boolean;      {Has the time been obtained at least once}
   FInitialClockCount:LongWord;   {How many times have we tried to obtain the initial clock}
   FInitialClockRetry:Boolean;    {Should the client setup a worker thread to retry until the initial clock has been set (Default: True)}
-  
+
   FTimerHandle:TTimerHandle;     {Handle for the NTP update timer}
-  
+
   {Internal Methods}
   function AcquireLock:Boolean;
-  function ReleaseLock:Boolean;  
-  
+  function ReleaseLock:Boolean;
+
   procedure SetPollInterval(APollInterval:LongWord);
   procedure SetPollTimeout(APollTimeout:LongWord);
   procedure SetPollRetries(APollRetries:LongWord);
-  
+
   procedure SetRetryTimeout(ARetryTimeout:LongWord);
 
   procedure SetUseClockOffset(AUseClockOffset:Boolean);
   procedure SetClockTolerance(AClockTolerance:LongWord);
-  
+
   procedure SetInitialClockGet(AInitialClockGet:Boolean);
   procedure SetInitialClockCount(AInitialClockCount:LongWord);
   procedure SetInitialClockRetry(AInitialClockRetry:Boolean);
-  
+
   procedure SetTimerHandle(ATimerHandle:TTimerHandle);
  public
   {Public Properties}
   property PollInterval:LongWord read FPollInterval write SetPollInterval;
   property PollTimeout:LongWord read FPollTimeout write SetPollTimeout;
   property PollRetries:LongWord read FPollRetries write SetPollRetries;
-  
+
   property RetryTimeout:LongWord read FRetryTimeout write SetRetryTimeout;
 
   property UseClockOffset:Boolean read FUseClockOffset write SetUseClockOffset;
@@ -475,21 +540,55 @@ type
   property InitialClockGet:Boolean read FInitialClockGet write SetInitialClockGet;
   property InitialClockCount:LongWord read FInitialClockCount write SetInitialClockCount;
   property InitialClockRetry:Boolean read FInitialClockRetry write SetInitialClockRetry;
-  
+
   property TimerHandle:TTimerHandle read FTimerHandle write SetTimerHandle;
-  
+
   {Public Methods}
   function GetTime:Int64;
-  
+
   procedure IncrementInitialClockCount;
-  
+
   function FormatTime(Time:Int64):String;
   function FormatOffset(Offset:Int64):String;
-  
+
   function CalculateClockOffset(T1,T2,T3,T4:Int64):Int64;
   function CalculateRoundtripDelay(T1,T2,T3,T4:Int64):Int64;
  end;
- 
+
+ TNTPGetBase = function(var ABase:Int64):Boolean of Object;
+ TNTPGetTime = function(var ATime:Int64):Boolean of Object;
+
+ TSNTPListener = class(TWinsock2UDPListener)
+ public
+  {}
+  constructor Create;
+ private
+  {Internal Variables}
+  FLocalMode:Boolean;     {If True the SNTP listener will set the mode to NTP_MODE_PRIVATE and return local time instead of universal time}
+
+  FOnGetBase:TNTPGetBase;
+  FOnGetTime:TNTPGetTime;
+
+  {Internal Methods}
+
+ protected
+  {Protected Variables}
+
+  {Protected Methods}
+  function DoExecute(AThread:TWinsock2UDPServerThread):Boolean; override;
+
+  function DoGetBase:Int64;
+  function DoGetTime:Int64;
+ public
+  {Public Properties}
+  property LocalMode:Boolean read FLocalMode write FLocalMode;
+
+  property OnGetBase:TNTPGetBase read FOnGetBase write FOnGetBase;
+  property OnGetTime:TNTPGetTime read FOnGetTime write FOnGetTime;
+
+  {Public Methods}
+ end;
+
  {Telnet classes}
  TTelnetBuffer = class(TObject)
  public
@@ -498,29 +597,29 @@ type
  private
   {Internal Variables}
   FLock:TCriticalSectionHandle;
-  
+
   FData:Pointer;
   FSize:LongWord;
   FCount:LongWord;
   FStart:LongWord;
-  
+
   {Internal Methods}
   function AcquireLock:Boolean;
   function ReleaseLock:Boolean;
 
-  function GetCount:LongWord;  
+  function GetCount:LongWord;
  public
   {Public Properties}
   property Count:LongWord read GetCount;
-  
+
   {Public Methods}
   function ReadData:Char;
   function WriteData(AChar:Char):Boolean;
-  
+
   function WriteLock(var ASize:LongWord):Pointer;
   function WriteUnlock(ACount:LongWord):Boolean;
  end;
- 
+
  TTelnetListener = class;
  TTelnetConnection = class(TListObject)
  public
@@ -530,7 +629,7 @@ type
  private
   {Internal Variables}
   FLock:TCriticalSectionHandle;
-  
+
   FHandle:THandle;
   FRxByteCount:Int64;         {Bytes Recv Count from Connection}
   FTxByteCount:Int64;         {Bytes Sent Count to Connection}
@@ -541,16 +640,16 @@ type
   FRemoteAddress:String;      {Address of Remote Client}
   FLocalState:LongWord;       {Local connection state (eg TELNET_STATE_ECHO)}
   FRemoteState:LongWord;      {Remote connection state (eg TELNET_STATE_ECHO)}
-  
+
   FData:Pointer;              {Private data for application}
   FThread:TThread;            {TWinsock2TCPServerThread}
   FBuffer:TTelnetBuffer;      {Buffer for received data}
   FListener:TTelnetListener;  {Listener for Connection}
-  
+
   {Internal Methods}
   function AcquireLock:Boolean;
   function ReleaseLock:Boolean;
-  
+
   procedure SetHandle(AHandle:THandle);
   function GetRxByteCount:Int64;
   procedure SetRxByteCount(const ARxByteCount:Int64);
@@ -568,7 +667,7 @@ type
   procedure SetRemoteAddress(const ARemoteAddress:String);
   procedure SetLocalState(ALocalState:LongWord);
   procedure SetRemoteState(ARemoteState:LongWord);
-  
+
   procedure SetData(AData:Pointer);
   procedure SetThread(AThread:TThread);
   procedure SetListener(AListener:TTelnetListener);
@@ -584,26 +683,26 @@ type
   property RemoteAddress:String read GetRemoteAddress write SetRemoteAddress;
   property LocalState:LongWord read FLocalState write SetLocalState;
   property RemoteState:LongWord read FRemoteState write SetRemoteState;
- 
+
   property Data:Pointer read FData write SetData;
   property Thread:TThread read FThread  write SetThread;
   property Buffer:TTelnetBuffer read FBuffer;
   property Listener:TTelnetListener read FListener write SetListener;
-  
+
   {Public Methods}
   procedure IncrementRxByteCount(const ARxByteCount:Int64);
   procedure IncrementTxByteCount(const ATxByteCount:Int64);
   procedure IncrementRequestCount;
   procedure IncrementResponseCount;
  end;
- 
+
  TTelnetHostEvent = function(AConnection:TTelnetConnection):Boolean of Object;
  TTelnetCountEvent = function(AConnection:TTelnetConnection):Boolean of Object;
  TTelnetInitEvent = function(AConnection:TTelnetConnection):Boolean of Object;
  TTelnetCharEvent = function(AConnection:TTelnetConnection;AChar:Char):Boolean of Object;
  TTelnetCommandEvent = function(AConnection:TTelnetConnection;ACommand,AOption:Byte;AData:Pointer;ASize:LongWord):Boolean of Object;
  TTelnetConnectionEvent = procedure(AConnection:TTelnetConnection) of Object;
- 
+
  TTelnetListener = class(TWinsock2TCPListener)
  public
   {}
@@ -615,51 +714,50 @@ type
 
   FOnCheckHost:TTelnetHostEvent;
   FOnCheckCount:TTelnetCountEvent;
-  
+
   FOnInit:TTelnetInitEvent;
   FOnChar:TTelnetCharEvent;
   FOnCommand:TTelnetCommandEvent;
  protected
-  {Internal Methods}
+  {Protected Methods}
   procedure DoConnect(AThread:TWinsock2TCPServerThread); override;
   procedure DoDisconnect(AThread:TWinsock2TCPServerThread); override;
-  
+
   function DoCheckHost(AThread:TWinsock2TCPServerThread):Boolean; virtual;
   function DoCheckCount(AThread:TWinsock2TCPServerThread):Boolean; virtual;
-  
+
   function DoExecute(AThread:TWinsock2TCPServerThread):Boolean; override;
- 
+
   procedure DoInit(AThread:TWinsock2TCPServerThread);
   procedure DoChar(AThread:TWinsock2TCPServerThread;AChar:Char);
   procedure DoCommand(AThread:TWinsock2TCPServerThread;ACommand,AOption:Byte;AData:Pointer;ASize:LongWord);
-  
+
   function SendEcho(AThread:TWinsock2TCPServerThread;AChar:Char):Boolean;
  public
   {Public Properties}
   property OnConnected:TTelnetConnectionEvent read FOnConnected write FOnConnected;
   property OnDisconnected:TTelnetConnectionEvent read FOnDisconnected write FOnDisconnected;
- 
+
   property OnCheckHost:TTelnetHostEvent read FOnCheckHost write FOnCheckHost;
   property OnCheckCount:TTelnetCountEvent read FOnCheckCount write FOnCheckCount;
-  
+
   property OnInit:TTelnetInitEvent read FOnInit write FOnInit;
   property OnChar:TTelnetCharEvent read FOnChar write FOnChar;
   property OnCommand:TTelnetCommandEvent read FOnCommand write FOnCommand;
-  
+
   {Public Methods}
   function GetChar(AThread:TWinsock2TCPServerThread;var AChar:Char):Boolean;
-  
+
   function SendChar(AThread:TWinsock2TCPServerThread;AChar:Char):Boolean;
   function SendText(AThread:TWinsock2TCPServerThread;const AText:String):Boolean;
   function SendCommand(AThread:TWinsock2TCPServerThread;ACommand,AOption:Byte;AData:Pointer;ASize:LongWord):Boolean;
  end;
- 
+
  {SSH classes}
- //To do
- 
+
  {UPnP classes}
- 
- {SysLog classes}
+
+ {Syslog classes}
  TSyslogClient = class(TObject)
  public
   {}
@@ -668,52 +766,163 @@ type
  private
   {Internal Variables}
   FLock:TMutexHandle;
- 
+
   FProtocol:LongWord;
   FBoundPort:Word;
   FRemoteHost:String;
   FRemotePort:Word;
+  FBSDFormat:Boolean;   {If True send messages in BSD format (RFC 3164), otherwise send messages in IETF format (RFC 5424)}
   FOctetCounting:Boolean;
   FBroadcastEnabled:Boolean;
-  
+
   FUDPClient:TWinsock2UDPClient;
   FTCPClient:TWinsock2TCPClient;
-  
+
   {Internal Methods}
   function AcquireLock:Boolean;
   function ReleaseLock:Boolean;
-  
+
   procedure SetProtocol(AProtocol:LongWord);
   procedure SetBoundPort(ABoundPort:Word);
   function GetRemoteHost:String;
   procedure SetRemoteHost(const ARemoteHost:String);
   procedure SetRemotePort(ARemotePort:Word);
+  procedure SetBSDFormat(ABSDFormat:Boolean);
   procedure SetOctetCounting(AOctetCounting:Boolean);
   procedure SetBroadcastEnabled(ABroadcastEnabled:Boolean);
  protected
   {Protected Variables}
-  
+
   {Protected Methods}
+  function GetValue(const AValue:String):String;
   function GetPriority(AFacility,ASeverity:LongWord):String;
   function GetMessage(const APriority,AAddress,ATag,AContent:String):String;
+  function GetMessageExt(const APriority,AAddress,AAppname,AProcID,AMsgID,AData,AMsg:String):String;
  public
   {Public Properties}
   property Protocol:LongWord read FProtocol write SetProtocol;
   property BoundPort:Word read FBoundPort write SetBoundPort;
   property RemoteHost:String read GetRemoteHost write SetRemoteHost;
   property RemotePort:Word read FRemotePort write SetRemotePort;
+  property BSDFormat:Boolean read FBSDFormat write SetBSDFormat;
   property OctetCounting:Boolean read FOctetCounting write SetOctetCounting;
   property BroadcastEnabled:Boolean read FBroadcastEnabled write SetBroadcastEnabled;
-  
+
   {Public Methods}
   function SendMessage(AFacility,ASeverity:LongWord;const ATag,AContent:String):LongWord;
+  function SendMessageExt(AFacility,ASeverity:LongWord;const AAppname,AProcID,AMsgID,AData,AMsg:String):LongWord;
  end;
- 
+
+ TSyslogRecvMessage = procedure(const AAddress,AData:String) of Object;
+ TSyslogDecodeMessage = function(const AAddress:String;AFacility,ASeverity:LongWord;const ATimestamp,AHost,ATag,AContent:String):Boolean of Object;
+ TSyslogDecodeMessageExt = function(const AAddress:String;AFacility,ASeverity:LongWord;const AVersion,ATimestamp,AHostname,AAppname,AProcID,AMsgID,AData:String;AMsg:UTF8String):Boolean of Object;
+
+ TSyslogListener = class(TObject)
+ public
+  {}
+  constructor Create;
+  destructor Destroy; override;
+ private
+  {Internal Variables}
+  FLock:TMutexHandle;
+
+  FActive:Boolean;
+  FProtocol:LongWord;
+  FBoundPort:Word;
+  FBufferSize:Integer;
+  FMinThreads:Integer;
+  FMaxThreads:Integer;
+  FThreadLimit:Integer;
+  FThreadWait:LongWord;
+  FBSDFormat:Boolean;   {If True expect messages in BSD format (RFC 3164), otherwise expect messages in IETF format (RFC 5424)}
+  FAutoDetect:Boolean;  {If True then auto detect the message format}
+  FOctetCounting:Boolean;
+
+  FListenerName:String;
+  FListenerPriority:LongWord;
+  FListenerStackSize:SizeUInt;
+
+  FServerName:String;
+  FServerPriority:LongWord;
+  FServerStackSize:SizeUInt;
+
+  FUDPListener:TWinsock2UDPListener;
+  FTCPListener:TWinsock2TCPListener;
+
+  FOnRecvMessage:TSyslogRecvMessage;
+  FOnDecodeMessage:TSyslogDecodeMessage;
+  FOnDecodeMessageExt:TSyslogDecodeMessageExt;
+
+  {Internal Methods}
+  function AcquireLock:Boolean;
+  function ReleaseLock:Boolean;
+
+  procedure SetActive(AActive:Boolean);
+  procedure SetProtocol(AProtocol:LongWord);
+  procedure SetBoundPort(ABoundPort:Word);
+  procedure SetBufferSize(ABufferSize:Integer);
+  procedure SetMinThreads(AMinThreads:Integer);
+  procedure SetMaxThreads(AMaxThreads:Integer);
+  procedure SetThreadLimit(AThreadLimit:Integer);
+  procedure SetThreadWait(AThreadWait:LongWord);
+  procedure SetBSDFormat(ABSDFormat:Boolean);
+  procedure SetAutoDetect(AAutoDetect:Boolean);
+  procedure SetOctetCounting(AOctetCounting:Boolean);
+
+  procedure SetListenerName(const AListenerName:String);
+  procedure SetListenerPriority(AListenerPriority:LongWord);
+  procedure SetListenerStackSize(AListenerStackSize:SizeUInt);
+
+  procedure SetServerName(const AServerName:String);
+  procedure SetServerPriority(AServerPriority:LongWord);
+  procedure SetServerStackSize(AServerStackSize:SizeUInt);
+
+  function DoUDPExecute(AThread:TWinsock2UDPServerThread):Boolean;
+  function DoTCPExecute(AThread:TWinsock2TCPServerThread):Boolean;
+
+  procedure DoRecvMessage(const AAddress,AData:String);
+  function DoDecodeMessage(const AAddress,AData:String):Boolean;
+  function DoDecodeMessageExt(const AAddress,AData:String):Boolean;
+ protected
+  {Protected Variables}
+
+  {Protected Methods}
+  function GetFacility(const APriority:String):LongWord;
+  function GetSeverity(const APriority:String):LongWord;
+ public
+  {Public Properties}
+  property Active:Boolean read FActive write SetActive;
+  property Protocol:LongWord read FProtocol write SetProtocol;
+  property BoundPort:Word read FBoundPort write SetBoundPort;
+  property BufferSize:Integer read FBufferSize write SetBufferSize;
+  property MinThreads:Integer read FMinThreads write SetMinThreads;
+  property MaxThreads:Integer read FMaxThreads write SetMaxThreads;
+  property ThreadLimit:Integer read FThreadLimit write SetThreadLimit;
+  property ThreadWait:LongWord read FThreadWait write SetThreadWait;
+  property BSDFormat:Boolean read FBSDFormat write SetBSDFormat;
+  property AutoDetect:Boolean read FAutoDetect write SetAutoDetect;
+  property OctetCounting:Boolean read FOctetCounting write SetOctetCounting;
+
+  property ListenerName:String read FListenerName write SetListenerName;
+  property ListenerPriority:LongWord read FListenerPriority write SetListenerPriority;
+  property ListenerStackSize:SizeUInt read FListenerStackSize write SetListenerStackSize;
+
+  property ServerName:String read FServerName write SetServerName;
+  property ServerPriority:LongWord read FServerPriority write SetServerPriority;
+  property ServerStackSize:SizeUInt read FServerStackSize write SetServerStackSize;
+
+  property OnRecvMessage:TSyslogRecvMessage read FOnRecvMessage write FOnRecvMessage;
+  property OnDecodeMessage:TSyslogDecodeMessage read FOnDecodeMessage write FOnDecodeMessage;
+  property OnDecodeMessageExt:TSyslogDecodeMessageExt read FOnDecodeMessageExt write FOnDecodeMessageExt;
+
+  {Public Methods}
+ end;
+
 {==============================================================================}
 type
  {Syslog Logging specific types}
  PSyslogLogging = ^TSyslogLogging;
- 
+
  {Syslog Logging}
  TSyslogLogging = record
   {Logging Properties}
@@ -721,11 +930,11 @@ type
   {Syslog Properties}
   Client:TSyslogClient;
  end;
- 
+
 {==============================================================================}
 {var}
  {Services specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure ServicesInit;
@@ -750,15 +959,15 @@ procedure NTPUpdateTime(Client:TNTPClient);
 {UPnP Functions}
 
 {==============================================================================}
-{SysLog Functions}
-function SysLogLoggingStart(Logging:PLoggingDevice):LongWord;
-function SysLogLoggingStop(Logging:PLoggingDevice):LongWord;
+{Syslog Functions}
+function SyslogLoggingStart(Logging:PLoggingDevice):LongWord;
+function SyslogLoggingStop(Logging:PLoggingDevice):LongWord;
 
-function SysLogLoggingOutput(Logging:PLoggingDevice;const Data:String):LongWord;
-function SysLogLoggingOutputEx(Logging:PLoggingDevice;Facility,Severity:LongWord;const Tag,Content:String):LongWord;
+function SyslogLoggingOutput(Logging:PLoggingDevice;const Data:String):LongWord;
+function SyslogLoggingOutputEx(Logging:PLoggingDevice;Facility,Severity:LongWord;const Tag,Content:String):LongWord;
 
-function SysLogLoggingGetTarget(Logging:PLoggingDevice):String;
-function SysLogLoggingSetTarget(Logging:PLoggingDevice;const Target:String):LongWord;
+function SyslogLoggingGetTarget(Logging:PLoggingDevice):String;
+function SyslogLoggingSetTarget(Logging:PLoggingDevice;const Target:String):LongWord;
 
 {==============================================================================}
 {Service Helper Functions}
@@ -799,11 +1008,12 @@ function TelnetOptionToString(Option:Byte):String;
 {UPnP Helper Functions}
 
 {==============================================================================}
-{SysLog Helper Functions}
-function FileTimeToSysLogDateTime(const AFileTime:TFileTime):String;
+{Syslog Helper Functions}
+function FileTimeToSyslogDateTime(const AFileTime:TFileTime):String; inline;
+function FileTimeToSyslogDateTimeExt(const AFileTime:TFileTime;const AFormat:String;AUTC:Boolean):String;
 
-function LoggingFacilityToSysLogFacility(Facility:LongWord):LongWord;
-function LoggingSeverityToSysLogSeverity(Severity:LongWord):LongWord;
+function LoggingFacilityToSyslogFacility(Facility:LongWord):LongWord;
+function LoggingSeverityToSyslogSeverity(Severity:LongWord):LongWord;
 
 {==============================================================================}
 {==============================================================================}
@@ -815,7 +1025,7 @@ implementation
 var
  {Services specific variables}
  ServicesInitialized:Boolean;
- 
+
 {==============================================================================}
 {==============================================================================}
 {TPingClient}
@@ -824,7 +1034,7 @@ constructor TPingClient.Create;
 begin
  {}
  inherited Create;
- 
+
  FSize:=PING_DEFAULT_SIZE;
  FCount:=PING_DEFAULT_COUNT;
  FTimeout:=PING_DEFAULT_TIMEOUT;
@@ -842,7 +1052,7 @@ begin
    if FSize > PING_MAXIMUM_SIZE then FSize:=PING_DEFAULT_SIZE;
 
    ResetPing;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -857,7 +1067,7 @@ begin
    if FCount = 0 then FCount:=PING_DEFAULT_COUNT;
 
    ResetPing;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -872,7 +1082,7 @@ begin
    if FTimeout = 0 then FTimeout:=PING_DEFAULT_TIMEOUT;
 
    ResetPing;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -886,7 +1096,7 @@ begin
    FTimeToLive:=ATimeToLive;
 
    ResetPing;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -900,7 +1110,7 @@ begin
    FNoFragment:=ANoFragment;
 
    ResetPing;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -942,7 +1152,7 @@ begin
  {Reset State}
  FLastHost:='';
  FLastAddress:='';
- 
+
  FLastTime:=0;
  FLastError:=0;
  FReplyAddress:='';
@@ -1074,7 +1284,7 @@ begin
           else
            begin
             FLastError:=WSAEINVAL;
-           end; 
+           end;
          end
         else if PICMPUnreachHeader(Reply).ICMPType = ICMP_UNREACH then
          begin
@@ -1083,11 +1293,11 @@ begin
            begin
             FLastError:=WSAENETUNREACH;
            end
-          else if PICMPUnreachHeader(Reply).Code = ICMP_UNREACH_HOST then 
+          else if PICMPUnreachHeader(Reply).Code = ICMP_UNREACH_HOST then
            begin
             FLastError:=WSAEHOSTUNREACH;
            end
-          else if PICMPUnreachHeader(Reply).Code = ICMP_UNREACH_NEEDFRAG then 
+          else if PICMPUnreachHeader(Reply).Code = ICMP_UNREACH_NEEDFRAG then
            begin
             FLastError:=WSAEOPNOTSUPP;
            end
@@ -1115,7 +1325,7 @@ begin
      finally
       {Free Reply}
       FreeMem(Reply);
-     end; 
+     end;
     end
    else
     begin
@@ -1131,7 +1341,7 @@ begin
 
   Disconnect;
   FLastError:=WorkInt;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1150,7 +1360,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Sequence}
  if FLastSequence = 0 then Exit;
 
@@ -1237,7 +1447,7 @@ begin
           else
            begin
             FLastError:=WSAEINVAL;
-           end; 
+           end;
          end
         else if PICMPUnreachHeader(Reply).ICMPType = ICMP_UNREACH then
          begin
@@ -1246,11 +1456,11 @@ begin
            begin
             FLastError:=WSAENETUNREACH;
            end
-          else if PICMPUnreachHeader(Reply).Code = ICMP_UNREACH_HOST then 
+          else if PICMPUnreachHeader(Reply).Code = ICMP_UNREACH_HOST then
            begin
             FLastError:=WSAEHOSTUNREACH;
            end
-          else if PICMPUnreachHeader(Reply).Code = ICMP_UNREACH_NEEDFRAG then 
+          else if PICMPUnreachHeader(Reply).Code = ICMP_UNREACH_NEEDFRAG then
            begin
             FLastError:=WSAEOPNOTSUPP;
            end
@@ -1278,7 +1488,7 @@ begin
      finally
       {Free Reply}
       FreeMem(Reply);
-     end; 
+     end;
     end
    else
     begin
@@ -1287,14 +1497,14 @@ begin
   finally
    {Free Request}
    FreeMem(Request);
-  end; 
+  end;
  finally
   {Disconnect}
   WorkInt:=FLastError;
 
   Disconnect;
   FLastError:=WorkInt;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1305,11 +1515,11 @@ begin
  {}
  inherited Create;
  FLock:=MutexCreate;
- 
+
  FPollInterval:=NTP_POLLING_INTERVAL;
  FPollTimeout:=NTP_POLLING_TIMEOUT;
  FPollRetries:=NTP_POLLING_RETRIES;
- 
+
  FRetryTimeout:=NTP_RETRY_TIMEOUT;
 
  FUseClockOffset:=NTP_USE_CLOCK_OFFSET;
@@ -1318,28 +1528,28 @@ begin
  FInitialClockGet:=False;
  FInitialClockCount:=0;
  FInitialClockRetry:=True;
- 
+
  FTimerHandle:=INVALID_HANDLE_VALUE;
- 
+
  RemoteHost:=NTP_SERVER_DEFAULT;
  RemotePort:=NTP_PORT_DEFAULT;
 end;
 
 {==============================================================================}
 
-destructor TNTPClient.Destroy; 
+destructor TNTPClient.Destroy;
 begin
  {}
  AcquireLock;
  try
   if FTimerHandle <> INVALID_HANDLE_VALUE then TimerDestroy(FTimerHandle);
   FTimerHandle:=INVALID_HANDLE_VALUE;
-  
+
   inherited Destroy;
  finally
   ReleaseLock;
   MutexDestroy(FLock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1352,7 +1562,7 @@ end;
 
 {==============================================================================}
 
-function TNTPClient.ReleaseLock:Boolean;  
+function TNTPClient.ReleaseLock:Boolean;
 begin
  {}
  Result:=(MutexUnlock(FLock) = ERROR_SUCCESS);
@@ -1364,9 +1574,9 @@ procedure TNTPClient.SetPollInterval(APollInterval:LongWord);
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FPollInterval:=APollInterval;
- 
+
  ReleaseLock;
 end;
 
@@ -1376,9 +1586,9 @@ procedure TNTPClient.SetPollTimeout(APollTimeout:LongWord);
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FPollTimeout:=APollTimeout;
- 
+
  ReleaseLock;
 end;
 
@@ -1388,9 +1598,9 @@ procedure TNTPClient.SetPollRetries(APollRetries:LongWord);
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FPollRetries:=APollRetries;
- 
+
  ReleaseLock;
 end;
 
@@ -1400,9 +1610,9 @@ procedure TNTPClient.SetRetryTimeout(ARetryTimeout:LongWord);
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FRetryTimeout:=ARetryTimeout;
- 
+
  ReleaseLock;
 end;
 
@@ -1436,9 +1646,9 @@ procedure TNTPClient.SetInitialClockGet(AInitialClockGet:Boolean);
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FInitialClockGet:=AInitialClockGet;
- 
+
  ReleaseLock;
 end;
 
@@ -1448,9 +1658,9 @@ procedure TNTPClient.SetInitialClockCount(AInitialClockCount:LongWord);
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FInitialClockCount:=AInitialClockCount;
- 
+
  ReleaseLock;
 end;
 
@@ -1460,9 +1670,9 @@ procedure TNTPClient.SetInitialClockRetry(AInitialClockRetry:Boolean);
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FInitialClockRetry:=AInitialClockRetry;
- 
+
  ReleaseLock;
 end;
 
@@ -1472,9 +1682,9 @@ procedure TNTPClient.SetTimerHandle(ATimerHandle:TTimerHandle);
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FTimerHandle:=ATimerHandle;
- 
+
  ReleaseLock;
 end;
 
@@ -1499,26 +1709,26 @@ var
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF NTP_DEBUG}
   if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client: GetTime');
   {$ENDIF}
- 
+
   {Connect}
   if not Connect then Exit;
   try
    {$IFDEF NTP_DEBUG}
    if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client: Connected');
    {$ENDIF}
-  
+
    {Set Polling Send Timeout}
    SendTimeout:=PollTimeout;
-  
+
    {Set Polling Receive Timeout}
    ReceiveTimeout:=PollTimeout;
- 
+
    {Create NTP Request}
    NTPRequest:=AllocMem(SizeOf(TNTPPacket));
    if NTPRequest = nil then Exit;
@@ -1534,23 +1744,23 @@ begin
         {$IFDEF NTP_DEBUG}
         if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client: Connected');
         {$ENDIF}
-        
+
         {Set Polling Send Timeout}
         SendTimeout:=PollTimeout;
-        
+
         {Set Polling Receive Timeout}
         ReceiveTimeout:=PollTimeout;
        end;
-     
+
       {$IFDEF NTP_DEBUG}
       if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client: Sending Request');
       {$ENDIF}
-      
+
       {Setup NTP Request}
       TransmitTime:=ClockGetTime;
       NTPRequest.LeapVersionMode:=(NTP_LEAP_NONE shl 6) or (NTP_VERSION shl 3) or (NTP_MODE_CLIENT shl 0);
       NTPRequest.TransmitTimestamp:=ClockTimeToNTPTimestamp(TransmitTime);
-      
+
       {Send NTP Request}
       if SendData(NTPRequest,SizeOf(TNTPPacket)) = SizeOf(TNTPPacket) then
        begin
@@ -1635,31 +1845,31 @@ begin
             begin
              if SERVICE_LOG_ENABLED then ServiceLogError('NTP Client: Leap indicator set to NTP_LEAP_ALARM in reply');
              Exit;
-            end; 
+            end;
            {Version}
            if (Version <> NTP_VERSION) and ((Version < NTP_MIN_VERSION) or (Version > NTP_MAX_VERSION)) then
             begin
              if SERVICE_LOG_ENABLED then ServiceLogError('NTP Client: Version incorrect in reply (Version=' + IntToStr(Version) + ' NTP_VERSION=' + IntToStr(NTP_VERSION) + ')');
              Exit;
-            end; 
+            end;
            {Mode}
            if (Mode <> NTP_MODE_SERVER) and (Mode <> NTP_MODE_BROADCAST) then
             begin
              if SERVICE_LOG_ENABLED then ServiceLogError('NTP Client: Mode not equal to server or broadcast in reply (Mode=' + IntToStr(Mode) + ')');
              Exit;
-            end; 
+            end;
            {Stratum}
-           if NTPReply.Stratum  = NTP_STRATUM_INVALID then
+           if NTPReply.Stratum = NTP_STRATUM_INVALID then
             begin
              if SERVICE_LOG_ENABLED then ServiceLogError('NTP Client: Stratum set to invalid in reply');
              Exit;
-            end; 
+            end;
            {Timestamp}
            if (NTPReply.TransmitTimestamp.Seconds = 0) and (NTPReply.TransmitTimestamp.Fraction = 0) then
             begin
              if SERVICE_LOG_ENABLED then ServiceLogError('NTP Client: Transmit timestamp not valid in reply');
              Exit;
-            end; 
+            end;
 
            {$IFDEF NTP_DEBUG}
            if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Client: Reply Validated');
@@ -1702,11 +1912,11 @@ begin
              Result:=TransmitTime;
             end;
            Exit;
-          end;          
+          end;
         finally
          FreeMem(NTPReply);
-        end;     
-       end;       
+        end;
+       end;
 
       Dec(Count);
       Sleep(RetryTimeout);
@@ -1717,14 +1927,14 @@ begin
      end;
    finally
     FreeMem(NTPRequest);
-   end;  
-  finally 
+   end;
+  finally
    {Disconnect}
    Disconnect;
   end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1733,9 +1943,9 @@ procedure TNTPClient.IncrementInitialClockCount;
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  Inc(FInitialClockCount);
- 
+
  ReleaseLock;
 end;
 
@@ -1757,7 +1967,7 @@ begin
  {}
  Seconds:=Offset div TIME_TICKS_PER_SECOND;
  Microseconds:=(Offset mod TIME_TICKS_PER_SECOND) div TIME_TICKS_PER_MICROSECOND;
- 
+
  Result:=IntToStr(Seconds) + ' seconds ' + IntToStr(Microseconds) + ' microseconds';
 end;
 
@@ -1768,7 +1978,7 @@ function TNTPClient.CalculateClockOffset(T1,T2,T3,T4:Int64):Int64;
  T2 = Receive Timestamp (time request received by server)
  T3 = Transmit Timestamp (time reply sent by server)
  T4 = Destination Timestamp (time reply received by client)}
-{ClockOffset = ((T2 - T1) + (T3 - T4)) / 2} 
+{ClockOffset = ((T2 - T1) + (T3 - T4)) / 2}
 begin
  {}
  Result:=((T2 - T1) + (T3 - T4)) div 2;
@@ -1789,24 +1999,179 @@ end;
 
 {==============================================================================}
 {==============================================================================}
+{TSNTPListener}
+constructor TSNTPListener.Create;
+begin
+ {}
+ inherited Create;
+
+ BoundPort:=NTP_PORT_DEFAULT;
+
+ ListenerName:=NTP_LISTENER_THREAD_NAME;
+ ServerName:=NTP_SERVER_THREAD_NAME;
+end;
+
+{==============================================================================}
+
+function TSNTPListener.DoExecute(AThread:TWinsock2UDPServerThread):Boolean;
+var
+ Leap:Byte;
+ Mode:Byte;
+ Version:Byte;
+ ReceiveTime:Int64;
+ NTPReply:TNTPPacket;
+ NTPRequest:TNTPPacket;
+begin
+ {}
+ Result:=inherited DoExecute(AThread);
+ if not Result then Exit;
+
+ Result:=False;
+
+ if AThread = nil then Exit;
+ if AThread.Server = nil then Exit;
+
+ {$IFDEF NTP_DEBUG}
+ if SERVICE_LOG_ENABLED then ServiceLogDebug('SNTP Listener: DoExecute');
+ {$ENDIF}
+
+ {Check Count}
+ if AThread.Server.Count >= SizeOf(TNTPPacket) then
+  begin
+   {Get Receive Timestamp}
+   ReceiveTime:=DoGetTime;
+
+   {Get Request}
+   Move(AThread.Server.Data^,NTPRequest,SizeOf(TNTPPacket));
+
+   {Get Leap}
+   Leap:=(NTPRequest.LeapVersionMode shr 6) and NTP_LEAP_MASK;
+
+   {Get Version}
+   Version:=(NTPRequest.LeapVersionMode shr 3) and NTP_VERSION_MASK;
+
+   {Get Mode}
+   Mode:=(NTPRequest.LeapVersionMode shr 0) and NTP_MODE_MASK;
+
+   {Check Request}
+   {Leap}
+   if Leap <> NTP_LEAP_NONE then
+    begin
+     if SERVICE_LOG_ENABLED then ServiceLogError('SNTP Listener: Leap indicator set in request');
+    end;
+   {Version}
+   if (Version <> NTP_VERSION) and ((Version < NTP_MIN_VERSION) or (Version > NTP_MAX_VERSION)) then
+    begin
+     if SERVICE_LOG_ENABLED then ServiceLogError('SNTP Listener: Version incorrect in request (Version=' + IntToStr(Version) + ' NTP_VERSION=' + IntToStr(NTP_VERSION) + ')');
+     {Update Version}
+     Version:=NTP_VERSION;
+    end;
+   {Mode}
+   if (Mode <> NTP_MODE_CLIENT) and (Mode <> NTP_MODE_SYMMETRIC_ACTIVE) then
+    begin
+     if SERVICE_LOG_ENABLED then ServiceLogError('SNTP Listener: Mode not equal to client or symmetric active in request (Mode=' + IntToStr(Mode) + ')');
+    end;
+   {Stratum}
+   if NTPRequest.Stratum <> NTP_STRATUM_INVALID then
+    begin
+     if SERVICE_LOG_ENABLED then ServiceLogError('SNTP Listener: Stratum not set to invalid in request');
+    end;
+   {Timestamp}
+   if (NTPRequest.TransmitTimestamp.Seconds = 0) and (NTPRequest.TransmitTimestamp.Fraction = 0) then
+    begin
+     if SERVICE_LOG_ENABLED then ServiceLogError('SNTP Listener: Transmit timestamp not valid in request');
+    end;
+
+   {Setup Reply}
+   FillChar(NTPReply,SizeOf(TNTPPacket),0);
+   {Leap}
+   if ReceiveTime < TIME_TICKS_TO_2001 then Leap:=NTP_LEAP_ALARM else Leap:=NTP_LEAP_NONE;
+   {Mode}
+   if Mode = NTP_MODE_SYMMETRIC_ACTIVE then Mode:=NTP_MODE_SYMMETRIC_PASSIVE else Mode:=NTP_MODE_SERVER;
+   if LocalMode then Mode:=NTP_MODE_PRIVATE;
+   NTPReply.LeapVersionMode:=(Leap shl 6) or (Version shl 3) or (Mode shl 0);
+   NTPReply.Stratum:=NTP_STRATUM_SECONDARY2; {NTP_STRATUM_PRIMARY}
+
+   {Timestamps}
+   if ReceiveTime < TIME_TICKS_TO_2001 then
+    begin
+     {Unsynchronized}
+     NTPReply.OriginateTimestamp:=NTPRequest.TransmitTimestamp;
+    end
+   else
+    begin
+     {Synchronized}
+     NTPReply.ReferenceTimestamp:=ClockTimeToNTPTimestamp(DoGetBase);
+     NTPReply.OriginateTimestamp:=NTPRequest.TransmitTimestamp;
+     NTPReply.ReceiveTimestamp:=ClockTimeToNTPTimestamp(ReceiveTime);
+     NTPReply.TransmitTimestamp:=ClockTimeToNTPTimestamp(DoGetTime);
+    end;
+
+   {Send Reply}
+   if AThread.Server.SendDataTo(AThread.Server.PeerAddress,AThread.Server.PeerPort,@NTPReply,SizeOf(TNTPPacket)) <> SizeOf(TNTPPacket) then
+    begin
+     if SERVICE_LOG_ENABLED then ServiceLogError('SNTP Listener: Failed to send reply (Error = ' + Winsock2ErrorToString(FLastError) + ')');
+    end;
+  end;
+
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function TSNTPListener.DoGetBase:Int64;
+begin
+ {}
+ if not Assigned(FOnGetBase) or not FOnGetBase(Result) then
+  begin
+   Result:=ClockGetBase;
+  end;
+end;
+
+{==============================================================================}
+
+function TSNTPListener.DoGetTime:Int64;
+var
+ ClockTime:Int64;
+begin
+ {}
+ if not Assigned(FOnGetTime) or not FOnGetTime(Result) then
+  begin
+   if LocalMode then
+    begin
+     {Get Local Time}
+     ClockTime:=ClockGetTime;
+
+     FileTimeToLocalFileTime(TFileTime(ClockTime),TFileTime(Result));
+    end
+   else
+    begin
+     {Get Universal Time}
+     Result:=ClockGetTime;
+    end;
+  end;
+end;
+
+{==============================================================================}
+{==============================================================================}
 {TTelnetBuffer}
 constructor TTelnetBuffer.Create(ASize:LongWord);
 begin
  {}
  inherited Create;
  FLock:=CriticalSectionCreate;
- 
+
  FData:=nil;
  FSize:=ASize;
  FCount:=0;
  FStart:=0;
- 
+
  if FSize <> 0 then FData:=GetMem(FSize);
 end;
 
 {==============================================================================}
 
-destructor TTelnetBuffer.Destroy; 
+destructor TTelnetBuffer.Destroy;
 begin
  {}
  AcquireLock;
@@ -1814,7 +2179,7 @@ begin
   if FData <> nil then FreeMem(FData);
   inherited Destroy;
  finally
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   CriticalSectionDestroy(FLock);
  end;
 end;
@@ -1837,16 +2202,16 @@ end;
 
 {==============================================================================}
 
-function TTelnetBuffer.GetCount:LongWord;  
+function TTelnetBuffer.GetCount:LongWord;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FCount;
- 
- ReleaseLock; 
+
+ ReleaseLock;
 end;
 
 {==============================================================================}
@@ -1855,23 +2220,23 @@ function TTelnetBuffer.ReadData:Char;
 begin
  {}
  Result:=TELNET_CHAR_NUL;
- 
+
  if not AcquireLock then Exit;
  try
   if FCount > 0 then
    begin
     {Read Char}
     Result:=Char(Pointer(PtrUInt(FData) + PtrUInt(FStart))^);
-    
+
     {Update Start}
     FStart:=(FStart + 1) mod FSize;
 
     {Update Count}
     Dec(FCount);
-   end; 
+   end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1880,20 +2245,20 @@ function TTelnetBuffer.WriteData(AChar:Char):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FCount < FSize then
    begin
     {Write Char}
     Char(Pointer(PtrUInt(FData) + PtrUInt((FStart + FCount) mod FSize))^):=AChar;
-    
+
     {Update Count}
     Inc(FCount);
-   end; 
+   end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1907,7 +2272,7 @@ begin
  Result:=nil;
 
  if not AcquireLock then Exit;
- 
+
  if FCount < FSize then
   begin
    {Check Wraparound}
@@ -1915,7 +2280,7 @@ begin
     begin
      {Get Size}
      ASize:=FStart - ((FStart + FCount) mod FSize);
-     
+
      {Get Data}
      Result:=Pointer(PtrUInt(FData) + PtrUInt((FStart + FCount) mod FSize));
     end
@@ -1923,15 +2288,15 @@ begin
     begin
      {Get Size}
      ASize:=FSize - (FStart + FCount);
-     
+
      {Get Data}
      Result:=Pointer(PtrUInt(FData) + PtrUInt((FStart + FCount) mod FSize));
-    end;    
+    end;
   end
  else
   begin
    ReleaseLock;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1940,13 +2305,13 @@ function TTelnetBuffer.WriteUnlock(ACount:LongWord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if (FCount + ACount) <= FSize then
   begin
    {Update Count}
    Inc(FCount,ACount);
   end;
-  
+
  ReleaseLock;
 end;
 
@@ -1958,7 +2323,7 @@ begin
  {}
  inherited Create;
  FLock:=CriticalSectionCreate;
- 
+
  FHandle:=THandle(Self);
  FRxByteCount:=0;
  FTxByteCount:=0;
@@ -1967,9 +2332,9 @@ begin
  FRequestTime:=Now;
  FResponseTime:=Now;
  FRemoteAddress:='';
- FLocalState:=TELNET_STATE_NONE; 
+ FLocalState:=TELNET_STATE_NONE;
  FRemoteState:=TELNET_STATE_NONE;
- 
+
  FData:=nil;
  FThread:=nil;
  FBuffer:=TTelnetBuffer.Create(TELNET_BUFFER_SIZE);
@@ -1978,7 +2343,7 @@ end;
 
 {==============================================================================}
 
-destructor TTelnetConnection.Destroy; 
+destructor TTelnetConnection.Destroy;
 begin
  {}
  AcquireLock;
@@ -1989,7 +2354,7 @@ begin
   FListener:=nil;
   inherited Destroy;
  finally
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   CriticalSectionDestroy(FLock);
  end;
 end;
@@ -2028,7 +2393,7 @@ function TTelnetConnection.GetRxByteCount:Int64;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FRxByteCount;
@@ -2054,7 +2419,7 @@ function TTelnetConnection.GetTxByteCount:Int64;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FTxByteCount;
@@ -2080,7 +2445,7 @@ function TTelnetConnection.GetRequestCount:Int64;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FRequestCount;
@@ -2106,7 +2471,7 @@ function TTelnetConnection.GetResponseCount:Int64;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FResponseCount;
@@ -2132,7 +2497,7 @@ function TTelnetConnection.GetRequestTime:TDateTime;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FRequestTime;
@@ -2158,7 +2523,7 @@ function TTelnetConnection.GetResponseTime:TDateTime;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FResponseTime;
@@ -2184,7 +2549,7 @@ function TTelnetConnection.GetRemoteAddress:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
 
  Result:=FRemoteAddress;
@@ -2243,7 +2608,7 @@ begin
 end;
 
 {==============================================================================}
- 
+
 procedure TTelnetConnection.SetThread(AThread:TThread);
 begin
  {}
@@ -2321,26 +2686,30 @@ constructor TTelnetListener.Create;
 begin
  {}
  inherited Create;
+
  BoundPort:=TELNET_PORT_DEFAULT;
  UseNagle:=False; {Note: Nagle is recommended for Telnet to reduce small packets}
+
+ ListenerName:=TELNET_LISTENER_THREAD_NAME;
+ ServerName:=TELNET_SERVER_THREAD_NAME;
 end;
 
 {==============================================================================}
 
-procedure TTelnetListener.DoConnect(AThread:TWinsock2TCPServerThread); 
+procedure TTelnetListener.DoConnect(AThread:TWinsock2TCPServerThread);
 var
  Connection:TTelnetConnection;
 begin
  {}
  inherited DoConnect(AThread);
- 
+
  if AThread = nil then Exit;
  if AThread.Server = nil then Exit;
- 
+
  {$IFDEF TELNET_DEBUG}
  if SERVICE_LOG_ENABLED then ServiceLogDebug('Telnet Listener: DoConnect');
  {$ENDIF}
- 
+
  {Create Connection}
  Connection:=TTelnetConnection.Create;
  Connection.RemoteAddress:=AThread.Server.PeerAddress;
@@ -2348,16 +2717,16 @@ begin
  Connection.Listener:=Self;
  Connection.RequestTime:=Now;
  Connection.ResponseTime:=Now;
- 
+
  {Update Thread}
  AThread.Data:=Connection;
- 
+
  {Connected Event}
  if Assigned(FOnConnected) then
   begin
    FOnConnected(Connection);
   end;
- 
+
  {Check Host Event}
  if not DoCheckHost(AThread) then
   begin
@@ -2365,7 +2734,7 @@ begin
    AThread.Server.Disconnect;
    Exit;
   end;
-  
+
  {Check Count Event}
  if not DoCheckCount(AThread) then
   begin
@@ -2373,7 +2742,7 @@ begin
    AThread.Server.Disconnect;
    Exit;
   end;
- 
+
  {Send Command (WILL ECHO)}
  if not SendCommand(AThread,TELNET_COMMAND_WILL,TELNET_OPTION_ECHO,nil,0) then
   begin
@@ -2381,7 +2750,7 @@ begin
    AThread.Server.Disconnect;
    Exit;
   end;
-  
+
  {Send Command (DO SUPPRESS GA)}
  if not SendCommand(AThread,TELNET_COMMAND_DO,TELNET_OPTION_SUPPRESS_GA,nil,0) then
   begin
@@ -2389,24 +2758,24 @@ begin
    AThread.Server.Disconnect;
    Exit;
   end;
-  
+
  {Init Event}
  DoInit(AThread);
 end;
 
 {==============================================================================}
 
-procedure TTelnetListener.DoDisconnect(AThread:TWinsock2TCPServerThread); 
+procedure TTelnetListener.DoDisconnect(AThread:TWinsock2TCPServerThread);
 begin
  {}
  inherited DoDisconnect(AThread);
- 
+
  if AThread = nil then Exit;
- 
+
  {$IFDEF TELNET_DEBUG}
  if SERVICE_LOG_ENABLED then ServiceLogDebug('Telnet Listener: DoDisconnect');
  {$ENDIF}
- 
+
  {Disconnected Event}
  if Assigned(FOnDisconnected) then
   begin
@@ -2420,13 +2789,13 @@ function TTelnetListener.DoCheckHost(AThread:TWinsock2TCPServerThread):Boolean;
 begin
  {}
  Result:=True;
- 
+
  if AThread = nil then Exit;
- 
+
  {$IFDEF TELNET_DEBUG}
  if SERVICE_LOG_ENABLED then ServiceLogDebug('Telnet Listener: DoCheckHost');
  {$ENDIF}
- 
+
  {Check Host Event}
  if Assigned(FOnCheckHost) then
   begin
@@ -2436,17 +2805,17 @@ end;
 
 {==============================================================================}
 
-function TTelnetListener.DoCheckCount(AThread:TWinsock2TCPServerThread):Boolean; 
+function TTelnetListener.DoCheckCount(AThread:TWinsock2TCPServerThread):Boolean;
 begin
  {}
  Result:=True;
- 
+
  if AThread = nil then Exit;
- 
+
  {$IFDEF TELNET_DEBUG}
  if SERVICE_LOG_ENABLED then ServiceLogDebug('Telnet Listener: DoCheckCount');
  {$ENDIF}
- 
+
  {Check Count Event}
  if Assigned(FOnCheckCount) then
   begin
@@ -2455,24 +2824,24 @@ begin
 end;
 
 {==============================================================================}
-  
-function TTelnetListener.DoExecute(AThread:TWinsock2TCPServerThread):Boolean; 
+
+function TTelnetListener.DoExecute(AThread:TWinsock2TCPServerThread):Boolean;
 var
  Value:Char;
 begin
  {}
  Result:=inherited DoExecute(AThread);
  if not Result then Exit;
- 
+
  Result:=False;
 
  if AThread = nil then Exit;
  if AThread.Server = nil then Exit;
- 
+
  {$IFDEF TELNET_DEBUG}
  if SERVICE_LOG_ENABLED then ServiceLogDebug('Telnet Listener: DoExecute');
  {$ENDIF}
- 
+
  {Check Connected}
  if AThread.Server.Connected then
   begin
@@ -2484,7 +2853,7 @@ begin
     begin
      {Get Command}
      if not GetChar(AThread,Value) then Exit;
-     
+
      {Check Command}
      case Ord(Value) of
       TELNET_COMMAND_IAC:begin
@@ -2494,7 +2863,7 @@ begin
       TELNET_COMMAND_DONT:begin
         {Get Option}
         if not GetChar(AThread,Value) then Exit;
-        
+
         {Command Event}
         DoCommand(AThread,TELNET_COMMAND_DONT,Ord(Value),nil,0);
        end;
@@ -2508,93 +2877,93 @@ begin
       TELNET_COMMAND_WONT:begin
         {Get Option}
         if not GetChar(AThread,Value) then Exit;
-      
+
         {Command Event}
         DoCommand(AThread,TELNET_COMMAND_WONT,Ord(Value),nil,0);
        end;
       TELNET_COMMAND_WILL:begin
         {Get Option}
         if not GetChar(AThread,Value) then Exit;
-        
+
         {Command Event}
         DoCommand(AThread,TELNET_COMMAND_WILL,Ord(Value),nil,0);
        end;
       TELNET_COMMAND_SB:begin
         {Begin Subnegotiations}
-        
+
         {Command Event}
         DoCommand(AThread,TELNET_COMMAND_SB,0,nil,0);
        end;
       TELNET_COMMAND_GA:begin
         {Go Ahead}
-        
+
         {Command Event}
         DoCommand(AThread,TELNET_COMMAND_GA,0,nil,0);
        end;
       TELNET_COMMAND_EL:begin
         {Erase Line}
-        
+
         {Command Event}
         DoCommand(AThread,TELNET_COMMAND_EL,0,nil,0);
-       end;        
+       end;
       TELNET_COMMAND_EC:begin
         {Erase Character}
-        
+
         {Command Event}
         DoCommand(AThread,TELNET_COMMAND_EC,0,nil,0);
        end;
       TELNET_COMMAND_AYT:begin
         {Are you there}
-        
+
         {Command Event}
         DoCommand(AThread,TELNET_COMMAND_AYT,0,nil,0);
        end;
       TELNET_COMMAND_AO:begin
         {Abort Output}
-        
+
         {Command Event}
         DoCommand(AThread,TELNET_COMMAND_AO,0,nil,0);
        end;
       TELNET_COMMAND_IP:begin
         {Interrupt Process}
-        
+
         {Command Event}
         DoCommand(AThread,TELNET_COMMAND_IP,0,nil,0);
        end;
       TELNET_COMMAND_BRK:begin
         {Break}
-        
+
         {Command Event}
         DoCommand(AThread,TELNET_COMMAND_BRK,0,nil,0);
        end;
       TELNET_COMMAND_DM:begin
         {Data Mark}
-        
+
         {Command Event}
         DoCommand(AThread,TELNET_COMMAND_DM,0,nil,0);
        end;
       TELNET_COMMAND_NOP:begin
         {No Operation}
-        
+
         {Command Event}
         DoCommand(AThread,TELNET_COMMAND_NOP,0,nil,0);
        end;
       TELNET_COMMAND_SE:begin
         {End Subnegotiations}
-        
+
         {Command Event}
         DoCommand(AThread,TELNET_COMMAND_SE,0,nil,0);
        end;
       TELNET_COMMAND_EOR:begin
         {End of Record}
-        
+
         {Command Event}
         DoCommand(AThread,TELNET_COMMAND_EOR,0,nil,0);
        end;
      end;
     end
    else
-    begin     
+    begin
      {Check for CR}
      if Value = TELNET_CHAR_CR then
       begin
@@ -2603,10 +2972,10 @@ begin
 
        {Char Event}
        DoChar(AThread,Value);
-      
+
        {Get Char}
        if not GetChar(AThread,Value) then Exit;
-       
+
        {Check for NUL or LF}
        if (Value = TELNET_CHAR_NUL) or (Value = TELNET_CHAR_LF) then
         begin
@@ -2623,9 +2992,9 @@ begin
 
          {Send Echo}
          if not SendEcho(AThread,Value) then Exit;
-        end;        
+        end;
       end
-     {Check for LF} 
+     {Check for LF}
      else if Value = TELNET_CHAR_LF then
       begin
        {Send Echo (Unconditional)}
@@ -2633,18 +3002,18 @@ begin
 
        {Char Event}
        DoChar(AThread,Value);
-      end      
-     {All other characters} 
-     else 
+      end
+     {All other characters}
+     else
       begin
        {Char Event}
        DoChar(AThread,Value);
-       
+
        {Send Echo}
        if not SendEcho(AThread,Value) then Exit;
       end;
     end;
-   
+
    Result:=True;
   end;
 end;
@@ -2662,11 +3031,11 @@ begin
  {$IFDEF TELNET_DEBUG}
  if SERVICE_LOG_ENABLED then ServiceLogDebug('Telnet Listener: DoInit');
  {$ENDIF}
- 
+
  {Get Connection}
  Connection:=TTelnetConnection(AThread.Data);
  if Connection = nil then Exit;
- 
+
  {Init Event}
  if Assigned(FOnInit) then
   begin
@@ -2676,13 +3045,13 @@ begin
      AThread.Server.Disconnect;
     end;
   end;
-  
- {Init Default} 
+
+ {Init Default}
  {Nothing}
 end;
- 
+
 {==============================================================================}
- 
+
 procedure TTelnetListener.DoChar(AThread:TWinsock2TCPServerThread;AChar:Char);
 var
  Connection:TTelnetConnection;
@@ -2690,34 +3059,34 @@ begin
  {}
  if AThread = nil then Exit;
  if AThread.Server = nil then Exit;
- 
+
  {$IFDEF TELNET_DEBUG}
  if SERVICE_LOG_ENABLED then ServiceLogDebug('Telnet Listener: DoChar');
  if SERVICE_LOG_ENABLED then ServiceLogDebug('Telnet Listener:  Char = ' + AChar + ' (' + IntToStr(Ord(AChar)) + ' / 0x' + IntToHex(Ord(AChar),2) + ')');
  {$ENDIF}
- 
+
  {Get Connection}
  Connection:=TTelnetConnection(AThread.Data);
  if Connection = nil then Exit;
- 
+
  {Update Connection}
  Connection.RequestTime:=Now;
  Connection.IncrementRequestCount;
  Connection.IncrementRxByteCount(1);
- 
+
  {Char Event}
  if Assigned(FOnChar) then
   begin
    if FOnChar(Connection,AChar) then
     begin
      Exit;
-    end; 
+    end;
   end;
-  
- {Char Default} 
+
+ {Char Default}
  {Nothing}
 end;
- 
+
 {==============================================================================}
 
 procedure TTelnetListener.DoCommand(AThread:TWinsock2TCPServerThread;ACommand,AOption:Byte;AData:Pointer;ASize:LongWord);
@@ -2729,17 +3098,17 @@ begin
  {}
  if AThread = nil then Exit;
  if AThread.Server = nil then Exit;
- 
+
  {$IFDEF TELNET_DEBUG}
  if SERVICE_LOG_ENABLED then ServiceLogDebug('Telnet Listener: DoCommand');
  if SERVICE_LOG_ENABLED then ServiceLogDebug('Telnet Listener:  Command = ' + TelnetCommandToString(ACommand));
  if SERVICE_LOG_ENABLED then ServiceLogDebug('Telnet Listener:  Option = ' + TelnetOptionToString(AOption));
  {$ENDIF}
- 
+
  {Get Connection}
  Connection:=TTelnetConnection(AThread.Data);
  if Connection = nil then Exit;
- 
+
  {Get Size}
  Size:=2;
  if TelnetCommandHasOption(ACommand) then Size:=3;
@@ -2747,26 +3116,26 @@ begin
   begin
    {Check Size}
    if ASize > 253 then Exit;
-   
+
    {Get Size}
    Size:=Size + ASize;
   end;
- 
+
  {Update Connection}
  Connection.RequestTime:=Now;
  Connection.IncrementRequestCount;
  Connection.IncrementRxByteCount(Size);
- 
+
  {Command Event}
  if Assigned(FOnCommand) then
   begin
    if FOnCommand(Connection,ACommand,AOption,AData,ASize) then
     begin
      Exit;
-    end; 
+    end;
   end;
-  
- {Command Default} 
+
+ {Command Default}
  {Check Option}
  case AOption of
   TELNET_OPTION_TRANSMIT_BINARY:begin
@@ -2793,9 +3162,9 @@ begin
   else
    begin
     State:=TELNET_STATE_NONE;
-   end;   
+   end;
  end;
- 
+
  {Check Command}
  case ACommand of
   TELNET_COMMAND_EOR:begin
@@ -2813,13 +3182,13 @@ begin
   TELNET_COMMAND_BRK:begin
     {Ignore}
    end;
-  TELNET_COMMAND_IP:begin 
+  TELNET_COMMAND_IP:begin
     {Ignore}
    end;
-  TELNET_COMMAND_AO:begin 
+  TELNET_COMMAND_AO:begin
     {Ignore}
    end;
-  TELNET_COMMAND_AYT:begin 
+  TELNET_COMMAND_AYT:begin
     {Are You There}
     {Send Text}
     SendText(AThread,'Ultibo/' + ULTIBO_RELEASE_VERSION);
@@ -2827,13 +3196,13 @@ begin
   TELNET_COMMAND_EC:begin
     {Ignore}
    end;
-  TELNET_COMMAND_EL:begin 
+  TELNET_COMMAND_EL:begin
     {Ignore}
    end;
   TELNET_COMMAND_GA:begin
     {Ignore}
    end;
-  TELNET_COMMAND_SB:begin  
+  TELNET_COMMAND_SB:begin
     {Ignore}
    end;
   TELNET_COMMAND_WILL:begin
@@ -2842,7 +3211,7 @@ begin
     if State <> TELNET_STATE_NONE then
      begin
       Connection.RemoteState:=Connection.RemoteState or State;
-     end;    
+     end;
    end;
   TELNET_COMMAND_WONT:begin
     {Won't}
@@ -2850,9 +3219,9 @@ begin
     if State <> TELNET_STATE_NONE then
      begin
       Connection.RemoteState:=Connection.RemoteState and not(State);
-     end;    
+     end;
    end;
-  TELNET_COMMAND_DO:begin 
+  TELNET_COMMAND_DO:begin
     {Do}
     {Send Command}
     if State <> TELNET_STATE_NONE then
@@ -2860,7 +3229,7 @@ begin
       SendCommand(AThread,TELNET_COMMAND_WILL,AOption,nil,0);
      end;
    end;
-  TELNET_COMMAND_DONT:begin 
+  TELNET_COMMAND_DONT:begin
     {Don't}
     {Send Command}
     if State <> TELNET_STATE_NONE then
@@ -2868,7 +3237,7 @@ begin
       SendCommand(AThread,TELNET_COMMAND_WONT,AOption,nil,0);
      end;
    end;
-  TELNET_COMMAND_IAC:begin  
+  TELNET_COMMAND_IAC:begin
     {Ignore (Handled by DoChar}
    end;
  end;
@@ -2888,18 +3257,18 @@ begin
  {}
  Result:=False;
  AChar:=TELNET_CHAR_NUL;
- 
+
  if AThread = nil then Exit;
  if AThread.Server = nil then Exit;
 
  {$IFDEF TELNET_DEBUG}
  if SERVICE_LOG_ENABLED then ServiceLogDebug('Telnet Listener: GetChar');
  {$ENDIF}
- 
+
  {Get Connection}
  Connection:=TTelnetConnection(AThread.Data);
  if Connection = nil then Exit;
- 
+
  {Get Next}
  Completed:=False;
  while not(Completed) do
@@ -2907,20 +3276,20 @@ begin
    {$IFDEF TELNET_DEBUG}
    if SERVICE_LOG_ENABLED then ServiceLogDebug('Telnet Listener:  Buffer Count = ' + IntToStr(Connection.Buffer.Count));
    {$ENDIF}
-   
+
    {Read from Buffer}
    if Connection.Buffer.Count > 0 then
     begin
      {Read Value}
      AChar:=Connection.Buffer.ReadData;
-     
+
      {Mark Completed}
      Completed:=True;
     end;
-    
+
    {Check Completed}
    if Completed then Break;
-   
+
    {Read from Socket}
    Data:=Connection.Buffer.WriteLock(Size);
    if Data = nil then Exit;
@@ -2930,21 +3299,21 @@ begin
     {$ENDIF}
 
     Count:=0;
-      
+
     {Read Available}
     if not AThread.Server.ReadAvailable(Data,Size,LongInt(Count),Closed) then Exit;
-    
+
     {$IFDEF TELNET_DEBUG}
     if SERVICE_LOG_ENABLED then ServiceLogDebug('Telnet Listener:  Buffer Write Count = ' + IntToStr(Count));
     {$ENDIF}
    finally
     Connection.Buffer.WriteUnlock(Count);
-   end; 
-  end;  
-  
+   end;
+  end;
+
  {Return Result}
- Result:=True; 
-  
+ Result:=True;
+
  {$IFDEF TELNET_DEBUG}
  if SERVICE_LOG_ENABLED then ServiceLogDebug('Telnet Listener:  Char = ' + AChar + ' (' + IntToStr(Ord(AChar)) + ' / 0x' + IntToHex(Ord(AChar),2) + ')');
  {$ENDIF}
@@ -2958,7 +3327,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AThread = nil then Exit;
  if AThread.Server = nil then Exit;
 
@@ -2970,21 +3339,21 @@ begin
  {Get Connection}
  Connection:=TTelnetConnection(AThread.Data);
  if Connection = nil then Exit;
- 
+
  {Check Echo}
  if (Connection.LocalState and TELNET_STATE_ECHO) <> 0 then
   begin
    {Send Echo}
    if not AThread.Server.WriteData(@AChar,1) then Exit;
-   
+
    {Update Connection}
    Connection.ResponseTime:=Now;
    Connection.IncrementResponseCount;
    Connection.IncrementTxByteCount(1);
-  end; 
-  
+  end;
+
  {Return Result}
- Result:=True; 
+ Result:=True;
 end;
 
 {==============================================================================}
@@ -2995,7 +3364,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AThread = nil then Exit;
  if AThread.Server = nil then Exit;
 
@@ -3007,17 +3376,17 @@ begin
  {Get Connection}
  Connection:=TTelnetConnection(AThread.Data);
  if Connection = nil then Exit;
- 
+
  {Send Char}
  if not AThread.Server.WriteData(@AChar,1) then Exit;
-   
+
  {Update Connection}
  Connection.ResponseTime:=Now;
  Connection.IncrementResponseCount;
  Connection.IncrementTxByteCount(1);
-  
+
  {Return Result}
- Result:=True; 
+ Result:=True;
 end;
 
 {==============================================================================}
@@ -3028,29 +3397,29 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AThread = nil then Exit;
  if AThread.Server = nil then Exit;
- 
+
  {$IFDEF TELNET_DEBUG}
  if SERVICE_LOG_ENABLED then ServiceLogDebug('Telnet Listener: SendText');
  if SERVICE_LOG_ENABLED then ServiceLogDebug('Telnet Listener:  Text = ' + AText);
  {$ENDIF}
- 
+
  {Get Connection}
  Connection:=TTelnetConnection(AThread.Data);
  if Connection = nil then Exit;
 
  {Send Text}
  if not AThread.Server.WriteData(PChar(AText),Length(AText)) then Exit;
- 
+
  {Update Connection}
  Connection.ResponseTime:=Now;
  Connection.IncrementResponseCount;
  Connection.IncrementTxByteCount(Length(AText));
- 
+
  {Return Result}
- Result:=True; 
+ Result:=True;
 end;
 
 {==============================================================================}
@@ -3064,7 +3433,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AThread = nil then Exit;
  if AThread.Server = nil then Exit;
 
@@ -3074,11 +3443,11 @@ begin
  if SERVICE_LOG_ENABLED then ServiceLogDebug('Telnet Listener:  Option = ' + TelnetOptionToString(AOption));
  if SERVICE_LOG_ENABLED then ServiceLogDebug('Telnet Listener:  Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Get Connection}
  Connection:=TTelnetConnection(AThread.Data);
  if Connection = nil then Exit;
- 
+
  {Get Size}
  Size:=2;
  if TelnetCommandHasOption(ACommand) then Size:=3;
@@ -3086,11 +3455,11 @@ begin
   begin
    {Check Size}
    if ASize > 253 then Exit;
-   
+
    {Get Size}
    Size:=Size + ASize;
   end;
- 
+
  {Get Data}
  Data[0]:=TELNET_COMMAND_IAC;
  Data[1]:=ACommand;
@@ -3100,10 +3469,10 @@ begin
    {Copy Data}
    System.Move(AData^,Data[3],ASize);
   end;
-  
+
  {Send Command}
  if not AThread.Server.WriteData(@Data,Size) then Exit;
- 
+
  {Check Option}
  case AOption of
   TELNET_OPTION_TRANSMIT_BINARY:begin
@@ -3130,9 +3499,9 @@ begin
   else
    begin
     State:=TELNET_STATE_NONE;
-   end;   
+   end;
  end;
- 
+
  {Check Comand}
  if ACommand = TELNET_COMMAND_WILL then
   begin
@@ -3140,7 +3509,7 @@ begin
    if State <> TELNET_STATE_NONE then
     begin
      Connection.LocalState:=Connection.LocalState or State;
-    end;    
+    end;
   end
  else if ACommand = TELNET_COMMAND_WONT then
   begin
@@ -3148,16 +3517,16 @@ begin
    if State <> TELNET_STATE_NONE then
     begin
      Connection.LocalState:=Connection.LocalState and not(State);
-    end;    
+    end;
   end;
- 
+
  {Update Connection}
  Connection.ResponseTime:=Now;
  Connection.IncrementResponseCount;
  Connection.IncrementTxByteCount(Size);
-  
+
  {Return Result}
- Result:=True; 
+ Result:=True;
 end;
 
 {==============================================================================}
@@ -3177,31 +3546,32 @@ begin
  FBoundPort:=SYSLOG_BOUND_PORT;
  FRemoteHost:=SYSLOG_SERVER_DEFAULT;
  FRemotePort:=SYSLOG_PORT_DEFAULT;
+ FBSDFormat:=SYSLOG_BSD_FORMAT;
  FOctetCounting:=SYSLOG_OCTET_COUNTING;
  FBroadcastEnabled:=SYSLOG_BROADCAST_ENABLED;
- 
+
  FUDPClient:=nil;
  FTCPClient:=nil;
 end;
- 
+
 {==============================================================================}
 
-destructor TSyslogClient.Destroy; 
+destructor TSyslogClient.Destroy;
 begin
  {}
  AcquireLock;
  try
   if FUDPClient <> nil then FUDPClient.Free;
   if FTCPClient <> nil then FTCPClient.Free;
-  
+
   FUDPClient:=nil;
   FTCPClient:=nil;
-  
+
   inherited Destroy;
  finally
   ReleaseLock;
   MutexDestroy(FLock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3214,7 +3584,7 @@ end;
 
 {==============================================================================}
 
-function TSyslogClient.ReleaseLock:Boolean;  
+function TSyslogClient.ReleaseLock:Boolean;
 begin
  {}
  Result:=(MutexUnlock(FLock) = ERROR_SUCCESS);
@@ -3226,29 +3596,29 @@ procedure TSyslogClient.SetProtocol(AProtocol:LongWord);
 begin
  {}
  if AProtocol = FProtocol then Exit;
- 
+
  if not AcquireLock then Exit;
  try
-  {Check Protocol} 
+  {Check Protocol}
   case AProtocol of
    LOGGING_PROTOCOL_UDP:begin
      {Close TCP Client}
      if FTCPClient <> nil then FTCPClient.Free;
      FTCPClient:=nil;
-     
+
      FProtocol:=AProtocol;
     end;
    LOGGING_PROTOCOL_TCP:begin
      {Close UDP Client}
      if FUDPClient <> nil then FUDPClient.Free;
      FUDPClient:=nil;
-     
+
      FProtocol:=AProtocol;
     end;
   end;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3260,32 +3630,32 @@ begin
 
  if not AcquireLock then Exit;
  try
-  {Check Protocol} 
+  {Check Protocol}
   case FProtocol of
    LOGGING_PROTOCOL_UDP:begin
      FBoundPort:=ABoundPort;
-     
+
      {Disconnect UDP Client}
      if FUDPClient <> nil then
       begin
        FUDPClient.Disconnect;
        FUDPClient.BoundPort:=FBoundPort;
-      end; 
+      end;
     end;
    LOGGING_PROTOCOL_TCP:begin
      FBoundPort:=ABoundPort;
-     
+
      {Disconnect TCP Client}
      if FTCPClient <> nil then
       begin
        FTCPClient.Disconnect;
        FTCPClient.BoundPort:=FBoundPort;
-      end; 
+      end;
     end;
   end;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3294,12 +3664,12 @@ function TSyslogClient.GetRemoteHost:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FRemoteHost;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -3312,34 +3682,34 @@ begin
 
  if not AcquireLock then Exit;
  try
-  {Check Protocol} 
+  {Check Protocol}
   case FProtocol of
    LOGGING_PROTOCOL_UDP:begin
      FRemoteHost:=ARemoteHost;
-     UniqueString(FRemoteHost);   
+     UniqueString(FRemoteHost);
 
      {Disconnect UDP Client}
      if FUDPClient <> nil then
       begin
        FUDPClient.Disconnect;
        FUDPClient.RemoteHost:=FRemoteHost;
-      end; 
+      end;
     end;
    LOGGING_PROTOCOL_TCP:begin
      FRemoteHost:=ARemoteHost;
-     UniqueString(FRemoteHost);   
+     UniqueString(FRemoteHost);
 
      {Disconnect TCP Client}
      if FTCPClient <> nil then
       begin
        FTCPClient.Disconnect;
        FTCPClient.RemoteHost:=FRemoteHost;
-      end; 
+      end;
     end;
   end;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3351,32 +3721,44 @@ begin
 
  if not AcquireLock then Exit;
  try
-  {Check Protocol} 
+  {Check Protocol}
   case FProtocol of
    LOGGING_PROTOCOL_UDP:begin
      FRemotePort:=ARemotePort;
-     
+
      {Disconnect UDP Client}
      if FUDPClient <> nil then
       begin
        FUDPClient.Disconnect;
        FUDPClient.RemotePort:=FRemotePort;
-      end; 
+      end;
     end;
    LOGGING_PROTOCOL_TCP:begin
      FRemotePort:=ARemotePort;
-     
+
      {Disconnect TCP Client}
      if FTCPClient <> nil then
       begin
        FTCPClient.Disconnect;
        FTCPClient.RemotePort:=FRemotePort;
-      end; 
+      end;
     end;
   end;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
+end;
+
+{==============================================================================}
+
+procedure TSyslogClient.SetBSDFormat(ABSDFormat:Boolean);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FBSDFormat:=ABSDFormat;
+
+ ReleaseLock;
 end;
 
 {==============================================================================}
@@ -3385,9 +3767,9 @@ procedure TSyslogClient.SetOctetCounting(AOctetCounting:Boolean);
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FOctetCounting:=AOctetCounting;
- 
+
  ReleaseLock;
 end;
 
@@ -3400,27 +3782,42 @@ begin
 
  if not AcquireLock then Exit;
  try
-  {Check Protocol} 
+  {Check Protocol}
   case FProtocol of
    LOGGING_PROTOCOL_UDP:begin
      FBroadcastEnabled:=ABroadcastEnabled;
-     
+
      {Disconnect UDP Client}
      if FUDPClient <> nil then
       begin
        FUDPClient.Disconnect;
        FUDPClient.BroadcastEnabled:=FBroadcastEnabled;
-      end; 
+      end;
     end;
    LOGGING_PROTOCOL_TCP:begin
      FBroadcastEnabled:=ABroadcastEnabled;
-     
+
      {Broadcast not applicable to TCP}
     end;
   end;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
+end;
+
+{==============================================================================}
+
+function TSyslogClient.GetValue(const AValue:String):String;
+begin
+ {}
+ if Length(AValue) = 0 then
+  begin
+   Result:=SYSLOG_NIL_VALUE;
+  end
+ else
+  begin
+   Result:=AValue;
+  end;
 end;
 
 {==============================================================================}
@@ -3432,13 +3829,13 @@ var
 begin
  {}
  Result:='';
- 
+
  {Get Facility}
- Facility:=LoggingFacilityToSysLogFacility(AFacility);
- 
+ Facility:=LoggingFacilityToSyslogFacility(AFacility);
+
  {Get Severity}
- Severity:=LoggingSeverityToSysLogSeverity(ASeverity);
- 
+ Severity:=LoggingSeverityToSyslogSeverity(ASeverity);
+
  {Return Result}
  Result:='<' + IntToStr((Facility * 8) + Severity) + '>';
 end;
@@ -3450,18 +3847,51 @@ begin
  {}
  {Add Priority}
  Result:=APriority;
- 
+
  {Add Date Time}
- Result:=Result + FileTimeToSysLogDateTime(GetCurrentTime) + ' ';
- 
+ Result:=Result + FileTimeToSyslogDateTimeExt(GetCurrentTime,SYSLOG_BSD_TIMESTAMP,False) + ' ';
+
  {Add Local Address}
  Result:=Result + AAddress + ' ';
- 
+
  {Add Tag}
  if Length(ATag) > 0 then Result:=Result + ATag + ': ';
- 
+
  {Add Content}
  Result:=Result + AContent;
+end;
+
+{==============================================================================}
+
+function TSyslogClient.GetMessageExt(const APriority,AAddress,AAppname,AProcID,AMsgID,AData,AMsg:String):String;
+begin
+ {}
+ {Add Priority}
+ Result:=APriority;
+
+ {Add Version}
+ Result:=Result + SYSLOG_VERSION + ' ';
+
+ {Add Date Time}
+ Result:=Result + FileTimeToSyslogDateTimeExt(GetCurrentTime,SYSLOG_TIMESTAMP,True) + ' ';
+
+ {Add Local Address}
+ Result:=Result + GetValue(AAddress) + ' ';
+
+ {Add App Name}
+ Result:=Result + GetValue(AAppname) + ' ';
+
+ {Add Proc ID}
+ Result:=Result + GetValue(AProcID) + ' ';
+
+ {Add Msg ID}
+ Result:=Result + GetValue(AMsgID) + ' ';
+
+ {Add Structured Data}
+ Result:=Result + GetValue(AData) + ' ';
+
+ {Add Msg}
+ if Length(AMsg) > 0 then Result:=Result + AMsg;
 end;
 
 {==============================================================================}
@@ -3472,15 +3902,15 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if not AcquireLock then Exit;
- try 
+ try
   {Check Port}
   if FRemotePort = 0 then Exit;
-  
+
   {Check Host}
   if Length(FRemoteHost) = 0 then Exit;
-  
+
   {Check Protocol}
   case FProtocol of
    LOGGING_PROTOCOL_UDP:begin
@@ -3496,19 +3926,19 @@ begin
       end;
 
      Result:=ERROR_OPERATION_FAILED;
-     
+
      {Connect UDP Client}
      if not FUDPClient.Connected then
       begin
        if not FUDPClient.Connect then Exit;
       end;
-     
+
      {Get Message}
      WorkBuffer:=GetMessage(GetPriority(AFacility,ASeverity),FUDPClient.LocalAddress,ATag,AContent);
-     
+
      {Send UDP Message}
      if FUDPClient.SendData(PChar(WorkBuffer),Length(WorkBuffer)) <> Length(WorkBuffer) then Exit;
-     
+
      {Return Result}
      Result:=ERROR_SUCCESS;
     end;
@@ -3522,44 +3952,1099 @@ begin
        FTCPClient.RemoteHost:=FRemoteHost;
        FTCPClient.RemotePort:=FRemotePort;
       end;
-      
+
      Result:=ERROR_OPERATION_FAILED;
-      
+
      {Connect TCP Client}
      if not FTCPClient.Connected then
       begin
        if not FTCPClient.Connect then Exit;
       end;
-     
+
      {Get Message}
      WorkBuffer:=GetMessage(GetPriority(AFacility,ASeverity),FTCPClient.LocalAddress,ATag,AContent);
-     
+
      if FOctetCounting then
       begin
        {Octet Counting (See: RFC6587)}
        {Add Message Length}
        WorkBuffer:=IntToStr(Length(WorkBuffer)) + ' ' + WorkBuffer;
-       
+
        {Send TCP Message}
        if not FTCPClient.WriteData(PChar(WorkBuffer),Length(WorkBuffer)) then Exit;
       end
      else
-      begin     
+      begin
        {Non-Transparent-Framing (See: RFC6587)}
        {Add Trailer (LF)}
        WorkBuffer:=WorkBuffer + #10;
-       
+
        {Send TCP Message}
        if not FTCPClient.WriteData(PChar(WorkBuffer),Length(WorkBuffer)) then Exit;
-      end; 
-     
+      end;
+
      {Return Result}
      Result:=ERROR_SUCCESS;
     end;
   end;
  finally
   ReleaseLock;
- end; 
+ end;
+end;
+
+{==============================================================================}
+
+function TSyslogClient.SendMessageExt(AFacility,ASeverity:LongWord;const AAppname,AProcID,AMsgID,AData,AMsg:String):LongWord;
+var
+ WorkBuffer:String;
+begin
+ {}
+ {Check Format}
+ if FBSDFormat then
+  begin
+   Result:=SendMessage(AFacility,ASeverity,AMsgID,AMsg);
+  end
+ else
+  begin
+   Result:=ERROR_INVALID_PARAMETER;
+   if not AcquireLock then Exit;
+   try
+    {Check Port}
+    if FRemotePort = 0 then Exit;
+
+    {Check Host}
+    if Length(FRemoteHost) = 0 then Exit;
+
+    {Check Protocol}
+    case FProtocol of
+     LOGGING_PROTOCOL_UDP:begin
+       {Check UDP Client}
+       if FUDPClient = nil then
+        begin
+         {Create UDP Client}
+         FUDPClient:=TWinsock2UDPClient.Create;
+         FUDPClient.BoundPort:=FBoundPort;
+         FUDPClient.RemoteHost:=FRemoteHost;
+         FUDPClient.RemotePort:=FRemotePort;
+         FUDPClient.BroadcastEnabled:=FBroadcastEnabled;
+        end;
+
+       Result:=ERROR_OPERATION_FAILED;
+
+       {Connect UDP Client}
+       if not FUDPClient.Connected then
+        begin
+         if not FUDPClient.Connect then Exit;
+        end;
+
+       {Get Message}
+       WorkBuffer:=GetMessageExt(GetPriority(AFacility,ASeverity),FUDPClient.LocalAddress,AAppname,AProcID,AMsgID,AData,AMsg);
+
+       {Send UDP Message}
+       if FUDPClient.SendData(PChar(WorkBuffer),Length(WorkBuffer)) <> Length(WorkBuffer) then Exit;
+
+       {Return Result}
+       Result:=ERROR_SUCCESS;
+      end;
+     LOGGING_PROTOCOL_TCP:begin
+       {Check TCP Client}
+       if FTCPClient = nil then
+        begin
+         {Create TCP Client}
+         FTCPClient:=TWinsock2TCPClient.Create;
+         FTCPClient.BoundPort:=FBoundPort;
+         FTCPClient.RemoteHost:=FRemoteHost;
+         FTCPClient.RemotePort:=FRemotePort;
+        end;
+
+       Result:=ERROR_OPERATION_FAILED;
+
+       {Connect TCP Client}
+       if not FTCPClient.Connected then
+        begin
+         if not FTCPClient.Connect then Exit;
+        end;
+
+       {Get Message}
+       WorkBuffer:=GetMessageExt(GetPriority(AFacility,ASeverity),FTCPClient.LocalAddress,AAppname,AProcID,AMsgID,AData,AMsg);
+
+       if FOctetCounting then
+        begin
+         {Octet Counting (See: RFC6587)}
+         {Add Message Length}
+         WorkBuffer:=IntToStr(Length(WorkBuffer)) + ' ' + WorkBuffer;
+
+         {Send TCP Message}
+         if not FTCPClient.WriteData(PChar(WorkBuffer),Length(WorkBuffer)) then Exit;
+        end
+       else
+        begin
+         {Non-Transparent-Framing (See: RFC6587)}
+         {Add Trailer (LF)}
+         WorkBuffer:=WorkBuffer + #10;
+
+         {Send TCP Message}
+         if not FTCPClient.WriteData(PChar(WorkBuffer),Length(WorkBuffer)) then Exit;
+        end;
+
+       {Return Result}
+       Result:=ERROR_SUCCESS;
+      end;
+    end;
+   finally
+    ReleaseLock;
+   end;
+
+  end;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{TSyslogListener}
+constructor TSyslogListener.Create;
+begin
+ {}
+ inherited Create;
+ FLock:=MutexCreate;
+
+ FActive:=False;
+ FProtocol:=SYSLOG_PROTOCOL_DEFAULT;
+ FBoundPort:=SYSLOG_PORT_DEFAULT;
+ FBufferSize:=WINSOCK2_MAX_UDP;
+ FMinThreads:=2;
+ FMaxThreads:=10;
+ FThreadLimit:=0;
+ FThreadWait:=50;
+ FBSDFormat:=SYSLOG_BSD_FORMAT;
+ FAutoDetect:=SYSLOG_BSD_FORMAT;
+ FOctetCounting:=SYSLOG_OCTET_COUNTING;
+
+ FListenerName:=SYSLOG_LISTENER_THREAD_NAME;
+ FListenerPriority:=THREAD_PRIORITY_NORMAL;
+ FListenerStackSize:=THREAD_STACK_DEFAULT_SIZE;
+
+ FServerName:=SYSLOG_SERVER_THREAD_NAME;
+ FServerPriority:=THREAD_PRIORITY_NORMAL;
+ FServerStackSize:=THREAD_STACK_DEFAULT_SIZE;
+
+ FUDPListener:=nil;
+ FTCPListener:=nil;
+
+ {Check Protocol}
+ if (FProtocol <> LOGGING_PROTOCOL_UDP) and (FProtocol <> LOGGING_PROTOCOL_TCP) then
+  begin
+   FProtocol:=LOGGING_PROTOCOL_UDP;
+  end;
+end;
+
+{==============================================================================}
+
+destructor TSyslogListener.Destroy;
+begin
+ {}
+ AcquireLock;
+ try
+  if FUDPListener <> nil then FUDPListener.Free;
+  if FTCPListener <> nil then FTCPListener.Free;
+
+  FUDPListener:=nil;
+  FTCPListener:=nil;
+
+  inherited Destroy;
+ finally
+  ReleaseLock;
+  MutexDestroy(FLock);
+ end;
+end;
+
+{==============================================================================}
+
+function TSyslogListener.AcquireLock:Boolean;
+begin
+ {}
+ Result:=(MutexLock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TSyslogListener.ReleaseLock:Boolean;
+begin
+ {}
+ Result:=(MutexUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+procedure TSyslogListener.SetActive(AActive:Boolean);
+begin
+ {}
+ if AActive = FActive then Exit;
+
+ if not AcquireLock then Exit;
+ try
+  {Check Protocol}
+  case FProtocol of
+   LOGGING_PROTOCOL_UDP:begin
+     {Update Active}
+     FActive:=AActive;
+
+     {Check Active}
+     if FActive then
+      begin
+       {Check UDP Listener}
+       if FUDPListener = nil then
+        begin
+         {Create UDP Listener}
+         FUDPListener:=TWinsock2UDPListener.Create;
+         FUDPListener.OnExecute:=DoUDPExecute;
+         FUDPListener.BoundPort:=FBoundPort;
+         FUDPListener.BufferSize:=FBufferSize;
+         FUDPListener.Threads.Min:=FMinThreads;
+         FUDPListener.Threads.Max:=FMaxThreads;
+         FUDPListener.Threads.Limit:=FThreadLimit;
+         FUDPListener.Threads.WaitTimeout:=FThreadWait;
+         FUDPListener.ListenerName:=FListenerName;
+         FUDPListener.ListenerPriority:=FListenerPriority;
+         FUDPListener.ListenerStackSize:=FListenerStackSize;
+         FUDPListener.ServerName:=FServerName;
+         FUDPListener.ServerPriority:=FServerPriority;
+         FUDPListener.ServerStackSize:=FServerStackSize;
+        end;
+
+       {Update UDP Listener}
+       FUDPListener.Active:=FActive;
+      end
+     else
+      begin
+       {Update UDP Listener}
+       if FUDPListener <> nil then FUDPListener.Active:=FActive;
+      end;
+    end;
+   LOGGING_PROTOCOL_TCP:begin
+     {Update Active}
+     FActive:=AActive;
+
+     {Check Active}
+     if FActive then
+      begin
+       {Check TCP Listener}
+       if FTCPListener = nil then
+        begin
+         {Create TCP Listener}
+         FTCPListener:=TWinsock2TCPListener.Create;
+         FTCPListener.OnExecute:=DoTCPExecute;
+         FTCPListener.BoundPort:=FBoundPort;
+         FTCPListener.ListenerName:=FListenerName;
+         FTCPListener.ListenerPriority:=FListenerPriority;
+         FTCPListener.ListenerStackSize:=FListenerStackSize;
+         FTCPListener.ServerName:=FServerName;
+         FTCPListener.ServerPriority:=FServerPriority;
+         FTCPListener.ServerStackSize:=FServerStackSize;
+        end;
+
+       {Update TCP Listener}
+       FTCPListener.Active:=FActive;
+      end
+     else
+      begin
+       {Update TCP Listener}
+       if FTCPListener <> nil then FTCPListener.Active:=FActive;
+      end;
+    end;
+  end;
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
+procedure TSyslogListener.SetProtocol(AProtocol:LongWord);
+begin
+ {}
+ if AProtocol = FProtocol then Exit;
+
+ if not AcquireLock then Exit;
+ try
+  {Check Protocol}
+  case AProtocol of
+   LOGGING_PROTOCOL_UDP:begin
+     {Close TCP Listener}
+     if FTCPListener <> nil then FTCPListener.Free;
+     FTCPListener:=nil;
+
+     {Update Protocol}
+     FProtocol:=AProtocol;
+    end;
+   LOGGING_PROTOCOL_TCP:begin
+     {Close UDP Listener}
+     if FUDPListener <> nil then FUDPListener.Free;
+     FUDPListener:=nil;
+
+     {Update Protocol}
+     FProtocol:=AProtocol;
+    end;
+  end;
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
+procedure TSyslogListener.SetBoundPort(ABoundPort:Word);
+begin
+ {}
+ if ABoundPort = FBoundPort then Exit;
+
+ if not AcquireLock then Exit;
+ try
+  {Update Bound Port}
+  FBoundPort:=ABoundPort;
+
+  {Check Protocol}
+  case FProtocol of
+   LOGGING_PROTOCOL_UDP:begin
+     {Update UDP Listener}
+     if FUDPListener <> nil then FUDPListener.BoundPort:=FBoundPort;
+    end;
+   LOGGING_PROTOCOL_TCP:begin
+     {Update TCP Listener}
+     if FTCPListener <> nil then FTCPListener.BoundPort:=FBoundPort;
+    end;
+  end;
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
+procedure TSyslogListener.SetBufferSize(ABufferSize:Integer);
+begin
+ {}
+ if ABufferSize = FBufferSize then Exit;
+
+ if not AcquireLock then Exit;
+ try
+  {Update Buffer Size}
+  FBufferSize:=ABufferSize;
+
+  {Check Protocol}
+  case FProtocol of
+   LOGGING_PROTOCOL_UDP:begin
+     {Update UDP Listener}
+     if FUDPListener <> nil then FUDPListener.BufferSize:=FBufferSize;
+    end;
+   {Does not apply to TCP Listener}
+  end;
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
+procedure TSyslogListener.SetMinThreads(AMinThreads:Integer);
+begin
+ {}
+ if AMinThreads = FMinThreads then Exit;
+
+ if not AcquireLock then Exit;
+ try
+  {Update Min Threads}
+  FMinThreads:=AMinThreads;
+  if FMinThreads <= 0 then FMinThreads:=1;
+  if FMinThreads > FMaxThreads then FMaxThreads:=FMinThreads;
+
+  {Check Protocol}
+  case FProtocol of
+   LOGGING_PROTOCOL_UDP:begin
+     {Update UDP Listener}
+     if FUDPListener <> nil then FUDPListener.Threads.Min:=FMinThreads;
+     if FUDPListener <> nil then FUDPListener.Threads.Max:=FMaxThreads;
+    end;
+   {Does not apply to TCP Listener}
+  end;
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
+procedure TSyslogListener.SetMaxThreads(AMaxThreads:Integer);
+begin
+ {}
+ if AMaxThreads = FMaxThreads then Exit;
+
+ if not AcquireLock then Exit;
+ try
+  {Update Max Threads}
+  FMaxThreads:=AMaxThreads;
+  if FMaxThreads < FMinThreads then FMaxThreads:=FMinThreads;
+
+  {Check Protocol}
+  case FProtocol of
+   LOGGING_PROTOCOL_UDP:begin
+     {Update UDP Listener}
+     if FUDPListener <> nil then FUDPListener.Threads.Max:=FMaxThreads;
+    end;
+   {Does not apply to TCP Listener}
+  end;
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
+procedure TSyslogListener.SetThreadLimit(AThreadLimit:Integer);
+begin
+ {}
+ if AThreadLimit = FThreadLimit then Exit;
+
+ if not AcquireLock then Exit;
+ try
+  {Update Thread Limit}
+  FThreadLimit:=AThreadLimit;
+  if (FThreadLimit <> 0) and (FThreadLimit < FMaxThreads) then FThreadLimit:=FMaxThreads;
+
+  {Check Protocol}
+  case FProtocol of
+   LOGGING_PROTOCOL_UDP:begin
+     {Update UDP Listener}
+     if FUDPListener <> nil then FUDPListener.Threads.Limit:=FThreadLimit;
+    end;
+   {Does not apply to TCP Listener}
+  end;
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
+procedure TSyslogListener.SetThreadWait(AThreadWait:LongWord);
+begin
+ {}
+ if AThreadWait = FThreadWait then Exit;
+
+ if not AcquireLock then Exit;
+ try
+  {Update Thread Wait}
+  FThreadWait:=AThreadWait;
+
+  {Check Protocol}
+  case FProtocol of
+   LOGGING_PROTOCOL_UDP:begin
+     {Update UDP Listener}
+     if FUDPListener <> nil then FUDPListener.Threads.WaitTimeout:=FThreadWait;
+    end;
+   {Does not apply to TCP Listener}
+  end;
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
+procedure TSyslogListener.SetBSDFormat(ABSDFormat:Boolean);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FBSDFormat:=ABSDFormat;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure TSyslogListener.SetAutoDetect(AAutoDetect:Boolean);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FAutoDetect:=AAutoDetect;
+
+ {Ensure BSD format is enabled if Auto Detect is True}
+ if FAutoDetect then FBSDFormat:=True;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure TSyslogListener.SetOctetCounting(AOctetCounting:Boolean);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FOctetCounting:=AOctetCounting;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure TSyslogListener.SetListenerName(const AListenerName:String);
+begin
+ {}
+ if FListenerName = AListenerName then Exit;
+
+ if not AcquireLock then Exit;
+ try
+  {Check Protocol}
+  case FProtocol of
+   LOGGING_PROTOCOL_UDP:begin
+     FListenerName:=AListenerName;
+
+     {Update UDP Listener}
+     if FUDPListener <> nil then FUDPListener.ListenerName:=AListenerName;
+    end;
+   LOGGING_PROTOCOL_TCP:begin
+     FListenerName:=AListenerName;
+
+     {Update TCP Listener}
+     if FTCPListener <> nil then FTCPListener.ListenerName:=AListenerName;
+    end;
+  end;
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
+procedure TSyslogListener.SetListenerPriority(AListenerPriority:LongWord);
+begin
+ {}
+ if FListenerPriority = AListenerPriority then Exit;
+
+ if not AcquireLock then Exit;
+ try
+  {Check Protocol}
+  case FProtocol of
+   LOGGING_PROTOCOL_UDP:begin
+     FListenerPriority:=AListenerPriority;
+
+     {Update UDP Listener}
+     if FUDPListener <> nil then FUDPListener.ListenerPriority:=AListenerPriority;
+    end;
+   LOGGING_PROTOCOL_TCP:begin
+     FListenerPriority:=AListenerPriority;
+
+     {Update TCP Listener}
+     if FTCPListener <> nil then FTCPListener.ListenerPriority:=AListenerPriority;
+    end;
+  end;
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
+procedure TSyslogListener.SetListenerStackSize(AListenerStackSize:SizeUInt);
+begin
+ {}
+ if FListenerStackSize = AListenerStackSize then Exit;
+
+ if not AcquireLock then Exit;
+ try
+  {Check Protocol}
+  case FProtocol of
+   LOGGING_PROTOCOL_UDP:begin
+     FListenerStackSize:=AListenerStackSize;
+
+     {Update UDP Listener}
+     if FUDPListener <> nil then FUDPListener.ListenerStackSize:=AListenerStackSize;
+    end;
+   LOGGING_PROTOCOL_TCP:begin
+     FListenerStackSize:=AListenerStackSize;
+
+     {Update TCP Listener}
+     if FTCPListener <> nil then FTCPListener.ListenerStackSize:=AListenerStackSize;
+    end;
+  end;
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
+procedure TSyslogListener.SetServerName(const AServerName:String);
+begin
+ {}
+ if FServerName = AServerName then Exit;
+
+ if not AcquireLock then Exit;
+ try
+  {Check Protocol}
+  case FProtocol of
+   LOGGING_PROTOCOL_UDP:begin
+     FServerName:=AServerName;
+
+     {Update UDP Listener}
+     if FUDPListener <> nil then FUDPListener.ServerName:=AServerName;
+    end;
+   LOGGING_PROTOCOL_TCP:begin
+     FServerName:=AServerName;
+
+     {Update TCP Listener}
+     if FTCPListener <> nil then FTCPListener.ServerName:=AServerName;
+    end;
+  end;
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
+procedure TSyslogListener.SetServerPriority(AServerPriority:LongWord);
+begin
+ {}
+ if FServerPriority = AServerPriority then Exit;
+
+ if not AcquireLock then Exit;
+ try
+  {Check Protocol}
+  case FProtocol of
+   LOGGING_PROTOCOL_UDP:begin
+     FServerPriority:=AServerPriority;
+
+     {Update UDP Listener}
+     if FUDPListener <> nil then FUDPListener.ServerPriority:=AServerPriority;
+    end;
+   LOGGING_PROTOCOL_TCP:begin
+     FServerPriority:=AServerPriority;
+
+     {Update TCP Listener}
+     if FTCPListener <> nil then FTCPListener.ServerPriority:=AServerPriority;
+    end;
+  end;
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
+procedure TSyslogListener.SetServerStackSize(AServerStackSize:SizeUInt);
+begin
+ {}
+ if FServerStackSize = AServerStackSize then Exit;
+
+ if not AcquireLock then Exit;
+ try
+  {Check Protocol}
+  case FProtocol of
+   LOGGING_PROTOCOL_UDP:begin
+     FServerStackSize:=AServerStackSize;
+
+     {Update UDP Listener}
+     if FUDPListener <> nil then FUDPListener.ServerStackSize:=AServerStackSize;
+    end;
+   LOGGING_PROTOCOL_TCP:begin
+     FServerStackSize:=AServerStackSize;
+
+     {Update TCP Listener}
+     if FTCPListener <> nil then FTCPListener.ServerStackSize:=AServerStackSize;
+    end;
+  end;
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
+function TSyslogListener.DoUDPExecute(AThread:TWinsock2UDPServerThread):Boolean;
+var
+ Data:String;
+begin
+ {}
+ Result:=False;
+
+ if AThread = nil then Exit;
+ if AThread.Server = nil then Exit;
+
+ {Check Count}
+ if AThread.Server.Count > 0 then
+  begin
+   {Get Data}
+   SetLength(Data,AThread.Server.Count);
+   Move(AThread.Server.Data^,PChar(Data)^,AThread.Server.Count);
+
+   {Receive Raw Message}
+   DoRecvMessage(AThread.Server.PeerAddress,Data);
+
+   if FBSDFormat then
+    begin
+     {Decode BSD Format Message}
+     DoDecodeMessage(AThread.Server.PeerAddress,Data);
+    end
+   else
+    begin
+     {Decode IETF Format Message}
+     DoDecodeMessageExt(AThread.Server.PeerAddress,Data);
+    end;
+  end;
+
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function TSyslogListener.DoTCPExecute(AThread:TWinsock2TCPServerThread):Boolean;
+var
+ Data:String;
+ Count:Integer;
+ Closed:Boolean;
+begin
+ {}
+ Result:=False;
+
+ if AThread = nil then Exit;
+ if AThread.Server = nil then Exit;
+
+ {Check Connected}
+ if AThread.Server.Connected then
+  begin
+   {Get Data}
+   SetLength(Data,SYSLOG_MESSAGE_MAX);
+   if AThread.Server.ReadAvailable(PChar(Data),SYSLOG_MESSAGE_MAX,Count,Closed) then
+    begin
+     SetLength(Data,Count);
+
+     {Receive Raw Message}
+     DoRecvMessage(AThread.Server.PeerAddress,Data);
+
+     if FBSDFormat then
+      begin
+       {Decode BSD Format Message}
+       DoDecodeMessage(AThread.Server.PeerAddress,Data);
+      end
+     else
+      begin
+       {Decode IETF Format Message}
+       DoDecodeMessageExt(AThread.Server.PeerAddress,Data);
+      end;
+    end;
+
+   Result:=True;
+  end;
+end;
+
+{==============================================================================}
+
+procedure TSyslogListener.DoRecvMessage(const AAddress,AData:String);
+begin
+ {}
+ if Assigned(FOnRecvMessage) then
+  begin
+   {Call Event Handler}
+   FOnRecvMessage(AAddress,AData);
+  end;
+end;
+
+{==============================================================================}
+
+function TSyslogListener.DoDecodeMessage(const AAddress,AData:String):Boolean;
+{BSD Syslog Message Format}
+{ PRI (Required) - Enclosed by <>}
+{ TIMESTAMP (Required) - Formatted as mmm dd hh:nn:ss}
+{ HOST (Required) - Separated by space}
+{ TAG (Optional) - Separated by space and delineated from content by a non alpha numeric character}
+{ CONTENT (Optional) - Remainder of message}
+var
+ Index:Integer;
+ Offset:Integer;
+ Facility,Severity:LongWord;
+ Priority,Timestamp,Host,Tag,Content:String;
+begin
+ {}
+ Result:=True;
+
+ if Assigned(FOnDecodeMessage) then
+  begin
+   {Get Priority (Required)}
+   {Find Priority Start}
+   Index:=Pos(SYSLOG_PRI_START,AData);
+   if Index <> 1 then Exit;
+   Offset:=Index + 1;
+
+   {Find Priority End}
+   Index:=Pos(SYSLOG_PRI_END,AData,Offset);
+   if Index = 0 then Exit;
+
+   {Copy Priority}
+   Priority:=Copy(AData,Offset,Index - Offset);
+   if Length(Priority) = 0 then Exit;
+   Offset:=Index + 1;
+
+   {Get Facility}
+   Facility:=GetFacility(Priority);
+
+   {Get Severity}
+   Severity:=GetSeverity(Priority);
+
+   {Check Auto Detect}
+   if FAutoDetect then
+    begin
+     {Check Version}
+     if (Copy(AData,Offset,Length(SYSLOG_VERSION)) = SYSLOG_VERSION) and (Copy(AData,Offset + 1,Length(SYSLOG_SEPARATOR)) = SYSLOG_SEPARATOR) then
+      begin
+       {Assume IETF Format}
+       Result:=DoDecodeMessageExt(AAddress,AData);
+       Exit;
+      end;
+    end;
+
+   {Get Timestamp (Required)}
+   {Check Separator}
+   if Copy(AData,Offset + Length(SYSLOG_BSD_TIMESTAMP),1) <> SYSLOG_SEPARATOR then Exit;
+
+   {Copy Timestamp}
+   Timestamp:=Copy(AData,Offset,Length(SYSLOG_BSD_TIMESTAMP));
+   if Length(Timestamp) <> Length(SYSLOG_BSD_TIMESTAMP) then Exit;
+   Offset:=Offset + Length(SYSLOG_BSD_TIMESTAMP) + 1;
+
+   {Get Host (Required)}
+   {Find Separator}
+   Index:=Pos(SYSLOG_SEPARATOR,AData,Offset);
+   if Index = 0 then Exit;
+
+   {Copy Host}
+   Host:=Copy(AData,Offset,Index - Offset);
+   if Length(Host) = 0 then Exit;
+   Offset:=Index + 1;
+
+   {Get Tag (Optional)}
+   {Find Non Alpha Numeric Character}
+   Tag:='';
+   Index:=Offset;
+   while Index <= Length(AData) do
+    begin
+     if not(AData[Index] in SYSLOG_TAG_CHARS) then
+      begin
+       {Copy Tag}
+       Tag:=Copy(AData,Offset,Index - Offset);
+       Offset:=Index + 1;
+       Break;
+      end;
+
+     Inc(Index);
+    end;
+
+   {Get Content (Optional)}
+   {Copy Content}
+   Content:=Copy(AData,Offset,Length(AData));
+
+   {Call Event Handler}
+   Result:=FOnDecodeMessage(AAddress,Facility,Severity,Timestamp,Host,Tag,Content);
+  end;
+end;
+
+{==============================================================================}
+
+function TSyslogListener.DoDecodeMessageExt(const AAddress,AData:String):Boolean;
+{IETF Syslog Message Format}
+{ PRI (Required) - Enclosed by <>}
+{ VERSION (Required) - Always 1}
+{ TIMESTAMP (Optional) - Separated by space (- if not present)}
+{ HOSTNAME (Optional) - Separated by space (- if not present)}
+{ APP-NAME (Optional) - Separated by space (- if not present)}
+{ PROCID (Optional) - Separated by space (- if not present)}
+{ MSGID (Optional)- Separated by space (- if not present)}
+{ STRUCTURED-DATA (Optional) - Separated by space and enclosed by [] (- if not present)}
+{ MSG (Optional) - Separated by space (Remainder of message with or without BOM)}
+var
+ Value:String;
+ Index:Integer;
+ Offset:Integer;
+ Facility,Severity:LongWord;
+ Priority,Version,Timestamp,Hostname,Appname,ProcID,MsgID,Data:String;
+ Msg:UTF8String;
+begin
+ {}
+ Result:=True;
+
+ if Assigned(FOnDecodeMessageExt) then
+  begin
+   {Get Priority (Required)}
+   {Find PRI Start}
+   Index:=Pos(SYSLOG_PRI_START,AData);
+   if Index <> 1 then Exit;
+   Offset:=Index + 1;
+
+   {Find PRI End}
+   Index:=Pos(SYSLOG_PRI_END,AData,Offset);
+   if Index = 0 then Exit;
+
+   {Copy PRI}
+   Priority:=Copy(AData,Offset,Index - Offset);
+   if Length(Priority) = 0 then Exit;
+   Offset:=Index + 1;
+
+   {Get Facility}
+   Facility:=GetFacility(Priority);
+
+   {Get Severity}
+   Severity:=GetSeverity(Priority);
+
+   {Get Version (Required)}
+   {Check Separator}
+   if Copy(AData,Offset + Length(SYSLOG_VERSION),1) <> SYSLOG_SEPARATOR then Exit;
+
+   {Copy Version}
+   Version:=Copy(AData,Offset,Length(SYSLOG_VERSION));
+   if Version <> SYSLOG_VERSION then Exit;
+   Offset:=Offset + Length(SYSLOG_VERSION) + 1;
+
+   {Get Timestamp (Optional)}
+   Timestamp:='';
+   {Find Separator}
+   Index:=Pos(SYSLOG_SEPARATOR,AData,Offset);
+   if Index > 0 then
+    begin
+     {Copy Timestamp}
+     Value:=Copy(AData,Offset,Index - Offset);
+     if Value <> SYSLOG_NIL_VALUE then Timestamp:=Value;
+     Offset:=Index + 1;
+    end;
+
+   {Get Hostname (Optional)}
+   Hostname:='';
+   {Find Separator}
+   Index:=Pos(SYSLOG_SEPARATOR,AData,Offset);
+   if Index > 0 then
+    begin
+     {Copy Hostname}
+     Value:=Copy(AData,Offset,Index - Offset);
+     if Value <> SYSLOG_NIL_VALUE then Hostname:=Value;
+     Offset:=Index + 1;
+    end;
+
+   {Get Appname (Optional)}
+   Appname:='';
+   {Find Separator}
+   Index:=Pos(SYSLOG_SEPARATOR,AData,Offset);
+   if Index > 0 then
+    begin
+     {Copy Appname}
+     Value:=Copy(AData,Offset,Index - Offset);
+     if Value <> SYSLOG_NIL_VALUE then Appname:=Value;
+     Offset:=Index + 1;
+    end;
+
+   {Get ProcID (Optional)}
+   ProcID:='';
+   {Find Separator}
+   Index:=Pos(SYSLOG_SEPARATOR,AData,Offset);
+   if Index > 0 then
+    begin
+     {Copy ProcID}
+     Value:=Copy(AData,Offset,Index - Offset);
+     if Value <> SYSLOG_NIL_VALUE then ProcID:=Value;
+     Offset:=Index + 1;
+    end;
+
+   {Get MsgID (Optional)}
+   MsgID:='';
+   {Find Separator}
+   Index:=Pos(SYSLOG_SEPARATOR,AData,Offset);
+   if Index > 0 then
+    begin
+     {Copy MsgID}
+     Value:=Copy(AData,Offset,Index - Offset);
+     if Value <> SYSLOG_NIL_VALUE then MsgID:=Value;
+     Offset:=Index + 1;
+    end;
+
+   {Get Data (Optional)}
+   Data:='';
+   {Find Data Start}
+   Index:=Pos(SYSLOG_DATA_START,AData,Offset);
+   if Index = Offset then
+    begin
+     while Index = Offset do
+      begin
+       {Find Data End}
+       Index:=Pos(SYSLOG_DATA_END,AData,Offset + 1);
+       if Index = 0 then Break;
+
+       {Copy Data}
+       Data:=Data + Copy(AData,Offset,Index - Offset + 1);
+       Offset:=Index + 1;
+
+       {Find Data Start}
+       Index:=Pos(SYSLOG_DATA_START,AData,Offset);
+      end;
+
+     {Find Separator}
+     Index:=Pos(SYSLOG_SEPARATOR,AData,Offset);
+     if Index = Offset then Offset:=Index + 1;
+    end
+   else
+    begin
+     {Find Nil Value}
+     Index:=Pos(SYSLOG_NIL_VALUE,AData,Offset);
+     if Index = Offset then Offset:=Index + 1;
+
+     {Find Separator}
+     Index:=Pos(SYSLOG_SEPARATOR,AData,Offset);
+     if Index = Offset then Offset:=Index + 1;
+    end;
+
+   {Get Msg (Optional)}
+   {Check BOM}
+   Value:=Copy(AData,Offset,SizeOf(SYSLOG_MSG_BOM));
+   if Length(Value) = SizeOf(SYSLOG_MSG_BOM) then
+    begin
+     if CompareMem(PChar(Value),@SYSLOG_MSG_BOM,SizeOf(SYSLOG_MSG_BOM)) then
+      begin
+       Offset:=Offset + SizeOf(SYSLOG_MSG_BOM);
+      end;
+    end;
+   {Copy Msg}
+   Msg:=Copy(AData,Offset,Length(AData));
+
+   {Call Event Handler}
+   Result:=FOnDecodeMessageExt(AAddress,Facility,Severity,Version,Timestamp,Hostname,Appname,ProcID,MsgID,Data,Msg);
+  end;
+end;
+
+{==============================================================================}
+
+function TSyslogListener.GetFacility(const APriority:String):LongWord;
+var
+ Value:LongWord;
+begin
+ {}
+ {Get Value}
+ Value:=StrToIntDef(aPriority,0);
+
+ {Get Facility}
+ Result:=Value shr 3; {Value div 8}
+end;
+
+{==============================================================================}
+
+function TSyslogListener.GetSeverity(const APriority:String):LongWord;
+var
+ Value:LongWord;
+begin
+ {}
+ {Get Value}
+ Value:=StrToIntDef(aPriority,0);
+
+ {Get Severity}
+ Result:=Value and $7
 end;
 
 {==============================================================================}
@@ -3573,81 +5058,85 @@ var
  WorkBuffer:String;
  WSAData:TWSAData;
  NTPClient:TNTPClient;
- Logging:PSysLogLogging;
+ Logging:PSyslogLogging;
 begin
  {}
  {Check Initialized}
  if ServicesInitialized then Exit;
- 
+
  {Initialize Logging}
- SERVICE_LOG_ENABLED:=(SERVICE_DEFAULT_LOG_LEVEL <> SERVICE_LOG_LEVEL_NONE); 
- 
+ SERVICE_LOG_ENABLED:=(SERVICE_DEFAULT_LOG_LEVEL <> SERVICE_LOG_LEVEL_NONE);
+
  {Check Environment Variables (NTP)}
  {NTP_SERVER_DEFAULT}
  WorkBuffer:=EnvironmentGet('NTP_SERVER_DEFAULT');
- if Length(WorkBuffer) <> 0 then NTP_SERVER_DEFAULT:=WorkBuffer;
- 
+ if Length(WorkBuffer) > 0 then NTP_SERVER_DEFAULT:=WorkBuffer;
+
  {NTP_PORT_DEFAULT}
- WorkInt:=StrToIntDef(EnvironmentGet('NTP_PORT_DEFAULT'),0);
- if WorkInt > 0 then NTP_PORT_DEFAULT:=WorkInt;
- 
+ WorkInt:=StrToIntDef(EnvironmentGet('NTP_PORT_DEFAULT'),NTP_PORT_DEFAULT);
+ if WorkInt <> NTP_PORT_DEFAULT then NTP_PORT_DEFAULT:=WorkInt;
+
  {NTP_POLLING_INTERVAL}
- WorkInt:=StrToIntDef(EnvironmentGet('NTP_POLLING_INTERVAL'),0);
- if WorkInt > 0 then NTP_POLLING_INTERVAL:=WorkInt;
- 
+ WorkInt:=StrToIntDef(EnvironmentGet('NTP_POLLING_INTERVAL'),NTP_POLLING_INTERVAL);
+ if WorkInt <> NTP_POLLING_INTERVAL then NTP_POLLING_INTERVAL:=WorkInt;
+
  {NTP_POLLING_TIMEOUT}
- WorkInt:=StrToIntDef(EnvironmentGet('NTP_POLLING_TIMEOUT'),0);
- if WorkInt > 0 then NTP_POLLING_TIMEOUT:=WorkInt;
- 
+ WorkInt:=StrToIntDef(EnvironmentGet('NTP_POLLING_TIMEOUT'),NTP_POLLING_TIMEOUT);
+ if WorkInt <> NTP_POLLING_TIMEOUT then NTP_POLLING_TIMEOUT:=WorkInt;
+
  {NTP_POLLING_RETRIES}
- WorkInt:=StrToIntDef(EnvironmentGet('NTP_POLLING_RETRIES'),0);
- if WorkInt > 0 then NTP_POLLING_RETRIES:=WorkInt;
- 
+ WorkInt:=StrToIntDef(EnvironmentGet('NTP_POLLING_RETRIES'),NTP_POLLING_RETRIES);
+ if WorkInt <> NTP_POLLING_RETRIES then NTP_POLLING_RETRIES:=WorkInt;
+
  {NTP_RETRY_TIMEOUT}
- WorkInt:=StrToIntDef(EnvironmentGet('NTP_RETRY_TIMEOUT'),0);
- if WorkInt > 0 then NTP_RETRY_TIMEOUT:=WorkInt;
- 
+ WorkInt:=StrToIntDef(EnvironmentGet('NTP_RETRY_TIMEOUT'),NTP_RETRY_TIMEOUT);
+ if WorkInt <> NTP_RETRY_TIMEOUT then NTP_RETRY_TIMEOUT:=WorkInt;
+
  {NTP_AUTOSTART}
- WorkInt:=StrToIntDef(EnvironmentGet('NTP_AUTOSTART'),0);
- if WorkInt <> 0 then NTP_AUTOSTART:=True;
- 
+ WorkBool:=StrToBoolDef(EnvironmentGet('NTP_AUTOSTART'),NTP_AUTOSTART);
+ if WorkBool <> NTP_AUTOSTART then NTP_AUTOSTART:=WorkBool;
+
  {Check Environment Variables (SYSLOG)}
  {SYSLOG_BOUND_PORT}
- WorkInt:=StrToIntDef(EnvironmentGet('SYSLOG_BOUND_PORT'),0);
- if WorkInt > 0 then SYSLOG_BOUND_PORT:=WorkInt;
- 
+ WorkInt:=StrToIntDef(EnvironmentGet('SYSLOG_BOUND_PORT'),SYSLOG_BOUND_PORT);
+ if WorkInt <> SYSLOG_BOUND_PORT then SYSLOG_BOUND_PORT:=WorkInt;
+
  {SYSLOG_SERVER_DEFAULT}
  WorkBuffer:=EnvironmentGet('SYSLOG_SERVER_DEFAULT');
- if Length(WorkBuffer) <> 0 then SYSLOG_SERVER_DEFAULT:=WorkBuffer;
- 
+ if Length(WorkBuffer) > 0 then SYSLOG_SERVER_DEFAULT:=WorkBuffer;
+
  {SYSLOG_PORT_DEFAULT}
- WorkInt:=StrToIntDef(EnvironmentGet('SYSLOG_PORT_DEFAULT'),0);
- if WorkInt > 0 then SYSLOG_PORT_DEFAULT:=WorkInt;
- 
+ WorkInt:=StrToIntDef(EnvironmentGet('SYSLOG_PORT_DEFAULT'),SYSLOG_PORT_DEFAULT);
+ if WorkInt <> SYSLOG_PORT_DEFAULT then SYSLOG_PORT_DEFAULT:=WorkInt;
+
  {SYSLOG_PROTOCOL_DEFAULT}
- WorkInt:=StrToIntDef(EnvironmentGet('SYSLOG_PROTOCOL_DEFAULT'),0);
- if WorkInt > 0 then SYSLOG_PROTOCOL_DEFAULT:=WorkInt;
- 
+ WorkInt:=StrToIntDef(EnvironmentGet('SYSLOG_PROTOCOL_DEFAULT'),SYSLOG_PROTOCOL_DEFAULT);
+ if WorkInt <> SYSLOG_PROTOCOL_DEFAULT then SYSLOG_PROTOCOL_DEFAULT:=WorkInt;
+
+ {SYSLOG_BSD_FORMAT}
+ WorkBool:=StrToBoolDef(EnvironmentGet('SYSLOG_BSD_FORMAT'),SYSLOG_BSD_FORMAT);
+ if WorkBool <> SYSLOG_BSD_FORMAT then SYSLOG_BSD_FORMAT:=WorkBool;
+
  {SYSLOG_OCTET_COUNTING}
- WorkInt:=StrToIntDef(EnvironmentGet('SYSLOG_OCTET_COUNTING'),0);
- if WorkInt <> 0 then SYSLOG_OCTET_COUNTING:=True;
- 
+ WorkBool:=StrToBoolDef(EnvironmentGet('SYSLOG_OCTET_COUNTING'),SYSLOG_OCTET_COUNTING);
+ if WorkBool <> SYSLOG_OCTET_COUNTING then SYSLOG_OCTET_COUNTING:=WorkBool;
+
  {SYSLOG_BROADCAST_ENABLED}
  WorkBool:=StrToBoolDef(EnvironmentGet('SYSLOG_BROADCAST_ENABLED'),SYSLOG_BROADCAST_ENABLED);
  if WorkBool <> SYSLOG_BROADCAST_ENABLED then SYSLOG_BROADCAST_ENABLED:=WorkBool;
- 
+
  {SYSLOG_REGISTER_LOGGING}
- WorkInt:=StrToIntDef(EnvironmentGet('SYSLOG_REGISTER_LOGGING'),0);
- if WorkInt <> 0 then SYSLOG_REGISTER_LOGGING:=True;
- 
+ WorkBool:=StrToBoolDef(EnvironmentGet('SYSLOG_REGISTER_LOGGING'),SYSLOG_REGISTER_LOGGING);
+ if WorkBool <> SYSLOG_REGISTER_LOGGING then SYSLOG_REGISTER_LOGGING:=WorkBool;
+
  {SYSLOG_LOGGING_DEFAULT}
- WorkInt:=StrToIntDef(EnvironmentGet('SYSLOG_LOGGING_DEFAULT'),0);
- if WorkInt <> 0 then SYSLOG_LOGGING_DEFAULT:=True;
- 
+ WorkBool:=StrToBoolDef(EnvironmentGet('SYSLOG_LOGGING_DEFAULT'),SYSLOG_LOGGING_DEFAULT);
+ if WorkBool <> SYSLOG_LOGGING_DEFAULT then SYSLOG_LOGGING_DEFAULT:=WorkBool;
+
  {SYSLOG_AUTOSTART}
- WorkInt:=StrToIntDef(EnvironmentGet('SYSLOG_AUTOSTART'),0);
- if WorkInt <> 0 then SYSLOG_AUTOSTART:=True;
- 
+ WorkBool:=StrToBoolDef(EnvironmentGet('SYSLOG_AUTOSTART'),SYSLOG_AUTOSTART);
+ if WorkBool <> SYSLOG_AUTOSTART then SYSLOG_AUTOSTART:=WorkBool;
+
  {Check NTP Auto Start}
  if NTP_AUTOSTART then
   begin
@@ -3657,12 +5146,12 @@ begin
     begin
      {Create Client}
      NTPClient:=TNTPClient.Create;
-     
+
      {Create Timer}
      NTPClient.TimerHandle:=TimerCreateEx(NTPClient.PollInterval * MILLISECONDS_PER_SECOND,TIMER_STATE_ENABLED,TIMER_FLAG_IMMEDIATE or TIMER_FLAG_WORKER,TTimerEvent(NTPUpdateTime),NTPClient); {Rescheduled by Timer Event}
-    end; 
+    end;
   end;
- 
+
  {Check Syslog Auto Start}
  if SYSLOG_AUTOSTART then
   begin
@@ -3673,28 +5162,28 @@ begin
      {Create Logging}
      if SYSLOG_REGISTER_LOGGING then
       begin
-       Logging:=PSysLogLogging(LoggingDeviceCreateEx(SizeOf(TSysLogLogging),SYSLOG_LOGGING_DEFAULT));
+       Logging:=PSyslogLogging(LoggingDeviceCreateEx(SizeOf(TSyslogLogging),SYSLOG_LOGGING_DEFAULT));
        if Logging <> nil then
         begin
          {Update Logging}
          {Device}
-         Logging.Logging.Device.DeviceBus:=DEVICE_BUS_NONE; 
+         Logging.Logging.Device.DeviceBus:=DEVICE_BUS_NONE;
          Logging.Logging.Device.DeviceType:=LOGGING_TYPE_SYSLOG;
          Logging.Logging.Device.DeviceFlags:=LOGGING_FLAG_NONE;
          Logging.Logging.Device.DeviceData:=nil;
          Logging.Logging.Device.DeviceDescription:=SYSLOG_LOGGING_DESCRIPTION;
          {Logging}
          Logging.Logging.LoggingState:=LOGGING_STATE_DISABLED;
-         Logging.Logging.DeviceStart:=SysLogLoggingStart;
-         Logging.Logging.DeviceStop:=SysLogLoggingStop;
-         Logging.Logging.DeviceOutput:=SysLogLoggingOutput;
-         Logging.Logging.DeviceOutputEx:=SysLogLoggingOutputEx;
-         Logging.Logging.DeviceGetTarget:=SysLogLoggingGetTarget;
-         Logging.Logging.DeviceSetTarget:=SysLogLoggingSetTarget;
+         Logging.Logging.DeviceStart:=SyslogLoggingStart;
+         Logging.Logging.DeviceStop:=SyslogLoggingStop;
+         Logging.Logging.DeviceOutput:=SyslogLoggingOutput;
+         Logging.Logging.DeviceOutputEx:=SyslogLoggingOutputEx;
+         Logging.Logging.DeviceGetTarget:=SyslogLoggingGetTarget;
+         Logging.Logging.DeviceSetTarget:=SyslogLoggingSetTarget;
          Logging.Logging.Target:=SYSLOG_SERVER_DEFAULT;
-         {SysLog}
+         {Syslog}
          Logging.Client:=nil;
-         
+
          {Register Logging}
          Status:=LoggingDeviceRegister(@Logging.Logging);
          if Status = ERROR_SUCCESS then
@@ -3712,7 +5201,7 @@ begin
              LoggingDeviceDestroy(@Logging.Logging);
             end;
           end
-         else 
+         else
           begin
            if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Logging: Failed to register new syslog logging device: ' + ErrorToString(Status));
 
@@ -3720,14 +5209,14 @@ begin
            LoggingDeviceDestroy(@Logging.Logging);
           end;
         end
-       else 
+       else
         begin
          if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Logging: Failed to create new syslog logging device');
         end;
       end;
-    end; 
-  end; 
- 
+    end;
+  end;
+
  ServicesInitialized:=True;
 end;
 
@@ -3780,11 +5269,11 @@ begin
  {}
  {Check Client}
  if Client = nil then Exit;
- 
+
  {$IFDEF NTP_DEBUG}
  if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Update Time');
  {$ENDIF}
- 
+
  {Get Remote Time}
  Current:=Client.GetTime;
  if Current <> 0 then
@@ -3806,17 +5295,17 @@ begin
     begin
      {Set Time}
      ClockSetTime(Current,True);
-     
+
      if SERVICE_LOG_ENABLED then ServiceLogInfo('NTP: Setting time to ' + Client.FormatTime(Current) + ' (from ' + Client.FormatTime(Previous) + ')');
-    end; 
-   
+    end;
+
    {Set Initial Clock}
    Client.InitialClockGet:=True;
-   
+
    {$IFDEF NTP_DEBUG}
    if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Update Time: Scheduling Update in ' + IntToStr(Client.PollInterval) + ' seconds');
    {$ENDIF}
-   
+
    {Enable Timer}
    TimerEnable(Client.TimerHandle);
   end
@@ -3825,35 +5314,35 @@ begin
    {$IFDEF NTP_DEBUG}
    if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Update Time: Get Time failure');
    {$ENDIF}
-   
+
    {Check Initial Clock}
    if Client.InitialClockGet then
     begin
      {$IFDEF NTP_DEBUG}
      if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Update Time: Scheduling Update in ' + IntToStr(Client.PollInterval) + ' seconds');
      {$ENDIF}
-    
+
      {Enable Timer}
      TimerEnable(Client.TimerHandle);
     end
-   else 
+   else
     begin
      {$IFDEF NTP_DEBUG}
      if SERVICE_LOG_ENABLED then ServiceLogDebug('NTP Update Time: Scheduling Retry in ' + IntToStr(Client.RetryTimeout * Min(Client.InitialClockCount + 1,10)) + ' milliseconds');
      {$ENDIF}
-     
+
      {Increment Clock Count}
      Client.IncrementInitialClockCount;
-     
+
      {Check Retry}
      if Client.InitialClockRetry then
       begin
        {Schedule Worker}
        WorkerSchedule(Client.RetryTimeout * Min(Client.InitialClockCount,10),TWorkerTask(NTPUpdateTime),Client,nil);
-      end; 
+      end;
     end;
-  end;  
-end; 
+  end;
+end;
 
 {==============================================================================}
 {==============================================================================}
@@ -3869,31 +5358,31 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{SysLog Functions}
-function SysLogLoggingStart(Logging:PLoggingDevice):LongWord;
+{Syslog Functions}
+function SyslogLoggingStart(Logging:PLoggingDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Logging}
  if Logging = nil then Exit;
- if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
- if MutexLock(Logging.Lock) = ERROR_SUCCESS then 
+ if MutexLock(Logging.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Logging}
     if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
     {Create Client}
-    PSysLogLogging(Logging).Client:=TSysLogClient.Create;
-    if PSysLogLogging(Logging).Client = nil then Exit;
-    
+    PSyslogLogging(Logging).Client:=TSyslogClient.Create;
+    if PSyslogLogging(Logging).Client = nil then Exit;
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Logging.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -3903,33 +5392,33 @@ end;
 
 {==============================================================================}
 
-function SysLogLoggingStop(Logging:PLoggingDevice):LongWord;
+function SyslogLoggingStop(Logging:PLoggingDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Logging}
  if Logging = nil then Exit;
- if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
- if MutexLock(Logging.Lock) = ERROR_SUCCESS then 
+ if MutexLock(Logging.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Logging}
     if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
     {Check Client}
-    if PSysLogLogging(Logging).Client = nil then Exit; 
-    
+    if PSyslogLogging(Logging).Client = nil then Exit;
+
     {Destroy Client}
-    PSysLogLogging(Logging).Client.Free;
-    PSysLogLogging(Logging).Client:=nil;
-    
+    PSyslogLogging(Logging).Client.Free;
+    PSyslogLogging(Logging).Client:=nil;
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Logging.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -3939,36 +5428,36 @@ end;
 
 {==============================================================================}
 
-function SysLogLoggingOutput(Logging:PLoggingDevice;const Data:String):LongWord;
+function SyslogLoggingOutput(Logging:PLoggingDevice;const Data:String):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Logging}
  if Logging = nil then Exit;
- if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
- if MutexLock(Logging.Lock) = ERROR_SUCCESS then 
+ if MutexLock(Logging.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Logging}
     if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
     {Check Client}
-    if PSysLogLogging(Logging).Client = nil then Exit; 
-    
+    if PSyslogLogging(Logging).Client = nil then Exit;
+
     {Send Message}
-    Result:=PSysLogLogging(Logging).Client.SendMessage(LOGGING_FACILITY_USER,LOGGING_SEVERITY_INFO,'',Data);
+    Result:=PSyslogLogging(Logging).Client.SendMessage(LOGGING_FACILITY_USER,LOGGING_SEVERITY_INFO,'',Data);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Update Statistics}
     Inc(Logging.OutputCount);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Logging.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -3978,36 +5467,36 @@ end;
 
 {==============================================================================}
 
-function SysLogLoggingOutputEx(Logging:PLoggingDevice;Facility,Severity:LongWord;const Tag,Content:String):LongWord;
+function SyslogLoggingOutputEx(Logging:PLoggingDevice;Facility,Severity:LongWord;const Tag,Content:String):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Logging}
  if Logging = nil then Exit;
- if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
- if MutexLock(Logging.Lock) = ERROR_SUCCESS then 
+ if MutexLock(Logging.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Logging}
     if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
     {Check Client}
-    if PSysLogLogging(Logging).Client = nil then Exit; 
-    
+    if PSyslogLogging(Logging).Client = nil then Exit;
+
     {Send Message}
-    Result:=PSysLogLogging(Logging).Client.SendMessage(Facility,Severity,Tag,Content);
+    Result:=PSyslogLogging(Logging).Client.SendMessage(Facility,Severity,Tag,Content);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Update Statistics}
     Inc(Logging.OutputCount);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Logging.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -4017,62 +5506,62 @@ end;
 
 {==============================================================================}
 
-function SysLogLoggingGetTarget(Logging:PLoggingDevice):String;
+function SyslogLoggingGetTarget(Logging:PLoggingDevice):String;
 begin
  {}
  Result:='';
- 
+
  {Check Logging}
  if Logging = nil then Exit;
- if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
- if MutexLock(Logging.Lock) = ERROR_SUCCESS then 
+ if MutexLock(Logging.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Logging}
     if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
     {Check Client}
-    if PSysLogLogging(Logging).Client = nil then Exit; 
-    
+    if PSyslogLogging(Logging).Client = nil then Exit;
+
     {Return Result}
-    Result:=PSysLogLogging(Logging).Client.RemoteHost;
+    Result:=PSyslogLogging(Logging).Client.RemoteHost;
    finally
     MutexUnlock(Logging.Lock);
-   end; 
+   end;
   end;
 end;
 
 {==============================================================================}
 
-function SysLogLoggingSetTarget(Logging:PLoggingDevice;const Target:String):LongWord;
+function SyslogLoggingSetTarget(Logging:PLoggingDevice;const Target:String):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Logging}
  if Logging = nil then Exit;
- if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
- if MutexLock(Logging.Lock) = ERROR_SUCCESS then 
+ if MutexLock(Logging.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Logging}
     if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
     {Check Client}
-    if PSysLogLogging(Logging).Client = nil then Exit; 
-    
+    if PSyslogLogging(Logging).Client = nil then Exit;
+
     {Set Target}
-    PSysLogLogging(Logging).Client.RemoteHost:=Target;
+    PSyslogLogging(Logging).Client.RemoteHost:=Target;
     Logging.Target:=Target;
     UniqueString(Logging.Target);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Logging.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -4090,7 +5579,7 @@ begin
  {}
  {Check Level}
  if Level < SERVICE_DEFAULT_LOG_LEVEL then Exit;
- 
+
  WorkBuffer:='';
  {Check Level}
  if Level = SERVICE_LOG_LEVEL_DEBUG then
@@ -4105,10 +5594,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
   end;
- 
+
  {Add Prefix}
  WorkBuffer:=WorkBuffer + 'Services: ';
- 
+
  {Output Logging}
  LoggingOutputEx(LOGGING_FACILITY_SERVICES,LogLevelToLoggingSeverity(Level),'Services',WorkBuffer + AText);
 end;
@@ -4179,7 +5668,7 @@ begin
  {}
  Result.Seconds:=BEToN(Timestamp1.Seconds) + BEToN(Timestamp2.Seconds);
  Result.Fraction:=BEToN(Timestamp1.Fraction) + BEToN(Timestamp2.Fraction);
- 
+
  {Swap Endian}
  Result.Seconds:=NToBE(Result.Seconds);
  Result.Fraction:=NToBE(Result.Fraction);
@@ -4194,7 +5683,7 @@ begin
  {}
  Result.Seconds:=BEToN(Timestamp1.Seconds) - BEToN(Timestamp2.Seconds);
  Result.Fraction:=BEToN(Timestamp1.Fraction) - BEToN(Timestamp2.Fraction);
- 
+
  {Swap Endian}
  Result.Seconds:=NToBE(Result.Seconds);
  Result.Fraction:=NToBE(Result.Fraction);
@@ -4209,18 +5698,18 @@ begin
  {}
  Result.Seconds:=0;
  Result.Fraction:=0;
- 
+
  {Check Divisor}
  if Divisor = 0 then Exit;
- 
+
  Result.Seconds:=BEToN(Timestamp.Seconds) div Divisor;
  Result.Fraction:=BEToN(Timestamp.Fraction) div Divisor;
- 
+
  {Swap Endian}
  Result.Seconds:=NToBE(Result.Seconds);
  Result.Fraction:=NToBE(Result.Fraction);
 end;
- 
+
 {==============================================================================}
 
 function ClockTimeToNTPTimestamp(const Time:Int64):TNTPTimestamp;
@@ -4231,17 +5720,17 @@ begin
  {}
  Result.Seconds:=0;
  Result.Fraction:=0;
- 
+
  {Check Time}
  if Time < NTP_TIMESTAMP_START then Exit;
- 
+
  {Calculate Timestamp Seconds}
  Result.Seconds:=(Time - NTP_TIMESTAMP_START) div TIME_TICKS_PER_SECOND;
- 
+
  {Calculate Timestamp Fraction}
  Microseconds:=((Time - NTP_TIMESTAMP_START) mod TIME_TICKS_PER_SECOND) div TIME_TICKS_PER_MICROSECOND;
  Result.Fraction:=(Microseconds shl 32) div MICROSECONDS_PER_SECOND; {Fraction is units of 1/2^32 of a second}
- 
+
  {Change to Network order}
  Result.Seconds:=NToBE(Result.Seconds);
  Result.Fraction:=NToBE(Result.Fraction);
@@ -4258,11 +5747,11 @@ begin
  {}
  {Get Seconds}
  Seconds:=BEToN(Timestamp.Seconds); {Avoid 32 bit overflow}
- 
+
  {Get Microseconds}
  Microseconds:=BEToN(Timestamp.Fraction); {Avoid 32 bit overflow}
  Microseconds:=(Microseconds * MICROSECONDS_PER_SECOND) shr 32; {Fraction is units of 1/2^32 of a second}
- 
+
  {Calculate Time}
  Result:=(Seconds * TIME_TICKS_PER_SECOND) + (Microseconds * TIME_TICKS_PER_MICROSECOND) + NTP_TIMESTAMP_START;
 end;
@@ -4278,11 +5767,11 @@ begin
  {}
  {Get Seconds}
  Seconds:=BEToN(Timestamp.Seconds); {Avoid 32 bit overflow}
- 
+
  {Get Microseconds}
  Microseconds:=BEToN(Timestamp.Fraction); {Avoid 32 bit overflow}
  Microseconds:=(Microseconds * MICROSECONDS_PER_SECOND) shr 32; {Fraction is units of 1/2^32 of a second}
- 
+
  Result:=IntToHex(BEToN(Timestamp.Seconds),8) + ' / ' + IntToHex(BEToN(Timestamp.Fraction),8) + ' (Seconds = ' + IntToStr(Seconds) + ' / Microseconds = ' + IntToStr(Microseconds) + ')';
 end;
 
@@ -4297,17 +5786,17 @@ begin
   TELNET_COMMAND_SE:Result:='TELNET_COMMAND_SE';
   TELNET_COMMAND_NOP:Result:='TELNET_COMMAND_NOP';
   TELNET_COMMAND_DM:Result:='TELNET_COMMAND_DM';
-  TELNET_COMMAND_BRK:Result:='TELNET_COMMAND_BRK'; 
-  TELNET_COMMAND_IP:Result:='TELNET_COMMAND_IP'; 
-  TELNET_COMMAND_AO:Result:='TELNET_COMMAND_AO'; 
-  TELNET_COMMAND_AYT:Result:='TELNET_COMMAND_AYT'; 
+  TELNET_COMMAND_BRK:Result:='TELNET_COMMAND_BRK';
+  TELNET_COMMAND_IP:Result:='TELNET_COMMAND_IP';
+  TELNET_COMMAND_AO:Result:='TELNET_COMMAND_AO';
+  TELNET_COMMAND_AYT:Result:='TELNET_COMMAND_AYT';
   TELNET_COMMAND_EC:Result:='TELNET_COMMAND_EC';
-  TELNET_COMMAND_EL:Result:='TELNET_COMMAND_EL'; 
-  TELNET_COMMAND_GA:Result:='TELNET_COMMAND_GA'; 
+  TELNET_COMMAND_EL:Result:='TELNET_COMMAND_EL';
+  TELNET_COMMAND_GA:Result:='TELNET_COMMAND_GA';
   TELNET_COMMAND_SB:Result:='TELNET_COMMAND_SB';
   TELNET_COMMAND_WILL:Result:='TELNET_COMMAND_WILL';
   TELNET_COMMAND_WONT:Result:='TELNET_COMMAND_WONT';
-  TELNET_COMMAND_DO:Result:='TELNET_COMMAND_DO'; 
+  TELNET_COMMAND_DO:Result:='TELNET_COMMAND_DO';
   TELNET_COMMAND_DONT:Result:='TELNET_COMMAND_DONT';
   TELNET_COMMAND_IAC:Result:='TELNET_COMMAND_IAC';
   else
@@ -4323,11 +5812,11 @@ function TelnetCommandHasOption(Command:Byte):Boolean;
 begin
  {}
  Result:=False;
- 
+
  case Command of
   TELNET_COMMAND_WILL:Result:=True;
   TELNET_COMMAND_WONT:Result:=True;
-  TELNET_COMMAND_DO:Result:=True; 
+  TELNET_COMMAND_DO:Result:=True;
   TELNET_COMMAND_DONT:Result:=True;
  end;
 end;
@@ -4339,7 +5828,7 @@ begin
  {}
  case Option of
   TELNET_OPTION_TRANSMIT_BINARY:Result:='TELNET_OPTION_TRANSMIT_BINARY';
-  TELNET_OPTION_ECHO:Result:='TELNET_OPTION_ECHO'; 
+  TELNET_OPTION_ECHO:Result:='TELNET_OPTION_ECHO';
   TELNET_OPTION_SUPPRESS_GA:Result:='TELNET_OPTION_SUPPRESS_GA';
   TELNET_OPTION_TERMINAL_TYPE:Result:='TELNET_OPTION_TERMINAL_TYPE';
   TELNET_OPTION_WINDOW_SIZE:Result:='TELNET_OPTION_WINDOW_SIZE';
@@ -4362,24 +5851,47 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{SysLog Helper Functions}
-function FileTimeToSysLogDateTime(const AFileTime:TFileTime):String;
-var
- DateTime:TDateTime;
+{Syslog Helper Functions}
+function FileTimeToSyslogDateTime(const AFileTime:TFileTime):String; inline;
+{Convert a FileTime value to a string in the BSD syslog format}
+{FileTime: The FileTime value to convert (Assumed to be UTC)}
+{Return: The converted FileTime in BSD syslog format}
 begin
  {}
- DateTime:=FileTimeToDateTime(AFileTime); {Converted to Local}
- 
- Result:=FormatDateTime('mmm dd hh:nn:ss',DateTime);
+ Result:=FileTimeToSyslogDateTimeExt(AFileTime,SYSLOG_BSD_TIMESTAMP,False);
 end;
 
 {==============================================================================}
 
-function LoggingFacilityToSysLogFacility(Facility:LongWord):LongWord;
+function FileTimeToSyslogDateTimeExt(const AFileTime:TFileTime;const AFormat:String;AUTC:Boolean):String;
+{Convert a FileTime value to a string with the supplied syslog format}
+{FileTime: The FileTime value to convert (Assumed to be UTC)}
+{Format: The format for the converted string (See: SYSLOG_TIMESTAMP)}
+{UTC: If True then the converted string will be in UTC time, if False it will be Local time}
+{Return: The converted FileTime in syslog format}
+var
+ DateTime:TDateTime;
+begin
+ {}
+ if AUTC then
+  begin
+   DateTime:=SystemFileTimeToDateTime(AFileTime); {Retained as UTC time}
+  end
+ else
+  begin
+   DateTime:=FileTimeToDateTime(AFileTime); {Converted to Local time}
+  end;
+
+ Result:=FormatDateTime(AFormat,DateTime);
+end;
+
+{==============================================================================}
+
+function LoggingFacilityToSyslogFacility(Facility:LongWord):LongWord;
 begin
  {}
  Result:=SYSLOG_FACILITY_USER;
- 
+
  case Facility of
   LOGGING_FACILITY_KERNEL,
   LOGGING_FACILITY_PLATFORM,
@@ -4399,7 +5911,7 @@ begin
   LOGGING_FACILITY_HTTP:Result:=SYSLOG_FACILITY_SYSTEM;
   LOGGING_FACILITY_IMAP,
   LOGGING_FACILITY_POP,
-  LOGGING_FACILITY_SMTP:Result:=SYSLOG_FACILITY_MAIL; 
+  LOGGING_FACILITY_SMTP:Result:=SYSLOG_FACILITY_MAIL;
   LOGGING_FACILITY_TELNET,
   LOGGING_FACILITY_SSH,
   LOGGING_FACILITY_SHELL:Result:=SYSLOG_FACILITY_SYSTEM;
@@ -4424,18 +5936,18 @@ begin
   LOGGING_FACILITY_BLUETOOTH,
   LOGGING_FACILITY_JOYSTICK,
   LOGGING_FACILITY_HID:Result:=SYSLOG_FACILITY_SYSTEM;
-  
-  LOGGING_FACILITY_USER:Result:=SYSLOG_FACILITY_USER; 
+
+  LOGGING_FACILITY_USER:Result:=SYSLOG_FACILITY_USER;
  end;
 end;
 
 {==============================================================================}
 
-function LoggingSeverityToSysLogSeverity(Severity:LongWord):LongWord;
+function LoggingSeverityToSyslogSeverity(Severity:LongWord):LongWord;
 begin
  {}
  Result:=SYSLOG_SEVERITY_INFORMATION;
- 
+
  case Severity of
   LOGGING_SEVERITY_ERROR:Result:=SYSLOG_SEVERITY_ERROR;
   LOGGING_SEVERITY_WARN:Result:=SYSLOG_SEVERITY_WARNING;
@@ -4451,7 +5963,7 @@ initialization
  ServicesInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

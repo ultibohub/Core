@@ -47,11 +47,29 @@ Big Integer Arithmetic
 {$inline on}      {Allow use of Inline procedures}
 {$pointermath on} {Allow pointer arithmetic}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit BigInt;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,SysUtils;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
@@ -169,7 +187,7 @@ function StringToBI(Context:PBigIntContext;const Value:String):PBigInt;
 
 {==============================================================================}
 {==============================================================================}
- 
+
 implementation
 
 {==============================================================================}
@@ -757,12 +775,12 @@ begin
  {Allocate Context}
  Context:=AllocMem(SizeOf(TBigIntContext));
 
- {Allocate Radix} 
+ {Allocate Radix}
  Context.BIRadix:=BIAllocate(Context,2);
  Context.BIRadix.Components[0]:=0;
  Context.BIRadix.Components[1]:=1;
  BIPermanent(Context.BIRadix);
- 
+
  Result:=Context;
 end;
 
@@ -827,8 +845,8 @@ begin
 
    Exit;
   end;
- 
- {Clear Permanent} 
+
+ {Clear Permanent}
  BI.References:=1;
 end;
 
@@ -843,7 +861,7 @@ begin
  {}
  {Check Free List}
  if Context.FreeList = nil then Exit;
- 
+
  {Free Cache}
  Next:=Context.FreeList;
  while Next <> nil do
@@ -851,7 +869,7 @@ begin
    {Get Next}
    Current:=Next;
    Next:=Current.Next;
-   
+
    {Free Components}
    FreeMem(Current.Components);
 
@@ -909,7 +927,7 @@ begin
 
  {Increment references}
  if BI.References <> BIGINT_PERMANENT then Inc(BI.References);
-  
+
  Result:=BI;
 end;
 
@@ -1050,14 +1068,14 @@ var
  PA:PComponent;
  PB:PComponent;
  Carry:TComponent;
- 
+
  SL:TComponent;
  RL:TComponent;
  CY1:TComponent;
 begin
  {}
  Carry:=0;
- 
+
  if not BICheck(BIA^) or not BICheck(BIB^) then
   begin
    Result:=nil;
@@ -1067,28 +1085,28 @@ begin
  N:=Max(BIA.Size,BIB.Size);
  BIAddComponents(BIA,N + 1);
  BIAddComponents(BIB,N);
- 
+
  PA:=BIA.Components;
  PB:=BIB.Components;
- 
+
  repeat
   SL:=PA^ + PB^;
   Inc(PB);
-  
+
   RL:=SL + Carry;
   if SL < PA^ then CY1:=1 else CY1:=0;
   if RL < SL then Carry:=CY1 or 1 else Carry:=CY1 or 0;
-  
+
   PA^:=RL;
   Inc(PA);
-  
+
   Dec(N);
  until N = 0;
- 
+
  PA^:=Carry; {Do overflow}
  BIFree(Context,BIB);
 
- Result:=BITrim(BIA); 
+ Result:=BITrim(BIA);
 end;
 
 {==============================================================================}
@@ -1121,21 +1139,21 @@ begin
 
  N:=BIA.Size;
  BIAddComponents(BIB,N);
- 
+
  PA:=BIA.Components;
  PB:=BIB.Components;
- 
- repeat 
+
+ repeat
   SL:=PA^ - PB^;
   Inc(PB);
-  
+
   RL:=SL - Carry;
   if SL > PA^ then CY1:=1 else CY1:=0;
   if RL > SL then Carry:=CY1 or 1 else Carry:=CY1 or 0;
 
   PA^:=RL;
   Inc(PA);
-  
+
   Dec(N);
  until N = 0;
 
@@ -1143,7 +1161,7 @@ begin
 
  BIFree(Context,BITrim(BIB)); {Put BIB back to the way it was}
 
- Result:=BITrim(BIA); 
+ Result:=BITrim(BIA);
 end;
 
 {==============================================================================}

@@ -1,7 +1,7 @@
 {
 Ultibo utils unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -37,11 +37,35 @@ Ultibo Utils
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit UltiboUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Threads,Unicode,Security,Ultibo,SysUtils,Classes;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Threads,
+  Core.Unicode,
+  Core.Security,
+  Core.Ultibo,
+  System.SysUtils,
+  System.Classes;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Threads,
+  Unicode,
+  Security,
+  Ultibo,
+  SysUtils,
+  Classes;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
@@ -54,11 +78,11 @@ const
  BOOLSTR_TRUEFALSE = 0;
  BOOLSTR_YESNO = 1;
  BOOLSTR_ZEROONE = 2;
-  
+
 const
  {Email Constants}
  InvalidEmailChars:set of char = [' ','!','"','#','$','%','(',')',',','/',':',';','<','>','[',']','\','`','|'];
-  
+
 {==============================================================================}
 {Ultibo Util types}
 {type}
@@ -71,7 +95,7 @@ const
 {Initialization Functions}
 
 {==============================================================================}
-{String Functions} 
+{String Functions}
 function GetFirstWord(var AValue:String;const ADelimiter:String):String;
 function GetLastWord(var AValue:String;const ADelimiter:String):String;
 
@@ -129,13 +153,13 @@ function StripLeadingSlash(const AFilePath:String):String;
 
 function AddTrailingDot(const AValue:String):String;
 function AddLeadingDot(const AValue:String):String;
-function StripTrailingDot(const AValue:String):String; 
-function StripLeadingDot(const AValue:String):String; 
+function StripTrailingDot(const AValue:String):String;
+function StripLeadingDot(const AValue:String):String;
 
 function AddTrailingChar(const AFilePath,ASlashChar:String):String;
-function AddLeadingChar(const AFilePath,ASlashChar:String):String; 
+function AddLeadingChar(const AFilePath,ASlashChar:String):String;
 function StripTrailingChar(const AFilePath,ASlashChar:String):String;
-function StripLeadingChar(const AFilePath,ASlashChar:String):String; 
+function StripLeadingChar(const AFilePath,ASlashChar:String):String;
 
 function IsWildcard(const Value:String):Boolean;
 function UniqueName(const BaseName:String;CurrentNames:TStrings):String;
@@ -161,7 +185,7 @@ function DuplicateMultiString(AString:PAnsiChar):PAnsiChar;
 function DuplicateMultiWideString(AString:PWideChar):PWideChar;
 
 {==============================================================================}
-{File Functions} 
+{File Functions}
 function IsRootDirectory(const Path:String):Boolean;
 function IsEightDotThree(const FileName:String):Boolean;
 function TruncateLongName(const FileName:String):String;
@@ -173,7 +197,7 @@ function GetFileInfo(const FileName:String;var FileTime,FileSize:Integer;var Fil
 function CompareFileInfo(const SourceFile,DestFile:String):Boolean;
 
 {==============================================================================}
-{Date Functions} 
+{Date Functions}
 function IsCurrentDate(ADate:TDateTime):Boolean;
 function IsCurrentTime(ATime:TDateTime):Boolean;
 function IsCurrentMinute(AMinute:Integer):Boolean;
@@ -209,13 +233,13 @@ function LongMonthToMonth(const ALongMonth:String):LongWord;
 function TwoDigitYearToYear(AYear:LongWord):LongWord;
 
 {==============================================================================}
-{Time Functions} 
+{Time Functions}
 
 {==============================================================================}
-{Numeric Functions} 
+{Numeric Functions}
 
 {==============================================================================}
-{Network Functions} 
+{Network Functions}
 function CheckEmailAddress(const EmailAddress:String):Boolean;
 function StripEmailAddress(const EmailAddress:String):String;
 function FormatEmailAddress(const FullName,EmailAddress:String):String;
@@ -224,7 +248,7 @@ function GetUserFromEmail(const EmailAddress:String):String;
 function GetDomainFromEmail(const EmailAddress:String):String;
 
 {==============================================================================}
-{Misc Functions} 
+{Misc Functions}
 function CloneSid(ASid:Pointer):Pointer;
 function CloneDescriptor(ADescriptor:Pointer):Pointer;
 
@@ -235,7 +259,7 @@ function GenerateSidHash(ASid:Pointer;ASize:LongWord):LongWord;
 function GenerateDescriptorHash(ADescriptor:Pointer;ASize:LongWord):LongWord;
 
 {==============================================================================}
-{Helper Functions} 
+{Helper Functions}
 
 {==============================================================================}
 {==============================================================================}
@@ -248,7 +272,7 @@ implementation
 
 {==============================================================================}
 {==============================================================================}
-{String Functions} 
+{String Functions}
 function GetFirstWord(var AValue:String;const ADelimiter:String):String;
 var
  PosIdx:Integer;
@@ -261,9 +285,9 @@ begin
    AValue:='';
   end
  else
-  begin	
+  begin
    Result:=Copy(AValue,1,PosIdx - 1);
-   Delete(AValue,1,PosIdx + (Length(ADelimiter) - 1));		
+   Delete(AValue,1,PosIdx + (Length(ADelimiter) - 1));
   end;
 end;
 
@@ -282,10 +306,10 @@ function PadString(const AValue:String;AChar:Char;ALength:Integer):String;
 begin
  {}
  Result:=AValue;
- 
+
  if ALength <= 0 then Exit;
  if Length(AValue) >= ALength then Exit;
- 
+
  Result:=Result + StringOfChar(AChar,ALength - Length(AValue));
 end;
 
@@ -296,7 +320,7 @@ function StrOfChar(const AValue:String;ALength:Integer):String;
 begin
  {}
  Result:='';
- 
+
  while Length(Result) < ALength do
   begin
    Result:=Result + AValue;
@@ -309,9 +333,9 @@ function StrToBool(const AValue:String):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if Trim(AValue) = '' then Exit;
- 
+
  if Uppercase(Trim(AValue)) = 'TRUE' then
   begin
    Result:=True;
@@ -350,7 +374,7 @@ begin
     begin
      Result:='0' + Result;
     end;
-    
+
    Result:='-' + Result;
   end;
 end;
@@ -407,7 +431,7 @@ function InFixStr(const Value:String):String;
 begin
  {}
  Result:=Trim(Value);
- 
+
  if Length(Result) > 0 then
   begin
    if Length(Result) > 1 then
@@ -496,7 +520,7 @@ begin
   begin
    Delete(WorkBuffer,Pos(' ',WorkBuffer),1);
   end;
-  
+
  Result:=WorkBuffer;
 end;
 
@@ -517,7 +541,7 @@ begin
    Inc(WorkCount);
    Delete(WorkBuffer,1,Pos(' ',WorkBuffer));
   end;
-  
+
  Result:=WorkCount;
 end;
 
@@ -533,7 +557,7 @@ begin
   begin
    Delete(WorkBuffer,Pos('  ',WorkBuffer),1);
   end;
-  
+
  Result:=WorkBuffer;
 end;
 
@@ -563,7 +587,7 @@ begin
      NextSpace:=Pos(' ',InBuffer);
     end;
   end;
-  
+
  Result:=OutBuffer + InBuffer;
 end;
 
@@ -573,7 +597,7 @@ function StringFill(const Text:String;Count:Integer):String;
 begin
  {}
  Result:=Text;
- 
+
  while Length(Result) < Count do
   begin
    Result:=Result + ' ';
@@ -602,7 +626,7 @@ begin
      Delete(WorkBuffer,Length(WorkBuffer),1);
     end
   end;
-  
+
  Result:=WorkBuffer;
 end;
 
@@ -628,7 +652,7 @@ begin
      Delete(WorkBuffer,Length(WorkBuffer),1);
     end
   end;
-  
+
  Result:=WorkBuffer;
 end;
 
@@ -654,7 +678,7 @@ begin
      Delete(WorkBuffer,Length(WorkBuffer),1);
     end
   end;
-  
+
  Result:=WorkBuffer;
 end;
 
@@ -680,7 +704,7 @@ begin
      Delete(WorkBuffer,Length(WorkBuffer),1);
     end
   end;
-  
+
  Result:=WorkBuffer;
 end;
 
@@ -706,7 +730,7 @@ begin
      Delete(WorkBuffer,Length(WorkBuffer),1);
     end
   end;
-  
+
  Result:=WorkBuffer;
 end;
 
@@ -718,14 +742,14 @@ var
 begin
  {}
  Result:=False;
- 
+
  if Length(AValue) = 0 then Exit;
- 
+
  for Count:=1 to Length(AValue) do
   begin
    if not(AValue[Count] in ['a'..'z','A'..'Z']) then Exit;
   end;
-  
+
  Result:=True;
 end;
 
@@ -737,14 +761,14 @@ var
 begin
  {}
  Result:=False;
- 
+
  if Length(AValue) = 0 then Exit;
- 
+
  for Count:=1 to Length(AValue) do
   begin
    if not(AValue[Count] in ['0'..'9']) then Exit;
   end;
-  
+
  Result:=True;
 end;
 
@@ -756,7 +780,7 @@ var
 begin
  {}
  Result:=Trim(Value);
- 
+
  if Length(Result) > 0 then
   begin
    for Count:=1 to Length(Result) do
@@ -766,7 +790,7 @@ begin
        Result[Count]:=' ';
       end;
     end;
-    
+
    Result:=RemoveSpaces(Result);
   end;
 end;
@@ -972,7 +996,7 @@ begin
      WorkBuffer[Count]:=AReplace;
     end;
   end;
-  
+
  Result:=WorkBuffer;
 end;
 
@@ -994,7 +1018,7 @@ begin
   begin
    LongKey:=LongKey + AKey;
   end;
-  
+
  {XOR each Byte in the String using the same byte in the LongKey}
  for Count:=1 to Length(AValue) do
   begin
@@ -1027,9 +1051,9 @@ begin
  {}
  if AStrings = nil then Exit;
  if Length(ADelimiter) = 0 then Exit; {Dont Trim Space is Allowed}
- 
+
  AString:='';
- 
+
  for Count:=0 to AStrings.Count - 1 do
   begin
    AString:=AString + AStrings.Strings[Count];
@@ -1051,18 +1075,18 @@ begin
  if Length(AString) = 0 then Exit;
  if AStrings = nil then Exit;
  if Length(ADelimiter) = 0 then Exit; {Dont Trim Space is Allowed}
- 
+
  WorkBuffer := AString;
- 
+
  PosIdx:=Pos(ADelimiter,WorkBuffer);
  while PosIdx > 0 do
   begin
    AStrings.Add(Copy(WorkBuffer,1,PosIdx - 1));
    Delete(WorkBuffer,1,PosIdx);
-   
+
    PosIdx:=Pos(ADelimiter,WorkBuffer);
   end;
-  
+
  AStrings.Add(WorkBuffer);
 end;
 
@@ -1077,7 +1101,7 @@ var
 begin
  {}
  if ADelimiter = '' then Exit; {Trim(ADelimiter)} {Dont Trim Space is Allowed}
- 
+
  TempStrings:=TStringList.Create;
  try
   UndelimitString(AString,TempStrings,ADelimiter);
@@ -1174,7 +1198,7 @@ begin
        end;
      end;
    end;
-   
+
   if Length(StringBuffer) > 0 then AStrings.Add(StringBuffer);
  finally
   TempStrings.Free;
@@ -1189,7 +1213,7 @@ var
 begin
  {}
  WorkBuffer:=Trim(AFilePath);
- 
+
  if Length(WorkBuffer) > 0 then
   begin
    if WorkBuffer[1] <> '\' then
@@ -1201,7 +1225,7 @@ begin
      WorkBuffer:=WorkBuffer + '\';
     end;
   end;
-  
+
  Result:=WorkBuffer;
 end;
 
@@ -1213,7 +1237,7 @@ var
 begin
  {}
  WorkBuffer:=Trim(AFilePath);
- 
+
  if Length(WorkBuffer) > 0 then
   begin
    if WorkBuffer[Length(WorkBuffer)] <> '\' then
@@ -1224,8 +1248,8 @@ begin
  else
   begin
    {WorkBuffer:='\';} {Do not add if blank}
-  end;  
-  
+  end;
+
  Result:=WorkBuffer;
 end;
 
@@ -1237,7 +1261,7 @@ var
 begin
  {}
  WorkBuffer:=Trim(AFilePath);
- 
+
  if Length(WorkBuffer) > 0 then
   begin
    if WorkBuffer[1] <> '\' then
@@ -1249,7 +1273,7 @@ begin
   begin
    {WorkBuffer:='\';} {Do not add if blank}
   end;
-  
+
  Result:=WorkBuffer;
 end;
 
@@ -1261,7 +1285,7 @@ var
 begin
  {}
  WorkBuffer:=Trim(AFilePath);
- 
+
  if Length(WorkBuffer) > 0 then
   begin
    if WorkBuffer[1] = '\' then
@@ -1276,7 +1300,7 @@ begin
       end;
     end;
   end;
-  
+
  Result:=WorkBuffer;
 end;
 
@@ -1288,7 +1312,7 @@ var
 begin
  {}
  WorkBuffer:=Trim(AFilePath);
- 
+
  if Length(WorkBuffer) > 0 then
   begin
    if WorkBuffer[Length(WorkBuffer)] = '\' then
@@ -1308,7 +1332,7 @@ var
 begin
  {}
  WorkBuffer:=Trim(AFilePath);
- 
+
  if Length(WorkBuffer) > 0 then
   begin
    if WorkBuffer[1] = '\' then
@@ -1316,7 +1340,7 @@ begin
      Delete(WorkBuffer,1,1);
     end;
   end;
-  
+
  Result:=WorkBuffer;
 end;
 
@@ -1328,7 +1352,7 @@ var
 begin
  {}
  WorkBuffer:=Trim(AValue);
- 
+
  if Length(WorkBuffer) > 0 then
   begin
    if WorkBuffer[Length(WorkBuffer)] <> '.' then
@@ -1340,7 +1364,7 @@ begin
   begin
    {WorkBuffer:='.';} {Do not add if blank}
   end;
-  
+
  Result:=WorkBuffer;
 end;
 
@@ -1352,7 +1376,7 @@ var
 begin
  {}
  WorkBuffer:=Trim(AValue);
- 
+
  if Length(WorkBuffer) > 0 then
   begin
    if WorkBuffer[1] <> '.' then
@@ -1364,7 +1388,7 @@ begin
   begin
    {WorkBuffer:='.';} {Do not add if blank}
   end;
-  
+
  Result:=WorkBuffer;
 end;
 
@@ -1376,7 +1400,7 @@ var
 begin
  {}
  WorkBuffer:=Trim(AValue);
- 
+
  if Length(WorkBuffer) > 0 then
   begin
    if WorkBuffer[Length(WorkBuffer)] = '.' then
@@ -1384,7 +1408,7 @@ begin
      Delete(WorkBuffer,Length(WorkBuffer),1);
     end;
   end;
-  
+
  Result:=WorkBuffer;
 end;
 
@@ -1396,7 +1420,7 @@ var
 begin
  {}
  WorkBuffer:=Trim(AValue);
- 
+
  if Length(WorkBuffer) > 0 then
   begin
    if WorkBuffer[1] = '.' then
@@ -1404,7 +1428,7 @@ begin
      Delete(WorkBuffer,1,1);
     end;
   end;
-  
+
  Result:=WorkBuffer;
 end;
 
@@ -1416,7 +1440,7 @@ var
 begin
  {}
  WorkBuffer:=Trim(AFilePath);
- 
+
  if Length(WorkBuffer) > 0 then
   begin
    if WorkBuffer[Length(WorkBuffer)] <> ASlashChar then
@@ -1428,7 +1452,7 @@ begin
   begin
    {WorkBuffer:=ASlashChar;} {Do not add if blank}
   end;
-  
+
  Result:=WorkBuffer;
 end;
 
@@ -1440,7 +1464,7 @@ var
 begin
  {}
  WorkBuffer:=Trim(AFilePath);
- 
+
  if Length(WorkBuffer) > 0 then
   begin
    if WorkBuffer[1] <> ASlashChar then
@@ -1452,7 +1476,7 @@ begin
   begin
    {WorkBuffer:=ASlashChar;} {Do not add if blank}
   end;
-  
+
  Result:=WorkBuffer;
 end;
 
@@ -1464,7 +1488,7 @@ var
 begin
  {}
  WorkBuffer:=Trim(AFilePath);
- 
+
  if Length(WorkBuffer) > 0 then
   begin
    if WorkBuffer[Length(WorkBuffer)] = ASlashChar then
@@ -1472,7 +1496,7 @@ begin
      Delete(WorkBuffer,Length(WorkBuffer),1);
     end;
   end;
-  
+
  Result:=WorkBuffer;
 end;
 
@@ -1484,7 +1508,7 @@ var
 begin
  {}
  WorkBuffer:=Trim(AFilePath);
- 
+
  if Length(WorkBuffer) > 0 then
   begin
    if WorkBuffer[1] = ASlashChar then
@@ -1492,7 +1516,7 @@ begin
      Delete(WorkBuffer,1,1);
     end;
   end;
-  
+
  Result:=WorkBuffer;
 end;
 
@@ -1502,9 +1526,9 @@ function IsWildcard(const Value:String):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if (Pos('*',Value) = 0) and (Pos('?',Value) = 0) then Exit;
- 
+
  Result:=True;
 end;
 
@@ -1523,7 +1547,7 @@ begin
    Inc(Count);
    WorkBuffer:=BaseName + ' ' + IntToStr(Count);
   end;
-  
+
  Result:=WorkBuffer;
 end;
 
@@ -1539,11 +1563,11 @@ var
 begin
  {}
  //To Do //This routine is not Unicode compliant
- 
+
  Result:=False;
- 
+
  if Length(Name) = 0 then Exit;
- if Length(Wildcard) = 0 then Exit; 
+ if Length(Wildcard) = 0 then Exit;
 
  WildPos:=1;
  NamePos:=1;
@@ -1665,7 +1689,7 @@ var
 begin
  {}
  Result:=ACommandLine; {Default to command}
- 
+
  if Length(ACommandLine) <> 0 then
   begin
    {Check for Quotes}
@@ -1699,7 +1723,7 @@ var
 begin
  {}
  Result:=''; {Default to nothing}
- 
+
  if Length(ACommandLine) <> 0 then
   begin
    {Check for Quotes}
@@ -1743,19 +1767,19 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get Name}
  Name:=ParamStr(0);
- 
+
  {Setup Defaults (Include argv[0])}
- AArgC:=1; 
+ AArgC:=1;
  Size:=(Length(Name) + 1) * SizeOf(AnsiChar);
- 
+
  Params:=TStringList.Create;
  try
   {Get Params}
   UndelimitString(ACommandLine,Params,' ');
-  
+
   {Check Params}
   for Counter:=0 to Params.Count - 1 do
    begin
@@ -1766,7 +1790,7 @@ begin
       Inc(Size,(Length(Param) + 1) * SizeOf(AnsiChar));
      end;
    end;
-   
+
   {Allocate Command Line}
   Buffer:=AllocMem(((AArgC + 1) * SizeOf(PAnsiChar)) + Size);
 
@@ -1776,7 +1800,7 @@ begin
   Buffer[Index]:=PAnsiChar(Pointer(Buffer) + Offset);
   StrLCopy(Buffer[Index],PAnsiChar(AnsiString(Name)),Length(Name));
   Inc(Offset,(Length(Name) + 1) * SizeOf(AnsiChar));
-  
+
   {Copy Params}
   for Counter:=0 to Params.Count - 1 do
    begin
@@ -1789,12 +1813,12 @@ begin
       Inc(Offset,(Length(Param) + 1) * SizeOf(AnsiChar));
      end;
    end;
-  
-  {Add Final Null}  
+
+  {Add Final Null}
   Inc(Index);
   Buffer[Index]:=nil;
-  
-  Result:=Buffer; 
+
+  Result:=Buffer;
  finally
   Params.Free;
  end;
@@ -1809,7 +1833,7 @@ begin
  {}
  {Check ArgV}
  if AArgV = nil then Exit;
- 
+
  {Free ArgV}
  FreeMem(AArgV);
 end;
@@ -1905,7 +1929,7 @@ begin
       Inc(Size,SizeOf(Byte));
      end;
    end;
-   
+
   {Copy Strings}
   Offset:=0;
   if Size > 1 then
@@ -1948,7 +1972,7 @@ begin
   Size:=1;
   Offset:=0;
   Result:=AllocMem(Size);
-  
+
   {Copy Strings}
   WorkBuffer:=AString;
   PosIdx:=Pos(ADelimiter,WorkBuffer);
@@ -1999,7 +2023,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if AString = nil then Exit;
 
  Len:=(lstrlenW(AString) + 1) * SizeOf(WCHAR);
@@ -2019,7 +2043,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if AString = nil then Exit;
 
  {Calculate Size}
@@ -2031,7 +2055,7 @@ begin
      Inc(Size,SizeOf(Byte));
     end;
   end;
-  
+
  {Duplicate String}
  Result:=PAnsiChar(LocalAlloc(LMEM_FIXED,Size + SizeOf(Byte)));
  if (Result <> nil) then
@@ -2049,7 +2073,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if AString = nil then Exit;
 
  {Calculate Size}
@@ -2061,7 +2085,7 @@ begin
      Inc(Size,SizeOf(Word));
     end;
   end;
-  
+
  {Duplicate String}
  Result:=PWideChar(LocalAlloc(LMEM_FIXED,Size + SizeOf(Word)));
  if (Result <> nil) then
@@ -2072,7 +2096,7 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{File Functions} 
+{File Functions}
 function IsRootDirectory(const Path:String):Boolean;
 var
  WorkBuffer:String;
@@ -2080,9 +2104,9 @@ var
 begin
  {}
  //To Do //Use the GetPathType etc functions and GetPathRoot etc //Need to build these into UltiboUtils ?
- 
+
  Result:=False;
- 
+
  WorkBuffer:=Trim(Path);
  if Length(WorkBuffer) > 0 then
   begin
@@ -2132,7 +2156,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check for zero length or series of spaces}
  if Length(Trim(FileName)) = 0 then Exit;
 
@@ -2206,9 +2230,9 @@ var
 begin
  {}
  //To Do //This needs to be rewritten somewhat - done a little already
- 
+
  Result:='';
- 
+
  {Check for Empty String or Series of Spaces}
  WorkShort:=TrimRight(Uppercase(FileName));
  if Length(WorkShort) = 0 then Exit;
@@ -2369,7 +2393,7 @@ var
 begin
  {}
  //To Do //This needs to be rewritten somewhat - done a little already
- 
+
  if not UseHash then
   begin
    Result:=GenerateShortName(FileName,AliasCount);
@@ -2377,7 +2401,7 @@ begin
  else
   begin
    Result:='';
-   
+
    {Check for Empty String or Series of Spaces}
    WorkShort:=TrimRight(Uppercase(FileName));
    if Length(WorkShort) = 0 then Exit;
@@ -2526,11 +2550,11 @@ begin
  {}
  //To Do //This needs to be rewritten somewhat
  //To Do //This routine is not Unicode compliant
- 
+
  Result:=False;
- 
+
  if Length(FileName) = 0 then Exit;
- if Length(Wildcard) = 0 then Exit; 
+ if Length(Wildcard) = 0 then Exit;
 
  WildPos:=1;
  FilePos:=1;
@@ -2663,10 +2687,10 @@ begin
      FileTime:=SearchRec.Time;
      FileSize:=SearchRec.Size;
      FileAttr:=SearchRec.Attr;
-     
+
      Result:=True;
     end;
-    
+
    FindClose(SearchRec);
   end;
 end;
@@ -2680,7 +2704,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if Trim(DestFile) = '' then Exit;
  if Trim(SourceFile) = '' then Exit;
 
@@ -2695,20 +2719,20 @@ begin
          if (SourceSearchRec.Time = DestSearchRec.Time) and (SourceSearchRec.Size = DestSearchRec.Size) and (SourceSearchRec.Attr = DestSearchRec.Attr) then
           begin
            Result:=True;
-          end; 
+          end;
         end;
-        
+
        FindClose(DestSearchRec);
       end;
     end;
-    
+
    FindClose(SourceSearchRec);
   end;
 end;
 
 {==============================================================================}
 {==============================================================================}
-{Date Functions} 
+{Date Functions}
 function IsCurrentDate(ADate:TDateTime):Boolean;
 var
  ADay,AMonth,AYear:Word;
@@ -2716,7 +2740,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  DecodeDate(ADate,AYear,AMonth,ADay);
  DecodeDate(Date,BYear,BMonth,BDay);
  if AYear = BYear then
@@ -2740,7 +2764,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  DecodeTime(ATime,AHour,AMinute,ASec,AMSec);
  DecodeTime(Time,BHour,BMinute,BSec,BMSec);
  if AHour = BHour then
@@ -2760,7 +2784,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  DecodeTime(Time,BHour,BMinute,BSec,BMSec);
  if AMinute = BMinute then
   begin
@@ -2776,7 +2800,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  DecodeTime(Time,BHour,BMinute,BSec,BMSec);
  if AHour = BHour then
   begin
@@ -2792,7 +2816,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  BWeekDay:=DayOfWeek(Date);
  if AWeekDay = BWeekDay then
   begin
@@ -2808,7 +2832,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  DecodeDate(Date,BYear,BMonth,BDay);
  if ADay = BDay then
   begin
@@ -2824,7 +2848,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  DecodeDate(Date,BYear,BMonth,BDay);
  if AMonth = BMonth then
   begin
@@ -2840,7 +2864,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  DecodeDate(Date,BYear,BMonth,BDay);
  if AYear = BYear then
   begin
@@ -2858,7 +2882,7 @@ begin
  Result:=0;
  try
   DecodeTime(ADateTime,BHour,BMinute,BSec,BMSec);
-  
+
   Result:=BMinute;
  except
   {}
@@ -2875,7 +2899,7 @@ begin
  Result:=0;
  try
   DecodeTime(ADateTime,BHour,BMinute,BSec,BMSec);
-  
+
   Result:=BHour;
  except
   {}
@@ -2905,7 +2929,7 @@ begin
  Result:=0;
  try
   DecodeDate(ADateTime,BYear,BMonth,BDay);
-  
+
   Result:=BDay;
  except
   {}
@@ -2922,7 +2946,7 @@ begin
  Result:=0;
  try
   DecodeDate(ADateTime,BYear,BMonth,BDay);
-  
+
   Result:=BMonth;
  except
   {}
@@ -2939,7 +2963,7 @@ begin
  Result:=0;
  try
   DecodeDate(ADateTime,BYear,BMonth,BDay);
-  
+
   Result:=BYear;
  except
   {}
@@ -2963,7 +2987,7 @@ begin
   ADays:=ATimeStamp.Date - BTimeStamp.Date;
   ASeconds:=(ATimeStamp.Time div 1000);
   BSeconds:=(BTimeStamp.Time div 1000);
-  
+
   Result:=(ADays * 86400) + (ASeconds - BSeconds);
  except
   {}
@@ -2987,7 +3011,7 @@ begin
   ADays:=ATimeStamp.Date - BTimeStamp.Date;
   AMinutes:=((ATimeStamp.Time div 1000) div 60);
   BMinutes:=((BTimeStamp.Time div 1000) div 60);
-  
+
   Result:=(ADays * 1440) + (AMinutes - BMinutes);
  except
   {}
@@ -3011,7 +3035,7 @@ begin
   ADays:=ATimeStamp.Date - BTimeStamp.Date;
   AHours:=(((ATimeStamp.Time div 1000) div 60) div 60);
   BHours:=(((BTimeStamp.Time div 1000) div 60) div 60);
-  
+
   Result:=(ADays * 24) + (AHours - BHours);
  except
   {}
@@ -3030,7 +3054,7 @@ begin
  try
   ATimeStamp:=DateTimeToTimeStamp(Now);
   BTimeStamp:=DateTimeToTimeStamp(ADateTime);
-  
+
   Result:=ATimeStamp.Date - BTimeStamp.Date;
  except
   {}
@@ -3049,7 +3073,7 @@ begin
  try
   DecodeDate(Date,AYear,AMonth,ADay);
   DecodeDate(ADateTime,BYear,BMonth,BDay);
-  
+
   Result:=((AYear * 12) + AMonth) - ((BYear * 12) + BMonth);
  except
   {}
@@ -3068,7 +3092,7 @@ begin
  try
   DecodeDate(Date,AYear,AMonth,ADay);
   DecodeDate(ADateTime,BYear,BMonth,BDay);
-  
+
   Result:=AYear - BYear;
  except
   {}
@@ -3086,7 +3110,7 @@ begin
  Result:=0;
  try
   DecodeDate(ADateTime,AYear,AMonth,ADay);
-  
+
   ADays:=0;
   case AMonth of
    1:ADays:=0;
@@ -3102,12 +3126,12 @@ begin
    11:ADays:=204;
    12:ADays:=334;
   end;
-  
+
   if (IsLeapYear(AYear)) and (AMonth > 2) then
    begin
     ADays:=ADays + 1;
    end;
-   
+
   Result:=ADays + ADay;
  except
   {}
@@ -3126,12 +3150,12 @@ begin
   if ADateTime < 1 then Exit;
   if ASeconds < 1 then Exit;
   if ASeconds > 86399 then ASeconds:=86399; {Maximum 23:59:59}
-  
+
   Hours:=ASeconds div 3600;
   ASeconds:=ASeconds mod 3600;
   Minutes:=ASeconds div 60;
   Seconds:=ASeconds mod 60;
-  
+
   Result:=(Result - EncodeTime(Hours,Minutes,Seconds,0));
  except
   {}
@@ -3153,7 +3177,7 @@ function NormaliseDate(const ADate:String):String;
 begin
  {}
  Result:=RemoveSpaces(ADate);
- 
+
  if DefaultFormatSettings.DateSeparator <> '/' then
   begin
    Result:=ReplaceChar(Result,'/',DefaultFormatSettings.DateSeparator);
@@ -3192,7 +3216,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  for Count:=1 to 12 do
   begin
    if Uppercase(DefaultFormatSettings.ShortMonthNames[Count]) = Uppercase(AShortMonth) then
@@ -3211,7 +3235,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  for Count:=1 to 12 do
   begin
    if Uppercase(DefaultFormatSettings.LongMonthNames[Count]) = Uppercase(ALongMonth) then
@@ -3231,40 +3255,40 @@ var
 begin
  {}
  Result:=AYear;
- 
+
  {Check Year}
  if AYear > 99 then Exit;
- 
+
  {Get Year}
  Year:=GetYear(Date);
- 
+
  {Get Threshold}
  Threshold:=(Year - DefaultFormatSettings.TwoDigitYearCenturyWindow) mod 100;
- 
+
  {Check Threshold}
  if (AYear > Threshold) and (DefaultFormatSettings.TwoDigitYearCenturyWindow > 0) then
   begin
-   {Previous Century} 
+   {Previous Century}
    Result:=(((Year - DefaultFormatSettings.TwoDigitYearCenturyWindow) div 100) * 100) + AYear;
   end
  else
   begin
    {Current Century}
-   Result:=((Year div 100) * 100) + AYear; 
-  end;  
+   Result:=((Year div 100) * 100) + AYear;
+  end;
 end;
 
 {==============================================================================}
 {==============================================================================}
-{Time Functions} 
+{Time Functions}
 
 {==============================================================================}
 {==============================================================================}
-{Numeric Functions} 
+{Numeric Functions}
 
 {==============================================================================}
 {==============================================================================}
-{Network Functions} 
+{Network Functions}
 function CheckEmailAddress(const EmailAddress:String):Boolean;
 var
  Count:Integer;
@@ -3272,17 +3296,17 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Get Email}
  WorkBuffer:=StripEmailAddress(EmailAddress);
  if Length(WorkBuffer) = 0 then Exit;
- 
+
  {Check for at least one @}
  if Pos('@',WorkBuffer) = 0 then Exit;
- 
+
  {Check for at least one dot}
  if Pos('.',WorkBuffer) = 0 then Exit;
- 
+
  {Check for any invalid characters}
  for Count:=1 to Length(WorkBuffer) do
   begin
@@ -3291,7 +3315,7 @@ begin
 
  Result:=True;
 end;
-  
+
 {==============================================================================}
 
 function StripEmailAddress(const EmailAddress:String):String;
@@ -3301,19 +3325,19 @@ var
 begin
  {}
  WorkBuffer:=EmailAddress;
- 
+
  PosIdx:=Pos('<',WorkBuffer);
  if PosIdx <> 0 then
   begin
    WorkBuffer:=Copy(WorkBuffer,PosIdx + 1,Length(WorkBuffer));
   end;
-  
+
  PosIdx:=Pos('>',WorkBuffer);
  if PosIdx <> 0 then
   begin
    WorkBuffer:=Copy(WorkBuffer,1,PosIdx - 1);
   end;
-  
+
  Result:=WorkBuffer;
 end;
 
@@ -3341,7 +3365,7 @@ var
 begin
  {}
  WorkBuffer:=StripEmailAddress(EmailAddress);
- 
+
  PosIdx:=Pos('@',WorkBuffer);
  if PosIdx <> 0 then
   begin
@@ -3364,7 +3388,7 @@ var
 begin
  {}
  WorkBuffer:=StripEmailAddress(EmailAddress);
- 
+
  PosIdx:=Pos('@',WorkBuffer);
  if PosIdx <> 0 then
   begin
@@ -3380,21 +3404,21 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{Misc Functions} 
+{Misc Functions}
 function CloneSid(ASid:Pointer):Pointer;
 var
  Size:LongWord;
 begin
  {}
  Result:=nil;
- 
+
  if ASid = nil then Exit;
- 
+
  if Security.IsValidSid(ASid) then
   begin
    Size:=Security.GetLengthSid(ASid);
    if Size = 0 then Exit;
-   
+
    Result:=AllocMem(Size);
    System.Move(ASid^,Result^,Size);
   end;
@@ -3409,9 +3433,9 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if ADescriptor = nil then Exit;
- 
+
  if Security.IsValidSecurityDescriptor(ADescriptor) then
   begin
    {Check Control}
@@ -3420,7 +3444,7 @@ begin
      {Relative Descriptor}
      Size:=Security.GetSecurityDescriptorLength(ADescriptor);
      if Size = 0 then Exit;
-     
+
      Result:=AllocMem(Size);
      System.Move(ADescriptor^,Result^,Size);
     end
@@ -3450,10 +3474,10 @@ function CompareSid(ASid1,ASid2:Pointer):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if ASid1 = nil then Exit;
  if ASid2 = nil then Exit;
- 
+
  if Security.IsValidSid(ASid1) then
   begin
    if Security.IsValidSid(ASid2) then
@@ -3477,10 +3501,10 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ADescriptor1 = nil then Exit;
  if ADescriptor2 = nil then Exit;
- 
+
  if Security.IsValidSecurityDescriptor(ADescriptor1) then
   begin
    if Security.IsValidSecurityDescriptor(ADescriptor2) then
@@ -3551,10 +3575,10 @@ begin
  try
   if ASid = nil then Exit;
   if ASize < SECURITY_MIN_SID_SIZE then Exit;
-  
+
   {Check Revision}
   if PSID(ASid).Revision <> SID_REVISION then Exit;
-  
+
   {Generate Hash}
   Hash:=0;
   Count:=0;
@@ -3563,7 +3587,7 @@ begin
     Hash:=LongWord(Pointer(PtrUInt(ASid) + Count)^) + Rol32(Hash,3);
     Inc(Count,4);
    end;
-  
+
   Result:=Hash;
  except
   {}
@@ -3584,11 +3608,11 @@ begin
  try
   if ADescriptor = nil then Exit;
   if ASize < SECURITY_DESCRIPTOR_MIN_LENGTH then Exit;
-  
+
   {Check Revision}
   if PSecurityDescriptor(ADescriptor).Sbz1 <> 0 then Exit;
   if PSecurityDescriptor(ADescriptor).Revision <> SECURITY_DESCRIPTOR_REVISION1 then Exit;
-  
+
   {Check Control}
   if (PSecurityDescriptor(ADescriptor).Control and SE_SELF_RELATIVE) = SE_SELF_RELATIVE then
    begin
@@ -3600,7 +3624,7 @@ begin
       Hash:=LongWord(Pointer(PtrUInt(ADescriptor) + Count)^) + Rol32(Hash,3);
       Inc(Count,4);
      end;
-     
+
     Result:=Hash;
    end
   else
@@ -3618,7 +3642,7 @@ begin
          Hash:=LongWord(Pointer(PtrUInt(Descriptor) + Count)^) + Rol32(Hash,3);
          Inc(Count,4);
         end;
-        
+
        Result:=Hash;
       end;
     finally
@@ -3632,7 +3656,7 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{Helper Functions} 
+{Helper Functions}
 
 {==============================================================================}
 {==============================================================================}
@@ -3641,7 +3665,7 @@ initialization
  {Nothing}
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

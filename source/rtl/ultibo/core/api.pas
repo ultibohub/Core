@@ -62,7 +62,9 @@ API
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit API;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
@@ -70,6 +72,175 @@ interface
 {Global definitions} {Must be prior to uses}
 {$INCLUDE GlobalDefines.inc}
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+
+  {$IFDEF API_EXPORT_PLATFORM}
+  Core.Platform,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_THREADS}
+  Core.Threads,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_HEAP}
+  Core.HeapManager,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_DEVICE_TREE}
+  Core.DeviceTree,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_DEVICES}
+  Core.Devices,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_CONSOLE}
+  Core.Console,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_LOGGING}
+  Core.Logging,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_DMA}
+  Core.DMA,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_PCI}
+  Core.PCI,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_USB}
+  Core.USB,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_MMC}
+  Core.MMC,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_SPI}
+  Core.SPI,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_I2C}
+  Core.I2C,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_PWM}
+  Core.PWM,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_PCM}
+  Core.I2S,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_GPIO}
+  Core.GPIO,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_UART}
+  Core.UART,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_SERIAL}
+  Core.Serial,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_RTC}
+  Core.RTC,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_FONT}
+  Core.Font,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_FRAMEBUFFER}
+  Core.Framebuffer,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_GRAPHICSCONSOLE}
+  Core.GraphicsConsole,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_HID}
+  Core.HID,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_KEYMAP}
+  Core.Keymap,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_KEYBOARD}
+  Core.Keyboard,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_MOUSE}
+  Core.Mouse,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_TOUCH}
+  Core.Touch,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_JOYSTICK}
+  Core.Joystick,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_STORAGE}
+  Core.Storage,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_NETWORK}
+  Core.Network,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_TIMEZONE}
+  Core.Timezone,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_LOCALE}
+  Core.Locale,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_UNICODE}
+  Core.Unicode,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_TFTFRAMEBUFFER}
+  Core.TFTFramebuffer,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_PS2}
+  Core.PS2,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_FILESYSTEM}
+  Core.FileSystem,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_WINSOCK}
+  Core.Winsock,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_WINSOCK2}
+  Core.Winsock2,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_IPHLPAPI}
+  Core.Iphlpapi,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_ULTIBO}
+  Core.Security,
+  Core.Ultibo,
+  {$ENDIF}
+
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -237,6 +408,7 @@ uses
   {$ENDIF}
 
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {const}
@@ -632,23 +804,23 @@ type
 type
  PHID_DEVICE = PHIDDevice;
  PHID_CONSUMER = PHIDConsumer;
- 
+
  PHID_STATE = PHIDState;
  PHID_STACK = PHIDStack;
- 
+
  PHID_USAGE = PHIDUsage;
  PHID_REPORT = PHIDReport;
  PHID_REPORTS = PHIDReports;
  PHID_COLLECTION = PHIDCollection;
  PHID_COLLECTIONS = PHIDCollections;
- 
+
  PHID_FIELD = PHIDField;
  PHID_DEFINITION = PHIDDefinition;
- 
+
  PHID_REPORT_DESCRIPTOR = PHIDReportDescriptor;
  PHID_PHYSICAL_DESCRIPTOR_SET = PHIDPhysicalDescriptorSet;
  PHID_PHYSICAL_DESCRIPTOR_SET0 = PHIDPhysicalDescriptorSet0;
- 
+
  hid_device_enumerate_cb = THIDDeviceEnumerate;
  hid_device_notification_cb = THIDDeviceNotification;
  hid_consumer_enumerate_cb = THIDConsumerEnumerate;
@@ -703,7 +875,7 @@ type
  PJOYSTICK_DATA = PJoystickData;
  PJOYSTICK_DEVICE = PJoystickDevice;
  PJOYSTICK_PROPERTIES = PJoystickProperties;
- 
+
  joystick_event_cb = TJoystickEvent;
  joystick_enumerate_cb = TJoystickEnumerate;
  joystick_notification_cb = TJoystickNotification;
@@ -791,7 +963,7 @@ type
 type
  TDRIVE_TYPE = TDriveType;
  TDRIVE_DATA = TDriveData;
- 
+
  TFILE_SYS_TYPE = TFileSysType;
 {$ENDIF}
 
@@ -1029,6 +1201,8 @@ function clock_seconds: uint32_t; stdcall; public name 'clock_seconds';
 function clock_milliseconds: int64_t; stdcall; public name 'clock_milliseconds';
 function clock_microseconds: int64_t; stdcall; public name 'clock_microseconds';
 function clock_nanoseconds: int64_t; stdcall; public name 'clock_nanoseconds';
+
+function clock_get_base: int64_t; stdcall; public name 'clock_get_base';
 
 function clock_get_time: int64_t; stdcall; public name 'clock_get_time';
 function clock_set_time(const time: int64_t; rtc: BOOL): int64_t; stdcall; public name 'clock_set_time';
@@ -1433,6 +1607,7 @@ function module_load(const name: PCHAR): THANDLE; stdcall; public name 'module_l
 function module_load_ex(const name: PCHAR; flags: uint32_t): THANDLE; stdcall; public name 'module_load_ex';
 function module_unload(handle: THANDLE): BOOL; stdcall; public name 'module_unload';
 function module_get_name(handle: THANDLE; name: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'module_get_name';
+function module_get_handle(const name: PCHAR): THANDLE; stdcall; public name 'module_get_handle';
 
 {Symbol Functions}
 function symbol_add(handle: THANDLE; const name: PCHAR; address: SIZE_T): BOOL; stdcall; public name 'symbol_add';
@@ -4852,6 +5027,8 @@ function partition_id_to_string(id: uint8_t; _string: PCHAR; len: uint32_t): uin
 function string_to_partition_id(partitionid: PCHAR): uint8_t; stdcall; public name 'string_to_partition_id';
 
 function cache_mode_to_string(cachemode: TCACHE_MODE; _string: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'cache_mode_to_string';
+function const_to_cache_mode(cachemode: uint32_t): TCACHE_MODE; stdcall; public name 'const_to_cache_mode';
+function string_to_cache_mode(cachemode: PCHAR): TCACHE_MODE; stdcall; public name 'string_to_cache_mode';
 function cache_state_to_string(cachestate: TCACHE_STATE; _string: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'cache_state_to_string';
 {$ENDIF}
 {==============================================================================}
@@ -4894,7 +5071,7 @@ function getservbyname(const name, proto: PCHAR): PServEnt; stdcall; public name
 function getprotobynumber(proto: tOS_INT): PProtoEnt; stdcall; public name 'getprotobynumber';
 function getprotobyname(const name: PCHAR): PProtoEnt; stdcall; public name 'getprotobyname';
 
-function WSAStartup(wversionrequired: uint16_t; var wsadata: TWSADATA): tOS_INT; stdcall; public name 'WSAStartup';
+function WSAStartup(wversionrequired: uint16_t; wsadata: PWSADATA): tOS_INT; stdcall; public name 'WSAStartup';
 function WSACleanup: tOS_INT; stdcall; public name 'WSACleanup';
 procedure WSASetLastError(ierror: tOS_INT); stdcall; public name 'WSASetLastError';
 function WSAGetLastError: tOS_INT; stdcall; public name 'WSAGetLastError';
@@ -4911,14 +5088,14 @@ function WSAAsyncGetHostByAddr(hwnd: HWND; wmsg: u_int; const addr: PCHAR; len: 
 function WSACancelAsyncRequest(hasynctaskhandle: THANDLE): tOS_INT; stdcall; public name 'WSACancelAsyncRequest';
 function WSAAsyncSelect(s: TSOCKET; hwnd: HWND; wmsg: u_int; levent: int32_t): tOS_INT; stdcall; public name 'WSAAsyncSelect'; //  really a c-long
 function WSARecvEx(s: TSOCKET; buf: PVOID; len: tOS_INT; flags: ptOS_INT): tOS_INT; stdcall; public name 'WSARecvEx';
-function __WSAFDIsSet(s: TSOCKET; var fdset: TFDSet): BOOL; stdcall; public name '__WSAFDIsSet';
-function __WSAFDIsSet_(s: TSOCKET; var fdset: TFDSet): tOS_INT; stdcall; public name '__WSAFDIsSet_';
+function __WSAFDIsSet(s: TSOCKET; fdset: PFDSet): BOOL; stdcall; public name '__WSAFDIsSet';
+function __WSAFDIsSet_(s: TSOCKET; fdset: PFDSet): tOS_INT; stdcall; public name '__WSAFDIsSet_';
 
 function TransmitFile(hsocket: TSOCKET; hfile: THANDLE; nnumberofbytestowrite: uint32_t; nnumberofbytespersend: uint32_t; lpoverlapped: POverlapped; lptransmitbuffers: PTransmitFileBuffers; dwreserved: uint32_t): BOOL; stdcall; public name 'TransmitFile';
 
-function AcceptEx(slistensocket, sacceptsocket: TSOCKET; lpoutputbuffer: PVOID; dwreceivedatalength, dwlocaladdresslength, dwremoteaddresslength: uint32_t; var lpdwbytesreceived: uint32_t; lpoverlapped: POverlapped): BOOL; stdcall; public name 'AcceptEx';
+function AcceptEx(slistensocket, sacceptsocket: TSOCKET; lpoutputbuffer: PVOID; dwreceivedatalength, dwlocaladdresslength, dwremoteaddresslength: uint32_t; lpdwbytesreceived: Puint32_t; lpoverlapped: POverlapped): BOOL; stdcall; public name 'AcceptEx';
 
-procedure GetAcceptExSockaddrs(lpoutputbuffer: PVOID; dwreceivedatalength, dwlocaladdresslength, dwremoteaddresslength: uint32_t; var localsockaddr: PSockAddr; var localsockaddrlength: int; var remotesockaddr: PSockAddr; var remotesockaddrlength: int); stdcall; public name 'GetAcceptExSockaddrs';
+procedure GetAcceptExSockaddrs(lpoutputbuffer: PVOID; dwreceivedatalength, dwlocaladdresslength, dwremoteaddresslength: uint32_t; localsockaddr: PPSockAddr; localsockaddrlength: Pint; remotesockaddr: PPSockAddr; remotesockaddrlength: Pint); stdcall; public name 'GetAcceptExSockaddrs';
 
 function WSAMakeSyncReply(buflen, error: uint16_t): uint32_t; stdcall; public name 'WSAMakeSyncReply';
 function WSAMakeSelectReply(event, error: uint16_t): uint32_t; stdcall; public name 'WSAMakeSelectReply';
@@ -4927,21 +5104,21 @@ function WSAGetAsyncError(param: uint32_t): uint16_t; stdcall; public name 'WSAG
 function WSAGetSelectEvent(param: uint32_t): uint16_t; stdcall; public name 'WSAGetSelectEvent';
 function WSAGetSelectError(param: uint32_t): uint16_t; stdcall; public name 'WSAGetSelectError';
 
-procedure FD_CLR(socket: TSOCKET; var fdset: TFDSet); stdcall; public name 'FD_CLR';
-function FD_ISSET(socket: TSOCKET; var fdset: TFDSet): BOOL; stdcall; public name 'FD_ISSET';
-procedure FD_SET(socket: TSOCKET; var fdset: TFDSet); stdcall; public name 'FD_SET';
-procedure FD_ZERO(var fdset: TFDSet); stdcall; public name 'FD_ZERO';
+procedure FD_CLR(socket: TSOCKET; fdset: PFDSet); stdcall; public name 'FD_CLR';
+function FD_ISSET(socket: TSOCKET; fdset: PFDSet): BOOL; stdcall; public name 'FD_ISSET';
+procedure FD_SET(socket: TSOCKET; fdset: PFDSet); stdcall; public name 'FD_SET';
+procedure FD_ZERO(fdset: PFDSet); stdcall; public name 'FD_ZERO';
 
 {==============================================================================}
 {Winsock Undocumented Functions}
-function WsControl(proto: uint32_t; action: uint32_t; prequestinfo: PVOID; var pcbrequestinfolen: uint32_t; presponseinfo: PVOID; var pcbresponseinfolen: uint32_t): int; stdcall; public name 'WsControl';
+function WsControl(proto: uint32_t; action: uint32_t; prequestinfo: PVOID; pcbrequestinfolen: Puint32_t; presponseinfo: PVOID; pcbresponseinfolen: Puint32_t): int; stdcall; public name 'WsControl';
 
 function getnetbyaddr(addr: PVOID; len, struct: int): PNetEnt; stdcall; public name 'getnetbyaddr';
 function getnetbyname(const name: PCHAR): PNetEnt; stdcall; public name 'getnetbyname';
 
 {==============================================================================}
 {Winsock Enhanced Functions}
-function WsControlEx(proto: uint32_t; action: uint32_t; prequestinfo: PVOID; var pcbrequestinfolen: uint32_t; presponseinfo: PVOID; var pcbresponseinfolen: uint32_t): int; stdcall; public name 'WsControlEx';
+function WsControlEx(proto: uint32_t; action: uint32_t; prequestinfo: PVOID; pcbrequestinfolen: Puint32_t; presponseinfo: PVOID; pcbresponseinfolen: Puint32_t): int; stdcall; public name 'WsControlEx';
 
 {==============================================================================}
 {Winsock Helper Functions}
@@ -4966,12 +5143,18 @@ function ioctlsocket(s: TSOCKET; cmd: int32_t; arg: pu_long): int32_t; stdcall; 
 function getpeername(s: TSOCKET; name: PSockAddr; namelen: Pint32_t): int32_t; stdcall; public name 'getpeername';
 function getsockname(s: TSOCKET; name: PSockAddr; namelen: Pint32_t): int32_t; stdcall; public name 'getsockname';
 function getsockopt(s: TSOCKET; level, optname: int32_t; optval: PCHAR; optlen: Pint32_t): int32_t; stdcall; public name 'getsockopt';
+function htond(hostdouble: double_t): uint64_t; stdcall; public name 'htond';
+function htonf(hostfloat: float_t): uint32_t; stdcall; public name 'htonf';
 function htonl(hostlong: u_long): u_long; stdcall; public name 'htonl';
+function htonll(hostlonglong: uint64_t): uint64_t; stdcall; public name 'htonll';
 function htons(hostshort: u_short): u_short; stdcall; public name 'htons';
 function inet_addr(const cp: PCHAR): u_long; stdcall; public name 'inet_addr';
 function inet_ntoa(inaddr: TInAddr): PCHAR; stdcall; public name 'inet_ntoa';
 function listen(s: TSOCKET; backlog: int32_t): int32_t; stdcall; public name 'listen';
+function ntohd(netdouble: uint64_t): double_t; stdcall; public name 'ntohd';
+function ntohf(netfloat: uint32_t): float_t; stdcall; public name 'ntohf';
 function ntohl(netlong: u_long): u_long; stdcall; public name 'ntohl';
+function ntohll(netlonglong: uint64_t): uint64_t; stdcall; public name 'ntohll';
 function ntohs(netshort: u_short): u_short; stdcall; public name 'ntohs';
 function recv(s: TSOCKET; buf: PCHAR; len, flags: int32_t): int32_t; stdcall; public name 'recv';
 function recvfrom(s: TSOCKET; buf: PCHAR; len, flags: int32_t; from: PSockAddr; fromlen: Pint32_t): int32_t; stdcall; public name 'recvfrom';
@@ -4990,11 +5173,13 @@ function getservbyname(const name, proto: PCHAR): PServEnt; stdcall; public name
 function getprotobynumber(proto: int32_t): PProtoEnt; stdcall; public name 'getprotobynumber';
 function getprotobyname(const name: PCHAR): PProtoEnt; stdcall; public name 'getprotobyname';
 
-function getaddrinfo(pnodename, pservicename: PCHAR; phints: PAddrInfo; var ppresult: PAddrInfo): int32_t; stdcall; public name 'getaddrinfo';
+function getaddrinfo(pnodename, pservicename: PCHAR; phints: PAddrInfo; ppresult: PPAddrInfo): int32_t; stdcall; public name 'getaddrinfo';
 procedure freeaddrinfo(ai: PAddrInfo); stdcall; public name 'freeaddrinfo';
 function getnameinfo(sa: PSockAddr; salen: int; host: PCHAR; hostlen: uint32_t; serv: PCHAR; servlen: uint32_t; flags: int): int; stdcall; public name 'getnameinfo';
 
-function WSAStartup(wversionrequired: uint16_t; var wsdata: TWSAData): int32_t; stdcall; public name 'WSAStartup';
+function gai_strerror(ecode: int): PCHAR; stdcall; public name 'gai_strerror';
+
+function WSAStartup(wversionrequired: uint16_t; wsdata: PWSADATA): int32_t; stdcall; public name 'WSAStartup';
 function WSACleanup: int32_t; stdcall; public name 'WSACleanup';
 procedure WSASetLastError(ierror: int32_t); stdcall; public name 'WSASetLastError';
 function WSAGetLastError: int32_t; stdcall; public name 'WSAGetLastError';
@@ -5010,80 +5195,80 @@ function WSAAsyncGetHostByName(hwindow: HWND; wmsg: u_int; const name: PCHAR; bu
 function WSAAsyncGetHostByAddr(hwindow: HWND; wmsg: u_int; const addr: PCHAR; len, family: int32_t; buf: PCHAR; buflen: int32_t): THANDLE; stdcall; public name 'WSAAsyncGetHostByAddr';
 function WSACancelAsyncRequest(hasynctaskhandle: THANDLE): int32_t; stdcall; public name 'WSACancelAsyncRequest';
 function WSAAsyncSelect(s: TSOCKET; hwindow: HWND; wmsg: u_int; levent: int32_t): int32_t; stdcall; public name 'WSAAsyncSelect';
-function __WSAFDIsSet(s: TSOCKET; var fdset: TFDSet): BOOL; stdcall; public name '__WSAFDIsSet';
+function __WSAFDIsSet(s: TSOCKET; fdset: PFDSet): BOOL; stdcall; public name '__WSAFDIsSet';
 
 { WinSock 2 API new function prototypes }
-function inet_pton(family: int32_t; pszaddrstring: PCHAR; paddrbuf: PVOID): int32_t; stdcall; public name 'inet_pton';
-function InetPtonA(family: int32_t; pszaddrstring: PCHAR; paddrbuf: PVOID): int32_t; stdcall; public name 'InetPtonA';
-function InetPtonW(family: int32_t; pszaddrstring: PWCHAR; paddrbuf: PVOID): int32_t; stdcall; public name 'InetPtonW';
+function inet_pton(family: int32_t; const pszaddrstring: PCHAR; paddrbuf: PVOID): int32_t; stdcall; public name 'inet_pton';
+function InetPtonA(family: int32_t; const pszaddrstring: PCHAR; paddrbuf: PVOID): int32_t; stdcall; public name 'InetPtonA';
+function InetPtonW(family: int32_t; const pszaddrstring: PWCHAR; paddrbuf: PVOID): int32_t; stdcall; public name 'InetPtonW';
 
 function inet_ntop(family: int32_t; paddr: PVOID; pstringbuf: PCHAR; stringbufsize: int32_t): PCHAR; stdcall; public name 'inet_ntop';
 function InetNtopA(family: int32_t; paddr: PVOID; pstringbuf: PCHAR; stringbufsize: int32_t): PCHAR; stdcall; public name 'InetNtopA';
 function InetNtopW(family: int32_t; paddr: PVOID; pstringbuf: PWCHAR; stringbufsize: int32_t): PWCHAR; stdcall; public name 'InetNtopW';
 
-function WSAAccept(s: TSOCKET; addr: TSockAddr; addrlen: Pint32_t; lpfncondition: LPCONDITIONPROC; dwcallbackdata: uint32_t): TSOCKET; stdcall; public name 'WSAAccept';
+function WSAAccept(s: TSOCKET; addr: PSockAddr; addrlen: Pint32_t; lpfncondition: LPCONDITIONPROC; dwcallbackdata: uintptr_t): TSOCKET; stdcall; public name 'WSAAccept';
 function WSACloseEvent(hevent: WSAEVENT): BOOL; stdcall; public name 'WSACloseEvent';
 function WSAConnect(s: TSOCKET; name: PSockAddr; namelen: int32_t; lpcallerdata, lpcalleedata: LPWSABUF; lpsqos, lpgqos: LPQOS): int32_t; stdcall; public name 'WSAConnect';
-function WSAConnectByList(s: TSOCKET; socketaddresslist: PSOCKET_ADDRESS_LIST; var localaddresslength: uint32_t; localaddress: PSockAddr; var remoteaddresslength: uint32_t; remoteaddress: PSockAddr; timeout: PTimeVal; reserved: LPWSAOVERLAPPED): BOOL; stdcall; public name 'WSAConnectByList';
-function WSAConnectByNameA(s: TSOCKET; nodename: PCHAR; servicename: PCHAR; var localaddresslength: uint32_t; localaddress: PSockAddr; var remoteaddresslength: uint32_t; remoteaddress: PSockAddr; timeout: PTimeVal; reserved: LPWSAOVERLAPPED): BOOL; stdcall; public name 'WSAConnectByNameA';
-function WSAConnectByNameW(s: TSOCKET; nodename: PWCHAR; servicename: PWCHAR; var localaddresslength: uint32_t; localaddress: PSockAddr; var remoteaddresslength: uint32_t; remoteaddress: PSockAddr; timeout: PTimeVal; reserved: LPWSAOVERLAPPED): BOOL; stdcall; public name 'WSAConnectByNameW';
+function WSAConnectByList(s: TSOCKET; socketaddresslist: PSOCKET_ADDRESS_LIST; localaddresslength: Puint32_t; localaddress: PSockAddr; remoteaddresslength: Puint32_t; remoteaddress: PSockAddr; timeout: PTimeVal; reserved: LPWSAOVERLAPPED): BOOL; stdcall; public name 'WSAConnectByList';
+function WSAConnectByNameA(s: TSOCKET; nodename: PCHAR; servicename: PCHAR; localaddresslength: Puint32_t; localaddress: PSockAddr; remoteaddresslength: Puint32_t; remoteaddress: PSockAddr; timeout: PTimeVal; reserved: LPWSAOVERLAPPED): BOOL; stdcall; public name 'WSAConnectByNameA';
+function WSAConnectByNameW(s: TSOCKET; nodename: PWCHAR; servicename: PWCHAR; localaddresslength: Puint32_t; localaddress: PSockAddr; remoteaddresslength: Puint32_t; remoteaddress: PSockAddr; timeout: PTimeVal; reserved: LPWSAOVERLAPPED): BOOL; stdcall; public name 'WSAConnectByNameW';
 function WSACreateEvent: WSAEVENT; stdcall; public name 'WSACreateEvent';
 function WSADuplicateSocketA(s: TSOCKET; dwprocessid: uint32_t; lpprotocolinfo: LPWSAProtocol_InfoA): int32_t; stdcall; public name 'WSADuplicateSocketA';
 function WSADuplicateSocketW(s: TSOCKET; dwprocessid: uint32_t; lpprotocolinfo: LPWSAProtocol_InfoW): int32_t; stdcall; public name 'WSADuplicateSocketW';
 function WSAEnumNetworkEvents(s: TSOCKET; heventobject: WSAEVENT; lpnetworkevents: LPWSANETWORKEVENTS): int32_t; stdcall; public name 'WSAEnumNetworkEvents';
-function WSAEnumProtocolsA(lpiprotocols: Pint32_t; lpprotocolbuffer: LPWSAProtocol_InfoA; var lpdwbufferlength: uint32_t): int32_t; stdcall; public name 'WSAEnumProtocolsA';
-function WSAEnumProtocolsW(lpiprotocols: Pint32_t; lpprotocolbuffer: LPWSAProtocol_InfoW; var lpdwbufferlength: uint32_t): int32_t; stdcall; public name 'WSAEnumProtocolsW';
+function WSAEnumProtocolsA(lpiprotocols: Pint32_t; lpprotocolbuffer: LPWSAProtocol_InfoA; lpdwbufferlength: Puint32_t): int32_t; stdcall; public name 'WSAEnumProtocolsA';
+function WSAEnumProtocolsW(lpiprotocols: Pint32_t; lpprotocolbuffer: LPWSAProtocol_InfoW; lpdwbufferlength: Puint32_t): int32_t; stdcall; public name 'WSAEnumProtocolsW';
 function WSAEventSelect(s: TSOCKET; heventobject: WSAEVENT; lnetworkevents: int32_t): int32_t; stdcall; public name 'WSAEventSelect';
-function WSAGetOverlappedResult(s: TSOCKET; lpoverlapped: LPWSAOVERLAPPED; lpcbtransfer: LPDWORD; fwait: BOOL; var lpdwflags: uint32_t): BOOL; stdcall; public name 'WSAGetOverlappedResult';
+function WSAGetOverlappedResult(s: TSOCKET; lpoverlapped: LPWSAOVERLAPPED; lpcbtransfer: LPDWORD; fwait: BOOL; lpdwflags: Puint32_t): BOOL; stdcall; public name 'WSAGetOverlappedResult';
 function WSAGetQosByName(s: TSOCKET; lpqosname: LPWSABUF; lpqos: LPQOS): BOOL; stdcall; public name 'WSAGetQosByName';
-function WSAHtonl(s: TSOCKET; hostlong: u_long; var lpnetlong: uint32_t): int32_t; stdcall; public name 'WSAHtonl';
-function WSAHtons(s: TSOCKET; hostshort: u_short; var lpnetshort: uint16_t): int32_t; stdcall; public name 'WSAHtons';
+function WSAHtonl(s: TSOCKET; hostlong: u_long; lpnetlong: Puint32_t): int32_t; stdcall; public name 'WSAHtonl';
+function WSAHtons(s: TSOCKET; hostshort: u_short; lpnetshort: Puint16_t): int32_t; stdcall; public name 'WSAHtons';
 function WSAIoctl(s: TSOCKET; dwiocontrolcode: uint32_t; lpvinbuffer: PVOID; cbinbuffer: uint32_t; lpvoutbuffer: PVOID; cboutbuffer: uint32_t; lpcbbytesreturned: LPDWORD; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall; public name 'WSAIoctl';
 function WSAJoinLeaf(s: TSOCKET; name: PSockAddr; namelen: int32_t; lpcallerdata, lpcalleedata: LPWSABUF; lpsqos, lpgqos: LPQOS; dwflags: uint32_t): TSOCKET; stdcall; public name 'WSAJoinLeaf';
-function WSANtohl(s: TSOCKET; netlong: u_long; var lphostlong: uint32_t): int32_t; stdcall; public name 'WSANtohl';
-function WSANtohs(s: TSOCKET; netshort: u_short; var lphostshort: uint16_t): int32_t; stdcall; public name 'WSANtohs';
+function WSANtohl(s: TSOCKET; netlong: u_long; lphostlong: Puint32_t): int32_t; stdcall; public name 'WSANtohl';
+function WSANtohs(s: TSOCKET; netshort: u_short; lphostshort: Puint16_t): int32_t; stdcall; public name 'WSANtohs';
 function WSAPoll(fdarray: LPWSAPOLLFD; fds: ULONG; timeout: int32_t): int32_t; stdcall; public name 'WSAPoll';
-function WSAProviderConfigChange(var lpnotificationhandle: THANDLE; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall; public name 'WSAProviderConfigChange';
-function WSARecv(s: TSOCKET; lpbuffers: LPWSABUF; dwbuffercount: uint32_t; var lpnumberofbytesrecvd: uint32_t; var lpflags: uint32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall; public name 'WSARecv';
+function WSAProviderConfigChange(lpnotificationhandle: PHANDLE; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall; public name 'WSAProviderConfigChange';
+function WSARecv(s: TSOCKET; lpbuffers: LPWSABUF; dwbuffercount: uint32_t; lpnumberofbytesrecvd: Puint32_t; lpflags: Puint32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall; public name 'WSARecv';
 function WSARecvDisconnect(s: TSOCKET; lpinbounddisconnectdata: LPWSABUF): int32_t; stdcall; public name 'WSARecvDisconnect';
-function WSARecvFrom(s: TSOCKET; lpbuffers: LPWSABUF; dwbuffercount: uint32_t; var lpnumberofbytesrecvd: uint32_t; var lpflags: uint32_t; lpfrom: PSockAddr; lpfromlen: Pint32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall; public name 'WSARecvFrom';
-function WSARecvMsg(s: TSOCKET; lpmsg: LPWSAMSG; lpdwnumberofbytesrecvd: uint32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall; public name 'WSARecvMsg';
+function WSARecvFrom(s: TSOCKET; lpbuffers: LPWSABUF; dwbuffercount: uint32_t; lpnumberofbytesrecvd: Puint32_t; lpflags: Puint32_t; lpfrom: PSockAddr; lpfromlen: Pint32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall; public name 'WSARecvFrom';
+function WSARecvMsg(s: TSOCKET; lpmsg: LPWSAMSG; lpdwnumberofbytesrecvd: Puint32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall; public name 'WSARecvMsg';
 function WSAResetEvent(hevent: WSAEVENT): BOOL; stdcall; public name 'WSAResetEvent';
-function WSASend(s: TSOCKET; lpbuffers: LPWSABUF; dwbuffercount: uint32_t; var lpnumberofbytessent: uint32_t; dwflags: uint32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall; public name 'WSASend';
+function WSASend(s: TSOCKET; lpbuffers: LPWSABUF; dwbuffercount: uint32_t; lpnumberofbytessent: Puint32_t; dwflags: uint32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall; public name 'WSASend';
 function WSASendDisconnect(s: TSOCKET; lpoutbounddisconnectdata: LPWSABUF): int32_t; stdcall; public name 'WSASendDisconnect';
-function WSASendTo(s: TSOCKET; lpbuffers: LPWSABUF; dwbuffercount: uint32_t; var lpnumberofbytessent: uint32_t; dwflags: uint32_t; lpto: PSockAddr; itolen: int32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall; public name 'WSASendTo';
-function WSASendMsg(s: TSOCKET; lpmsg: LPWSAMSG; dwflags: uint32_t; lpnumberofbytessent: uint32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall; public name 'WSASendMsg';
+function WSASendTo(s: TSOCKET; lpbuffers: LPWSABUF; dwbuffercount: uint32_t; lpnumberofbytessent: Puint32_t; dwflags: uint32_t; lpto: PSockAddr; itolen: int32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall; public name 'WSASendTo';
+function WSASendMsg(s: TSOCKET; lpmsg: LPWSAMSG; dwflags: uint32_t; lpnumberofbytessent: Puint32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall; public name 'WSASendMsg';
 function WSASetEvent(hevent: WSAEVENT): BOOL; stdcall; public name 'WSASetEvent';
 function WSASocketA(af, itype, protocol: int32_t; lpprotocolinfo: LPWSAProtocol_InfoA; g: GROUP; dwflags: uint32_t): TSOCKET; stdcall; public name 'WSASocketA';
 function WSASocketW(af, itype, protocol: int32_t; lpprotocolinfo: LPWSAProtocol_InfoW; g: GROUP; dwflags: uint32_t): TSOCKET; stdcall; public name 'WSASocketW';
 
 function WSAWaitForMultipleEvents(cevents: uint32_t; lphevents: PWSAEVENT; fwaitall: BOOL; dwtimeout: uint32_t; falertable: BOOL): uint32_t; stdcall; public name 'WSAWaitForMultipleEvents';
-function WSAAddressToStringA(var lpsaaddress: TSockAddr; const dwaddresslength: uint32_t; const lpprotocolinfo: LPWSAProtocol_InfoA; const lpszaddressstring: PCHAR; var lpdwaddressstringlength: uint32_t): int32_t; stdcall; public name 'WSAAddressToStringA';
-function WSAAddressToStringW(var lpsaaddress: TSockAddr; const dwaddresslength: uint32_t; const lpprotocolinfo: LPWSAProtocol_InfoW; const lpszaddressstring: PWCHAR; var lpdwaddressstringlength: uint32_t): int32_t; stdcall; public name 'WSAAddressToStringW';
+function WSAAddressToStringA(lpsaaddress: PSockAddr; dwaddresslength: uint32_t; lpprotocolinfo: LPWSAProtocol_InfoA; lpszaddressstring: PCHAR; lpdwaddressstringlength: Puint32_t): int32_t; stdcall; public name 'WSAAddressToStringA';
+function WSAAddressToStringW(lpsaaddress: PSockAddr; dwaddresslength: uint32_t; lpprotocolinfo: LPWSAProtocol_InfoW; lpszaddressstring: PWCHAR; lpdwaddressstringlength: Puint32_t): int32_t; stdcall; public name 'WSAAddressToStringW';
 
-function WSAStringToAddressA(const addressstring: PCHAR; const addressfamily: int32_t; const lpprotocolinfo: LPWSAProtocol_InfoA; var lpaddress: TSockAddr; var lpaddresslength: int32_t): int32_t; stdcall; public name 'WSAStringToAddressA';
-function WSAStringToAddressW(const addressstring: PWCHAR; const addressfamily: int32_t; const lpprotocolinfo: LPWSAProtocol_InfoA; var lpaddress: TSockAddr; var lpaddresslength: int32_t): int32_t; stdcall; public name 'WSAStringToAddressW';
+function WSAStringToAddressA(const addressstring: PCHAR; addressfamily: int32_t; lpprotocolinfo: LPWSAProtocol_InfoA; lpaddress: PSockAddr; lpaddresslength: Pint32_t): int32_t; stdcall; public name 'WSAStringToAddressA';
+function WSAStringToAddressW(const addressstring: PWCHAR; addressfamily: int32_t; lpprotocolinfo: LPWSAProtocol_InfoA; lpaddress: PSockAddr; lpaddresslength: Pint32_t): int32_t; stdcall; public name 'WSAStringToAddressW';
 
 { Registration and Name Resolution API functions }
-function WSALookupServiceBeginA(const lpqsrestrictions: LPWSAQuerySetA; const dwcontrolflags: uint32_t; lphlookup: PHANDLE): int32_t; stdcall; public name 'WSALookupServiceBeginA';
-function WSALookupServiceBeginW(const lpqsrestrictions: LPWSAQuerySetW; const dwcontrolflags: uint32_t; lphlookup: PHANDLE): int32_t; stdcall; public name 'WSALookupServiceBeginW';
+function WSALookupServiceBeginA(lpqsrestrictions: LPWSAQuerySetA; dwcontrolflags: uint32_t; lphlookup: PHANDLE): int32_t; stdcall; public name 'WSALookupServiceBeginA';
+function WSALookupServiceBeginW(lpqsrestrictions: LPWSAQuerySetW; dwcontrolflags: uint32_t; lphlookup: PHANDLE): int32_t; stdcall; public name 'WSALookupServiceBeginW';
 
-function WSALookupServiceNextA(const hlookup: THANDLE; const dwcontrolflags: uint32_t; var lpdwbufferlength: uint32_t; lpqsresults: LPWSAQuerySetA): int32_t; stdcall; public name 'WSALookupServiceNextA';
-function WSALookupServiceNextW(const hlookup: THANDLE; const dwcontrolflags: uint32_t; var lpdwbufferlength: uint32_t; lpqsresults: LPWSAQuerySetW): int32_t; stdcall; public name 'WSALookupServiceNextW';
-function WSALookupServiceEnd(const hlookup: THANDLE): int32_t; stdcall; public name 'WSALookupServiceEnd';
-function WSAInstallServiceClassA(const lpserviceclassinfo: LPWSAServiceClassInfoA): int32_t; stdcall; public name 'WSAInstallServiceClassA';
-function WSAInstallServiceClassW(const lpserviceclassinfo: LPWSAServiceClassInfoW): int32_t; stdcall; public name 'WSAInstallServiceClassW';
-function WSARemoveServiceClass(const lpserviceclassid: PGUID): int32_t; stdcall; public name 'WSARemoveServiceClass';
-function WSAGetServiceClassInfoA(const lpproviderid: PGUID; const lpserviceclassid: PGUID; var lpdwbufsize: uint32_t; lpserviceclassinfo: LPWSAServiceClassInfoA): int32_t; stdcall; public name 'WSAGetServiceClassInfoA';
-function WSAGetServiceClassInfoW(const lpproviderid: PGUID; const lpserviceclassid: PGUID; var lpdwbufsize: uint32_t; lpserviceclassinfo: LPWSAServiceClassInfoW): int32_t; stdcall; public name 'WSAGetServiceClassInfoW';
+function WSALookupServiceNextA(hlookup: THANDLE; dwcontrolflags: uint32_t; lpdwbufferlength: Puint32_t; lpqsresults: LPWSAQuerySetA): int32_t; stdcall; public name 'WSALookupServiceNextA';
+function WSALookupServiceNextW(hlookup: THANDLE; dwcontrolflags: uint32_t; lpdwbufferlength: Puint32_t; lpqsresults: LPWSAQuerySetW): int32_t; stdcall; public name 'WSALookupServiceNextW';
+function WSALookupServiceEnd(hlookup: THANDLE): int32_t; stdcall; public name 'WSALookupServiceEnd';
+function WSAInstallServiceClassA(lpserviceclassinfo: LPWSAServiceClassInfoA): int32_t; stdcall; public name 'WSAInstallServiceClassA';
+function WSAInstallServiceClassW(lpserviceclassinfo: LPWSAServiceClassInfoW): int32_t; stdcall; public name 'WSAInstallServiceClassW';
+function WSARemoveServiceClass(lpserviceclassid: PGUID): int32_t; stdcall; public name 'WSARemoveServiceClass';
+function WSAGetServiceClassInfoA(lpproviderid: PGUID; lpserviceclassid: PGUID; lpdwbufsize: Puint32_t; lpserviceclassinfo: LPWSAServiceClassInfoA): int32_t; stdcall; public name 'WSAGetServiceClassInfoA';
+function WSAGetServiceClassInfoW(lpproviderid: PGUID; lpserviceclassid: PGUID; lpdwbufsize: Puint32_t; lpserviceclassinfo: LPWSAServiceClassInfoW): int32_t; stdcall; public name 'WSAGetServiceClassInfoW';
 
-function WSAEnumNameSpaceProvidersA(var lpdwbufferlength: uint32_t; const lpnspbuffer: LPWSANameSpace_InfoA): int32_t; stdcall; public name 'WSAEnumNameSpaceProvidersA';
-function WSAEnumNameSpaceProvidersW(var lpdwbufferlength: uint32_t; const lpnspbuffer: LPWSANameSpace_InfoW): int32_t; stdcall; public name 'WSAEnumNameSpaceProvidersW';
+function WSAEnumNameSpaceProvidersA(lpdwbufferlength: Puint32_t; lpnspbuffer: LPWSANameSpace_InfoA): int32_t; stdcall; public name 'WSAEnumNameSpaceProvidersA';
+function WSAEnumNameSpaceProvidersW(lpdwbufferlength: Puint32_t; lpnspbuffer: LPWSANameSpace_InfoW): int32_t; stdcall; public name 'WSAEnumNameSpaceProvidersW';
 
-function WSAGetServiceClassNameByClassIdA(const lpserviceclassid: PGUID; lpszserviceclassname: PCHAR; var lpdwbufferlength: uint32_t): int32_t; stdcall; public name 'WSAGetServiceClassNameByClassIdA';
-function WSAGetServiceClassNameByClassIdW(const lpserviceclassid: PGUID; lpszserviceclassname: PWCHAR; var lpdwbufferlength: uint32_t): int32_t; stdcall; public name 'WSAGetServiceClassNameByClassIdW';
-function WSASetServiceA(const lpqsreginfo: LPWSAQuerySetA; const essoperation: TWSAeSetServiceOp; const dwcontrolflags: uint32_t): int32_t; stdcall; public name 'WSASetServiceA';
-function WSASetServiceW(const lpqsreginfo: LPWSAQuerySetW; const essoperation: TWSAeSetServiceOp; const dwcontrolflags: uint32_t): int32_t; stdcall; public name 'WSASetServiceW';
+function WSAGetServiceClassNameByClassIdA(lpserviceclassid: PGUID; lpszserviceclassname: PCHAR; lpdwbufferlength: Puint32_t): int32_t; stdcall; public name 'WSAGetServiceClassNameByClassIdA';
+function WSAGetServiceClassNameByClassIdW(lpserviceclassid: PGUID; lpszserviceclassname: PWCHAR; lpdwbufferlength: Puint32_t): int32_t; stdcall; public name 'WSAGetServiceClassNameByClassIdW';
+function WSASetServiceA(lpqsreginfo: LPWSAQuerySetA; essoperation: TWSAESetServiceOp; dwcontrolflags: uint32_t): int32_t; stdcall; public name 'WSASetServiceA';
+function WSASetServiceW(lpqsreginfo: LPWSAQuerySetW; essoperation: TWSAESetServiceOp; dwcontrolflags: uint32_t): int32_t; stdcall; public name 'WSASetServiceW';
 
 function WSAMakeSyncReply(buflen, error: uint16_t): int32_t; stdcall; public name 'WSAMakeSyncReply';
 function WSAMakeSelectReply(event, error: uint16_t): int32_t; stdcall; public name 'WSAMakeSelectReply';
@@ -5092,21 +5277,21 @@ function WSAGetAsyncError(param: int32_t): uint16_t; stdcall; public name 'WSAGe
 function WSAGetSelectEvent(param: int32_t): uint16_t; stdcall; public name 'WSAGetSelectEvent';
 function WSAGetSelectError(param: int32_t): uint16_t; stdcall; public name 'WSAGetSelectError';
 
-procedure FD_CLR(socket: TSOCKET; var fdset: TFDSet); stdcall; public name 'FD_CLR';
-function FD_ISSET(socket: TSOCKET; var fdset: TFDSet): BOOL; stdcall; public name 'FD_ISSET';
-procedure FD_SET(socket: TSOCKET; var fdset: TFDSet); stdcall; public name 'FD_SET';
-procedure FD_ZERO(var fdset: TFDSet); stdcall; public name 'FD_ZERO';
+procedure FD_CLR(socket: TSOCKET; fdset: PFDSet); stdcall; public name 'FD_CLR';
+function FD_ISSET(socket: TSOCKET; fdset: PFDSet): BOOL; stdcall; public name 'FD_ISSET';
+procedure FD_SET(socket: TSOCKET; fdset: PFDSet); stdcall; public name 'FD_SET';
+procedure FD_ZERO(fdset: PFDSet); stdcall; public name 'FD_ZERO';
 
 {==============================================================================}
 {Winsock2 Undocumented Functions}
-function WsControl(proto: uint32_t; action: uint32_t; prequestinfo: PVOID; var pcbrequestinfolen: uint32_t; presponseinfo: PVOID; var pcbresponseinfolen: uint32_t): int; stdcall; public name 'WsControl';
+function WsControl(proto: uint32_t; action: uint32_t; prequestinfo: PVOID; pcbrequestinfolen: Puint32_t; presponseinfo: PVOID; pcbresponseinfolen: Puint32_t): int; stdcall; public name 'WsControl';
 
 function getnetbyaddr(addr: PVOID; len, struct: int): PNetEnt; stdcall; public name 'getnetbyaddr';
 function getnetbyname(const name: PCHAR): PNetEnt; stdcall; public name 'getnetbyname';
 
 {==============================================================================}
 {Winsock2 Enhanced Functions}
-function WsControlEx(proto: uint32_t; action: uint32_t; prequestinfo: PVOID; var pcbrequestinfolen: uint32_t; presponseinfo: PVOID; var pcbresponseinfolen: uint32_t): int; stdcall; public name 'WsControlEx';
+function WsControlEx(proto: uint32_t; action: uint32_t; prequestinfo: PVOID; pcbrequestinfolen: Puint32_t; presponseinfo: PVOID; pcbresponseinfolen: Puint32_t): int; stdcall; public name 'WsControlEx';
 
 {==============================================================================}
 {Winsock2 Helper Functions}
@@ -8258,6 +8443,22 @@ function clock_nanoseconds: int64_t; stdcall;
 begin
  {}
  Result:=ClockNanoseconds;
+end;
+
+{==============================================================================}
+
+function clock_get_base: int64_t; stdcall;
+{Get the current clock base in 100 nanosecond ticks since 1/1/1601}
+{Return: The current clock base or zero if not set}
+{Note: Clock base is the value added to the system clock to obtain the current time
+       which is calculated at the last setting of the clock}
+{Note: This is the same time format as Windows FILE_TIME and is intended to allow
+       compatibility with file system functions etc.}
+{Note: By default the time returned by this function is considered to be UTC but
+       the actual conversion between UTC and local time is handled at a higher level}
+begin
+ {}
+ Result:=ClockGetBase;
 end;
 
 {==============================================================================}
@@ -12643,6 +12844,21 @@ begin
   end;
 
  Result:=APIStringToPCharBuffer(Buffer,name,len);
+end;
+
+{==============================================================================}
+
+function module_get_handle(const name: PCHAR): THANDLE; stdcall;
+begin
+ {}
+ if Assigned(ModuleGetHandleHandler) then
+  begin
+   Result:=ModuleGetHandleHandler(String(name));
+  end
+ else
+  begin
+   Result:=INVALID_HANDLE_VALUE;
+  end;
 end;
 
 {==============================================================================}
@@ -31464,7 +31680,7 @@ var
 begin
  {}
  Result:=HIDExtractBitField(field,buffer,size,WorkBool);
- 
+
  {Return Value}
  value:=WorkBool;
 end;
@@ -34803,7 +35019,7 @@ var
 begin
  {}
  Result:=TimezoneCalculateOffset(datetime,offset,DST);
- 
+
  daylight:=DST;
 end;
 
@@ -34830,6 +35046,7 @@ end;
 {Locale Functions}
 {$IFDEF API_EXPORT_LOCALE}
 function IsValidCodePage(codepage: UINT): BOOL; stdcall;
+{Determine if a specified code page is valid}
 begin
  {}
  Result:=Locale.IsValidCodePage(codepage);
@@ -34838,6 +35055,7 @@ end;
 {==============================================================================}
 
 function GetACP: UINT; stdcall;
+{Retrieve the current ANSI code page identifier for the system}
 begin
  {}
  Result:=Locale.GetACP;
@@ -34846,6 +35064,7 @@ end;
 {==============================================================================}
 
 function GetOEMCP: UINT; stdcall;
+{Return the current original equipment manufacturer (OEM) code page identifier for the system}
 begin
  {}
  Result:=Locale.GetOEMCP;
@@ -34854,6 +35073,7 @@ end;
 {==============================================================================}
 
 function SetACP(codepage: UINT): BOOL; stdcall;
+{Set the current ANSI code page identifier for the system}
 begin
  {}
  Result:=Locale.SetACP(codepage);
@@ -34862,6 +35082,7 @@ end;
 {==============================================================================}
 
 function SetOEMCP(codepage: UINT): BOOL; stdcall;
+{Set the current original equipment manufacturer (OEM) code page identifier for the system}
 begin
  {}
  Result:=Locale.SetOEMCP(codepage);
@@ -34870,6 +35091,7 @@ end;
 {==============================================================================}
 
 function GetConsoleCP: UINT; stdcall;
+{Retrieve the input code page used by the console for the system}
 begin
  {}
  Result:=Locale.GetConsoleCP;
@@ -34878,6 +35100,7 @@ end;
 {==============================================================================}
 
 function SetConsoleCP(wcodepageid: UINT): BOOL; stdcall;
+{Set the input code page used by the console for the system}
 begin
  {}
  Result:=Locale.SetConsoleCP(wcodepageid);
@@ -34886,6 +35109,7 @@ end;
 {==============================================================================}
 
 function GetConsoleOutputCP: UINT; stdcall;
+{Retrieve the output code page used by the console for the system}
 begin
  {}
  Result:=Locale.GetConsoleOutputCP;
@@ -34894,6 +35118,7 @@ end;
 {==============================================================================}
 
 function SetConsoleOutputCP(wcodepageid: UINT): BOOL; stdcall;
+{Set the output code page used by the console for the system}
 begin
  {}
  Result:=Locale.SetConsoleOutputCP(wcodepageid);
@@ -34902,6 +35127,7 @@ end;
 {==============================================================================}
 
 function GetCPInfo(codepage: UINT; var lpcpinfo: CPINFO): BOOL; stdcall;
+{Retrieve information about any valid installed or available code page}
 begin
  {}
  Result:=Locale.GetCPInfo(codepage,lpcpinfo);
@@ -34910,6 +35136,7 @@ end;
 {==============================================================================}
 
 function GetCPInfoEx(codepage: UINT; dwflags: uint32_t; var lpcpinfoex: CPINFOEXA): BOOL; stdcall;
+{Retrieve information about any valid installed or available code page}
 begin
  {}
  Result:=Locale.GetCPInfoEx(codepage,dwflags,lpcpinfoex);
@@ -34918,6 +35145,7 @@ end;
 {==============================================================================}
 
 function GetCPInfoExA(codepage: UINT; dwflags: uint32_t; var lpcpinfoex: CPINFOEXA): BOOL; stdcall;
+{Retrieve information about any valid installed or available code page}
 begin
  {}
  Result:=Locale.GetCPInfoExA(codepage,dwflags,lpcpinfoex);
@@ -34926,6 +35154,7 @@ end;
 {==============================================================================}
 
 function GetCPInfoExW(codepage: UINT; dwflags: uint32_t; var lpcpinfoex: CPINFOEXW): BOOL; stdcall;
+{Retrieve information about any valid installed or available code page}
 begin
  {}
  Result:=Locale.GetCPInfoExW(codepage,dwflags,lpcpinfoex);
@@ -34934,6 +35163,7 @@ end;
 {==============================================================================}
 
 function IsValidLocale(_locale: LCID; dwflags: uint32_t): BOOL; stdcall;
+{Determine if the specified locale is installed or supported on the system}
 begin
  {}
  Result:=Locale.IsValidLocale(_locale,dwflags);
@@ -34942,6 +35172,8 @@ end;
 {==============================================================================}
 
 function GetSystemDefaultLCID: LCID; stdcall;
+{Return the locale identifier for the system locale}
+{Note: System and User values are the same for Ultibo}
 begin
  {}
  Result:=Locale.GetSystemDefaultLCID;
@@ -34950,6 +35182,8 @@ end;
 {==============================================================================}
 
 function GetUserDefaultLCID: LCID; stdcall;
+{Return the locale identifier for the user default locale}
+{Note: System and User values are the same for Ultibo}
 begin
  {}
  Result:=Locale.GetUserDefaultLCID;
@@ -34958,6 +35192,8 @@ end;
 {==============================================================================}
 
 function SetSystemDefaultLCID(_locale: LCID): BOOL; stdcall;
+{Set the locale identifier for the system locale}
+{Note: System and User values are the same for Ultibo}
 begin
  {}
  Result:=Locale.SetSystemDefaultLCID(_locale);
@@ -35698,6 +35934,11 @@ end;
 function FileRead(handle: THANDLE; buffer: PVOID; count: int32_t): int32_t; stdcall;
 begin
  {}
+ Result:=-1;
+
+ {Check Buffer}
+ if buffer = nil then Exit;
+
  Result:=FileSystem.FSFileRead(handle,buffer^,count);
 end;
 
@@ -35706,6 +35947,11 @@ end;
 function FileWrite(handle: THANDLE; buffer: PVOID; count: int32_t): int32_t; stdcall;
 begin
  {}
+ Result:=-1;
+
+ {Check Buffer}
+ if buffer = nil then Exit;
+
  Result:=FileSystem.FSFileWrite(handle,buffer^,count);
 end;
 
@@ -36024,6 +36270,28 @@ end;
 
 {==============================================================================}
 
+function const_to_cache_mode(cachemode: uint32_t): TCACHE_MODE; stdcall;
+{Convert a cache mode constant to a cache mode enum}
+{CacheMode: The cache mode constant (eg FILESYS_CACHE_MODE_READONLY)}
+{Return: The cache mode enum value (eg cmREADONLY)}
+begin
+ {}
+ Result:=FileSystem.ConstToCacheMode(cachemode);
+end;
+
+{==============================================================================}
+
+function string_to_cache_mode(cachemode: PCHAR): TCACHE_MODE; stdcall;
+{Convert a string value to a cache mode enum}
+{CacheMode: The cache mode string value (eg READONLY)}
+{Return: The cache mode enum value (eg cmREADONLY)}
+begin
+ {}
+ Result:=FileSystem.StringToCacheMode(cachemode);
+end;
+
+{==============================================================================}
+
 function cache_state_to_string(cachestate: TCACHE_STATE; _string: PCHAR; len: uint32_t): uint32_t; stdcall;
 begin
  {}
@@ -36059,6 +36327,8 @@ end;
 {==============================================================================}
 
 function accept(s: TSOCKET; addr: PSockAddr; addrlen: ptOS_INT): TSOCKET; stdcall;
+{Accept an incoming connection attempt on a socket}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=Winsock.accept(s,addr,addrlen);
@@ -36067,14 +36337,18 @@ end;
 {==============================================================================}
 
 function bind(s: TSOCKET; addr: PSockaddr; namelen: tOS_INT): tOS_INT; stdcall;
+{Associate a local address with a socket}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
- Result:=Winsock.bind(s,addr^,namelen);
+ Result:=Winsock.bind(s,addr,namelen);
 end;
 
 {==============================================================================}
 
 function closesocket(s: TSOCKET): tOS_INT; stdcall;
+{Close an existing socket}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=Winsock.closesocket(s);
@@ -36083,46 +36357,78 @@ end;
 {==============================================================================}
 
 function connect(s: TSOCKET; name: PSockAddr; namelen: tOS_INT): tOS_INT; stdcall;
+{Establish a connection to a specified socket}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
- Result:=Winsock.connect(s,name^,namelen);
+ Result:=Winsock.connect(s,name,namelen);
 end;
 
 {==============================================================================}
 
 function ioctlsocket(s: TSOCKET; cmd: int32_t; arg: pu_long): tOS_INT; stdcall;
+{Control the I/O mode of a socket}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
- Result:=Winsock.ioctlsocket(s,cmd,arg^);
+ Result:=Winsock.ioctlsocket(s,cmd,arg);
 end;
 
 {==============================================================================}
 
 function getpeername(s: TSOCKET; name: PSockaddr; namelen: ptOS_INT): tOS_INT; stdcall;
+{Retrieve the address of the peer to which a socket is connected}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
+ Result:=SOCKET_ERROR;
+
+ {Check Parameters}
+ NetworkSetLastError(WSAEFAULT);
+ if name = nil then Exit;
+ if namelen = nil then Exit;
+
  Result:=Winsock.getpeername(s,name^,namelen^);
 end;
 
 {==============================================================================}
 
 function getsockname(s: TSOCKET; name: PSockaddr; namelen: ptOS_INT): tOS_INT; stdcall;
+{Retrieve the local name for a socket}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
+ Result:=SOCKET_ERROR;
+
+ {Check Parameters}
+ NetworkSetLastError(WSAEFAULT);
+ if name = nil then Exit;
+ if namelen = nil then Exit;
+
  Result:=Winsock.getsockname(s,name^,namelen^);
 end;
 
 {==============================================================================}
 
 function getsockopt(s: TSOCKET; level: tOS_INT; optname: tOS_INT; optval: PCHAR; optlen: ptOS_INT): tOS_INT; stdcall;
+{Retrieve a socket option}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
+ Result:=SOCKET_ERROR;
+
+ {Check Parameters}
+ NetworkSetLastError(WSAEFAULT);
+ if optlen = nil then Exit;
+
  Result:=Winsock.getsockopt(s,level,optname,optval,optlen^);
 end;
 
 {==============================================================================}
 
 function htonl(hostlong: u_long): u_long; stdcall;
+{Convert a u_long from host byte order to TCP/IP network byte order (which is big-endian)}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=Winsock.htonl(hostlong);
@@ -36131,6 +36437,8 @@ end;
 {==============================================================================}
 
 function htons(hostshort: u_short): u_short; stdcall;
+{Convert a u_short from host byte order to TCP/IP network byte order (which is big-endian)}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=Winsock.htons(hostshort);
@@ -36139,6 +36447,9 @@ end;
 {==============================================================================}
 
 function inet_addr(const cp: PCHAR): u_long; stdcall; // PInAddr;
+{Convert a string containing an IPv4 dotted-decimal address into a proper address for the IN_ADDR structure}
+{Note: Address will be returned in network byte order}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=Winsock.inet_addr(cp);
@@ -36147,9 +36458,12 @@ end;
 {==============================================================================}
 
 function inet_ntoa(inaddr: TInAddr): PCHAR; stdcall;
+{Convert an (IPv4) Internet network address into an ASCII string in Internet standard dotted-decimal format}
 {As per the Winsock specification, the buffer returned by this function is only
  guaranteed to be valid until the next Winsock function call is made within the
  same thread. Therefore, the data should be copied before another Winsock call}
+{Note: Address will be in network byte order}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=Winsock.inet_ntoa(inaddr);
@@ -36158,6 +36472,8 @@ end;
 {==============================================================================}
 
 function listen(s: TSOCKET; backlog: tOS_INT): tOS_INT; stdcall;
+{Place a socket in a state in which it is listening for incoming connections}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=Winsock.listen(s,backlog);
@@ -36166,6 +36482,8 @@ end;
 {==============================================================================}
 
 function ntohl(netlong: u_long): u_long; stdcall;
+{Convert a u_long from TCP/IP network byte order to host byte order}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=Winsock.ntohl(netlong);
@@ -36174,6 +36492,8 @@ end;
 {==============================================================================}
 
 function ntohs(netshort: u_short): u_short; stdcall;
+{Convert a u_short from TCP/IP network byte order to host byte order}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=Winsock.ntohs(netshort);
@@ -36182,23 +36502,29 @@ end;
 {==============================================================================}
 
 function recv(s: TSOCKET; buf: PCHAR; len: tOS_INT; flags: tOS_INT): tOS_INT; stdcall;
+{Receive data from a connected socket or a bound connectionless socket}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
- Result:=Winsock.recv(s,buf^,len,flags);
+ Result:=Winsock.recv(s,buf,len,flags);
 end;
 
 {==============================================================================}
 
 function recvfrom(s: TSOCKET; buf: PCHAR; len: tOS_INT; flags: tOS_INT; from: PSockAddr; fromlen: ptOS_INT): tOS_INT; stdcall;
+{Receive a datagram and store the source address}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
- Result:=Winsock.recvfrom(s,buf^,len,flags,from^,fromlen^);
+ Result:=Winsock.recvfrom(s,buf,len,flags,from,fromlen);
 end;
 
 {==============================================================================}
 
 function select(nfds: tOS_INT; readfds, writefds, exceptfds: PFDSet; timeout: PTimeVal): tOS_INT; stdcall;
+{Determine the status of one or more sockets, waiting if necessary, to perform synchronous I/O}
 {Note: All sockets contained by the FDSet must be of the same type}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=Winsock.select(nfds,readfds,writefds,exceptfds,timeout);
@@ -36207,22 +36533,28 @@ end;
 {==============================================================================}
 
 function send(s: TSOCKET; const buf: PCHAR; len: tOS_INT; flags: tOS_INT): tOS_INT; stdcall;
+{Send data on a connected socket}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
- Result:=Winsock.send(s,buf^,len,flags);
+ Result:=Winsock.send(s,buf,len,flags);
 end;
 
 {==============================================================================}
 
 function sendto(s: TSOCKET; const buf: PCHAR; len: tOS_INT; flags: tOS_INT; toaddr: PSockAddr; tolen: tOS_INT): tOS_INT; stdcall;
+{Send data to a specific destination}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
- Result:=Winsock.sendto(s,buf^,len,flags,toaddr^,tolen);
+ Result:=Winsock.sendto(s,buf,len,flags,toaddr,tolen);
 end;
 
 {==============================================================================}
 
 function setsockopt(s: TSOCKET; level: tOS_INT; optname: tOS_INT; const optval: PCHAR; optlen: tOS_INT): tOS_INT; stdcall;
+{Set a socket option}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=Winsock.setsockopt(s,level,optname,optval,optlen);
@@ -36231,6 +36563,8 @@ end;
 {==============================================================================}
 
 function shutdown(s: TSOCKET; how: tOS_INT): tOS_INT; stdcall;
+{Disable sends or receives on a socket}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=Winsock.shutdown(s,how);
@@ -36239,6 +36573,8 @@ end;
 {==============================================================================}
 
 function socket(af: tOS_INT; struct: tOS_INT; protocol: tOS_INT): TSOCKET; stdcall;
+{Create a socket that is bound to a specific transport service provider}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=Winsock.socket(af,struct,protocol);
@@ -36247,6 +36583,9 @@ end;
 {==============================================================================}
 
 function gethostbyaddr(const addr: PCHAR; len: tOS_INT; family: tOS_INT): PHostEnt; stdcall;
+{Retrieve the host information corresponding to a network address}
+{Note: Address will be in network byte order where applicable}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=Winsock.gethostbyaddr(addr,len,family);
@@ -36255,6 +36594,8 @@ end;
 {==============================================================================}
 
 function gethostbyname(const name: PCHAR): PHostEnt; stdcall;
+{Retrieve network address corresponding to a host name}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=Winsock.gethostbyname(name);
@@ -36263,6 +36604,8 @@ end;
 {==============================================================================}
 
 function gethostname(name: PCHAR; namelen: tOS_INT): tOS_INT; stdcall;
+{Retrieve the standard host name for the local computer}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=Winsock.gethostname(name,namelen);
@@ -36271,6 +36614,9 @@ end;
 {==============================================================================}
 
 function getservbyport(port: tOS_INT; const proto: PCHAR): PServEnt; stdcall;
+{Retrieve service information corresponding to a port and protocol}
+{Note: Port will be in network byte order}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=Winsock.getservbyport(port,proto);
@@ -36279,6 +36625,8 @@ end;
 {==============================================================================}
 
 function getservbyname(const name, proto: PCHAR): PServEnt; stdcall;
+{Retrieve service information corresponding to a service name and protocol}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=Winsock.getservbyname(name,proto);
@@ -36287,6 +36635,8 @@ end;
 {==============================================================================}
 
 function getprotobynumber(proto: tOS_INT): PProtoEnt; stdcall;
+{Retrieve protocol information corresponding to a protocol number}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=Winsock.getprotobynumber(proto);
@@ -36295,6 +36645,8 @@ end;
 {==============================================================================}
 
 function getprotobyname(const name: PCHAR): PProtoEnt; stdcall;
+{Retrieve the protocol information corresponding to a protocol name}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=Winsock.getprotobyname(name);
@@ -36302,15 +36654,24 @@ end;
 
 {==============================================================================}
 
-function WSAStartup(wversionrequired: uint16_t; var wsadata: TWSADATA): tOS_INT; stdcall;
+function WSAStartup(wversionrequired: uint16_t; wsadata: PWSADATA): tOS_INT; stdcall;
+{Initiate use of Winsock by an application}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
- Result:=Winsock.WSAStartup(wversionrequired,wsadata);
+ Result:=WSAEFAULT;
+
+ {Check Data}
+ if wsadata = nil then Exit;
+
+ Result:=Winsock.WSAStartup(wversionrequired,wsadata^);
 end;
 
 {==============================================================================}
 
 function WSACleanup: tOS_INT; stdcall;
+{Terminate use of Winsock by an application}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=Winsock.WSACleanup;
@@ -36319,6 +36680,8 @@ end;
 {==============================================================================}
 
 procedure WSASetLastError(ierror: tOS_INT); stdcall;
+{Set the error code that can be retrieved through the WSAGetLastError function}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Winsock.WSASetLastError(ierror);
@@ -36327,6 +36690,8 @@ end;
 {==============================================================================}
 
 function WSAGetLastError: tOS_INT; stdcall;
+{Return the error status for the last Windows Sockets operation that failed}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=Winsock.WSAGetLastError;
@@ -36431,25 +36796,47 @@ end;
 {==============================================================================}
 
 function WSARecvEx(s: TSOCKET; buf: PVOID; len: tOS_INT; flags: ptOS_INT): tOS_INT; stdcall;
+{Receive data from a connected socket or a bound connectionless socket}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
- Result:=Winsock.WSARecvEx(s,buf,len,flags);
+ Result:=SOCKET_ERROR;
+
+ {Check Buffer}
+ NetworkSetLastError(WSAEFAULT);
+ if buf = nil then Exit;
+
+ Result:=Winsock.WSARecvEx(s,buf^,len,flags);
 end;
 
 {==============================================================================}
 
-function __WSAFDIsSet(s: TSOCKET; var fdset: TFDSet): BOOL; stdcall;
+function __WSAFDIsSet(s: TSOCKET; fdset: PFDSet): BOOL; stdcall;
+{Return a value indicating whether a socket is included in a set of socket descriptors}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
- Result:=Winsock.__WSAFDIsSet(s,fdset);
+ Result:=False;
+
+ {Check FDSet}
+ if fdset = nil then Exit;
+
+ Result:=Winsock.__WSAFDIsSet(s,fdset^);
 end;
 
 {==============================================================================}
 
-function __WSAFDIsSet_(s: TSOCKET; var fdset: TFDSet): tOS_INT; stdcall;
+function __WSAFDIsSet_(s: TSOCKET; fdset: PFDSet): tOS_INT; stdcall;
+{Return a value indicating whether a socket is included in a set of socket descriptors}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
- Result:=Winsock.__WSAFDIsSet_(s,fdset);
+ Result:=0;
+
+ {Check FDSet}
+ if fdset = nil then Exit;
+
+ Result:=Winsock.__WSAFDIsSet_(s,fdset^);
 end;
 
 {==============================================================================}
@@ -36462,7 +36849,7 @@ end;
 
 {==============================================================================}
 
-function AcceptEx(slistensocket, sacceptsocket: TSOCKET; lpoutputbuffer: PVOID; dwreceivedatalength, dwlocaladdresslength, dwremoteaddresslength: uint32_t; var lpdwbytesreceived: uint32_t; lpoverlapped: POverlapped): BOOL; stdcall;
+function AcceptEx(slistensocket, sacceptsocket: TSOCKET; lpoutputbuffer: PVOID; dwreceivedatalength, dwlocaladdresslength, dwremoteaddresslength: uint32_t; lpdwbytesreceived: Puint32_t; lpoverlapped: POverlapped): BOOL; stdcall;
 begin
  {}
  Result:=Winsock.AcceptEx(slistensocket,sacceptsocket,lpoutputbuffer,dwreceivedatalength,dwlocaladdresslength,dwremoteaddresslength,lpdwbytesreceived,lpoverlapped);
@@ -36470,7 +36857,7 @@ end;
 
 {==============================================================================}
 
-procedure GetAcceptExSockaddrs(lpoutputbuffer: PVOID; dwreceivedatalength, dwlocaladdresslength, dwremoteaddresslength: uint32_t; var localsockaddr: PSockAddr; var localsockaddrlength: int; var remotesockaddr: PSockAddr; var remotesockaddrlength: int); stdcall;
+procedure GetAcceptExSockaddrs(lpoutputbuffer: PVOID; dwreceivedatalength, dwlocaladdresslength, dwremoteaddresslength: uint32_t; localsockaddr: PPSockAddr; localsockaddrlength: Pint; remotesockaddr: PPSockAddr; remotesockaddrlength: Pint); stdcall;
 begin
  {}
  Winsock.GetAcceptExSockaddrs(lpoutputbuffer,dwreceivedatalength,dwlocaladdresslength,dwremoteaddresslength,localsockaddr,localsockaddrlength,remotesockaddr,remotesockaddrlength);
@@ -36526,47 +36913,78 @@ end;
 
 {==============================================================================}
 
-procedure FD_CLR(socket: TSOCKET; var fdset: TFDSet); stdcall;
+procedure FD_CLR(socket: TSOCKET; fdset: PFDSet); stdcall;
+{Remove a socket from an fd_set}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
- Winsock.FD_CLR(socket,fdset);
+ {Check FDSet}
+ if fdset = nil then Exit;
+
+ Winsock.FD_CLR(socket,fdset^);
 end;
 
 {==============================================================================}
 
-function FD_ISSET(socket: TSOCKET; var fdset: TFDSet): BOOL; stdcall;
+function FD_ISSET(socket: TSOCKET; fdset: PFDSet): BOOL; stdcall;
+{Check if a socket is a member of an fd_set}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
- Result:=Winsock.FD_ISSET(socket,fdset);
+ Result:=False;
+
+ {Check FDSet}
+ if fdset = nil then Exit;
+
+ Result:=Winsock.FD_ISSET(socket,fdset^);
 end;
 
 {==============================================================================}
 
-procedure FD_SET(socket: TSOCKET; var fdset: TFDSet); stdcall;
+procedure FD_SET(socket: TSOCKET; fdset: PFDSet); stdcall;
+{Add a socket to an fd_set}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
- Winsock.FD_SET(socket,fdset);
+ {Check FDSet}
+ if fdset = nil then Exit;
+
+ Winsock.FD_SET(socket,fdset^);
 end;
 
 {==============================================================================}
 
-procedure FD_ZERO(var fdset: TFDSet); stdcall;
+procedure FD_ZERO(fdset: PFDSet); stdcall;
+{Initialize an fd_set to null}
+{See the Windows Sockets documentation for additional information}
 begin
  {}
- Winsock.FD_ZERO(fdset);
+ {Check FDSet}
+ if fdset = nil then Exit;
+
+ Winsock.FD_ZERO(fdset^);
 end;
 
 {==============================================================================}
 {Winsock Undocumented Functions}
-function WsControl(proto: uint32_t; action: uint32_t; prequestinfo: PVOID; var pcbrequestinfolen: uint32_t; presponseinfo: PVOID; var pcbresponseinfolen: uint32_t): int; stdcall;
+function WsControl(proto: uint32_t; action: uint32_t; prequestinfo: PVOID; pcbrequestinfolen: Puint32_t; presponseinfo: PVOID; pcbresponseinfolen: Puint32_t): int; stdcall;
 begin
  {}
- Result:=Winsock.WsControl(proto,action,prequestinfo,pcbrequestinfolen,presponseinfo,pcbresponseinfolen);
+ Result:=SOCKET_ERROR;
+
+ {Check Parameters}
+ NetworkSetLastError(WSAEINVAL);
+ if pcbrequestinfolen = nil then Exit;
+ if pcbresponseinfolen = nil then Exit;
+
+ Result:=Winsock.WsControl(proto,action,prequestinfo,pcbrequestinfolen^,presponseinfo,pcbresponseinfolen^);
 end;
 
 {==============================================================================}
 
 function getnetbyaddr(addr: PVOID; len, struct: int): PNetEnt; stdcall;
+{Retrieve the network information corresponding to a network address}
+{Note: Address will be in network byte order where applicable}
 begin
  {}
  Result:=Winsock.getnetbyaddr(addr,len,struct);
@@ -36575,6 +36993,7 @@ end;
 {==============================================================================}
 
 function getnetbyname(const name: PCHAR): PNetEnt; stdcall;
+{Retrieve network address corresponding to a network name}
 begin
  {}
  Result:=Winsock.getnetbyname(name);
@@ -36582,10 +37001,17 @@ end;
 
 {==============================================================================}
 {Winsock Enhanced Functions}
-function WsControlEx(proto: uint32_t; action: uint32_t; prequestinfo: PVOID; var pcbrequestinfolen: uint32_t; presponseinfo: PVOID; var pcbresponseinfolen: uint32_t): int; stdcall;
+function WsControlEx(proto: uint32_t; action: uint32_t; prequestinfo: PVOID; pcbrequestinfolen: Puint32_t; presponseinfo: PVOID; pcbresponseinfolen: Puint32_t): int; stdcall;
 begin
  {}
- Result:=Winsock.WsControlEx(proto,action,prequestinfo,pcbrequestinfolen,presponseinfo,pcbresponseinfolen);
+ Result:=SOCKET_ERROR;
+
+ {Check Parameters}
+ NetworkSetLastError(WSAEINVAL);
+ if pcbrequestinfolen = nil then Exit;
+ if pcbresponseinfolen = nil then Exit;
+
+ Result:=Winsock.WsControlEx(proto,action,prequestinfo,pcbrequestinfolen^,presponseinfo,pcbresponseinfolen^);
 end;
 
 {==============================================================================}
@@ -36651,6 +37077,8 @@ end;
 {==============================================================================}
 
 function accept(s: TSOCKET; addr: PSockAddr; addrlen: Pint32_t): TSOCKET; stdcall;
+{Accept an incoming connection attempt on a socket}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.accept(s,addr,addrlen);
@@ -36659,14 +37087,18 @@ end;
 {==============================================================================}
 
 function bind(s: TSOCKET; addr: PSockAddr; namelen: int32_t): int32_t; stdcall;
+{Associate a local address with a socket}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
- Result:=Winsock2.bind(s,addr^,namelen);
+ Result:=Winsock2.bind(s,addr,namelen);
 end;
 
 {==============================================================================}
 
 function closesocket(s: TSOCKET): int32_t; stdcall;
+{Close an existing socket}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.closesocket(s);
@@ -36675,46 +37107,98 @@ end;
 {==============================================================================}
 
 function connect(s: TSOCKET; name: PSockAddr; namelen: int32_t): int32_t; stdcall;
+{Establish a connection to a specified socket}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
- Result:=Winsock2.connect(s,name^,namelen);
+ Result:=Winsock2.connect(s,name,namelen);
 end;
 
 {==============================================================================}
 
 function ioctlsocket(s: TSOCKET; cmd: int32_t; arg: pu_long): int32_t; stdcall;
+{Control the I/O mode of a socket}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
- Result:=Winsock2.ioctlsocket(s,cmd,arg^);
+ Result:=Winsock2.ioctlsocket(s,cmd,arg);
 end;
 
 {==============================================================================}
 
 function getpeername(s: TSOCKET; name: PSockAddr; namelen: Pint32_t): int32_t; stdcall;
+{Retrieve the address of the peer to which a socket is connected}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
+ Result:=SOCKET_ERROR;
+
+ {Check Parameters}
+ NetworkSetLastError(WSAEFAULT);
+ if name = nil then Exit;
+ if namelen = nil then Exit;
+
  Result:=Winsock2.getpeername(s,name^,namelen^);
 end;
 
 {==============================================================================}
 
 function getsockname(s: TSOCKET; name: PSockAddr; namelen: Pint32_t): int32_t; stdcall;
+{Retrieve the local name for a socket}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
+ Result:=SOCKET_ERROR;
+
+ {Check Parameters}
+ NetworkSetLastError(WSAEFAULT);
+ if name = nil then Exit;
+ if namelen = nil then Exit;
+
  Result:=Winsock2.getsockname(s,name^,namelen^);
 end;
 
 {==============================================================================}
 
 function getsockopt(s: TSOCKET; level, optname: int32_t; optval: PCHAR; optlen: Pint32_t): int32_t; stdcall;
+{Retrieve a socket option}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
+ Result:=SOCKET_ERROR;
+
+ {Check Parameters}
+ NetworkSetLastError(WSAEFAULT);
+ if optlen = nil then Exit;
+
  Result:=Winsock2.getsockopt(s,level,optname,optval,optlen^);
 end;
 
 {==============================================================================}
 
+function htond(hostdouble: double_t): uint64_t; stdcall;
+{Convert a double from host byte order to TCP/IP network byte order (which is big-endian)}
+{See the Windows Sockets 2 documentation for additional information}
+begin
+ {}
+ Result:=Winsock2.htond(hostdouble);
+end;
+
+{==============================================================================}
+
+function htonf(hostfloat: float_t): uint32_t; stdcall;
+{Convert a float from host byte order to TCP/IP network byte order (which is big-endian)}
+{See the Windows Sockets 2 documentation for additional information}
+begin
+ {}
+ Result:=Winsock2.htonf(hostfloat);
+end;
+
+{==============================================================================}
+
 function htonl(hostlong: u_long): u_long; stdcall;
+{Convert a u_long from host byte order to TCP/IP network byte order (which is big-endian)}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.htonl(hostlong);
@@ -36722,7 +37206,19 @@ end;
 
 {==============================================================================}
 
+function htonll(hostlonglong: uint64_t): uint64_t; stdcall;
+{Convert an unsigned int64 from host byte order to TCP/IP network byte order (which is big-endian)}
+{See the Windows Sockets 2 documentation for additional information}
+begin
+ {}
+ Result:=Winsock2.htonll(hostlonglong);
+end;
+
+{==============================================================================}
+
 function htons(hostshort: u_short): u_short; stdcall;
+{Convert a u_short from host byte order to TCP/IP network byte order (which is big-endian)}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.htons(hostshort);
@@ -36731,6 +37227,9 @@ end;
 {==============================================================================}
 
 function inet_addr(const cp: PCHAR): u_long; stdcall;
+{Convert a string containing an IPv4 dotted-decimal address into a proper address for the IN_ADDR structure}
+{Note: Address will be returned in network byte order}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.inet_addr(cp);
@@ -36739,9 +37238,12 @@ end;
 {==============================================================================}
 
 function inet_ntoa(inaddr: TInAddr): PCHAR; stdcall;
+{Convert an (IPv4) Internet network address into an ASCII string in Internet standard dotted-decimal format}
 {As per the Winsock specification, the buffer returned by this function is only
  guaranteed to be valid until the next Winsock function call is made within the
  same thread. Therefore, the data should be copied before another Winsock call}
+{Note: Address will be in network byte order}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.inet_ntoa(inaddr);
@@ -36750,6 +37252,8 @@ end;
 {==============================================================================}
 
 function listen(s: TSOCKET; backlog: int32_t): int32_t; stdcall;
+{Place a socket in a state in which it is listening for incoming connections}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.listen(s,backlog);
@@ -36757,7 +37261,29 @@ end;
 
 {==============================================================================}
 
+function ntohd(netdouble: uint64_t): double_t; stdcall;
+{Convert an unsigned int64 from TCP/IP network byte order to host byte order and return a double}
+{See the Windows Sockets 2 documentation for additional information}
+begin
+ {}
+ Result:=Winsock2.ntohd(netdouble);
+end;
+
+{==============================================================================}
+
+function ntohf(netfloat: uint32_t): float_t; stdcall;
+{Convert an unsigned int32 from TCP/IP network byte order to host byte order and return a float}
+{See the Windows Sockets 2 documentation for additional information}
+begin
+ {}
+ Result:=Winsock2.ntohf(netfloat);
+end;
+
+{==============================================================================}
+
 function ntohl(netlong: u_long): u_long; stdcall;
+{Convert a u_long from TCP/IP network byte order to host byte order}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.ntohl(netlong);
@@ -36765,7 +37291,19 @@ end;
 
 {==============================================================================}
 
+function ntohll(netlonglong: uint64_t): uint64_t; stdcall;
+{Convert an unsigned nt64 from TCP/IP network byte order to host byte order}
+{See the Windows Sockets 2 documentation for additional information}
+begin
+ {}
+ Result:=Winsock2.ntohll(netlonglong);
+end;
+
+{==============================================================================}
+
 function ntohs(netshort: u_short): u_short; stdcall;
+{Convert a u_short from TCP/IP network byte order to host byte order}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.ntohs(netshort);
@@ -36774,23 +37312,29 @@ end;
 {==============================================================================}
 
 function recv(s: TSOCKET; buf: PCHAR; len, flags: int32_t): int32_t; stdcall;
+{Receive data from a connected socket or a bound connectionless socket}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
- Result:=Winsock2.recv(s,buf^,len,flags);
+ Result:=Winsock2.recv(s,buf,len,flags);
 end;
 
 {==============================================================================}
 
 function recvfrom(s: TSOCKET; buf: PCHAR; len, flags: int32_t; from: PSockAddr; fromlen: Pint32_t): int32_t; stdcall;
+{Receive a datagram and store the source address}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
- Result:=Winsock2.recvfrom(s,buf^,len,flags,from^,fromlen^);
+ Result:=Winsock2.recvfrom(s,buf,len,flags,from,fromlen);
 end;
 
 {==============================================================================}
 
 function select(nfds: int32_t; readfds, writefds, exceptfds: PFDSet; timeout: PTimeVal): int32_t; stdcall;
+{Determine the status of one or more sockets, waiting if necessary, to perform synchronous I/O}
 {Note: All sockets contained by the FDSet must be of the same type}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.select(nfds,readfds,writefds,exceptfds,timeout);
@@ -36799,22 +37343,28 @@ end;
 {==============================================================================}
 
 function send(s: TSOCKET; const buf: PCHAR; len, flags: int32_t): int32_t; stdcall;
+{Send data on a connected socket}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
- Result:=Winsock2.send(s,buf^,len,flags);
+ Result:=Winsock2.send(s,buf,len,flags);
 end;
 
 {==============================================================================}
 
 function sendto(s: TSOCKET; const buf: PCHAR; len, flags: int32_t; addrto: PSockAddr; tolen: int32_t): int32_t; stdcall;
+{Send data to a specific destination}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
- Result:=Winsock2.sendto(s,buf^,len,flags,addrto^,tolen);
+ Result:=Winsock2.sendto(s,buf,len,flags,addrto,tolen);
 end;
 
 {==============================================================================}
 
 function setsockopt(s: TSOCKET; level, optname: int32_t; const optval: PCHAR; optlen: int32_t): int32_t; stdcall;
+{Set a socket option}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.setsockopt(s,level,optname,optval,optlen);
@@ -36823,6 +37373,8 @@ end;
 {==============================================================================}
 
 function shutdown(s: TSOCKET; how: int32_t): int32_t; stdcall;
+{Disable sends or receives on a socket}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.shutdown(s,how);
@@ -36831,6 +37383,8 @@ end;
 {==============================================================================}
 
 function socket(af, struct, protocol: int32_t): TSOCKET; stdcall;
+{Create a socket that is bound to a specific transport service provider}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.socket(af,struct,protocol);
@@ -36839,6 +37393,9 @@ end;
 {==============================================================================}
 
 function gethostbyaddr(addr: PVOID; len, family: int32_t): PHostEnt; stdcall;
+{Retrieve the host information corresponding to a network address}
+{Note: Address will be in network byte order where applicable}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.gethostbyaddr(addr,len,family);
@@ -36847,6 +37404,8 @@ end;
 {==============================================================================}
 
 function gethostbyname(const name: PCHAR): PHostEnt; stdcall;
+{Retrieve network address corresponding to a host name}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.gethostbyname(name);
@@ -36855,6 +37414,8 @@ end;
 {==============================================================================}
 
 function gethostname(name: PCHAR; len: int32_t): int32_t; stdcall;
+{Retrieve the standard host name for the local computer}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.gethostname(name,len);
@@ -36863,6 +37424,9 @@ end;
 {==============================================================================}
 
 function getservbyport(port: int32_t; const proto: PCHAR): PServEnt; stdcall;
+{Retrieve service information corresponding to a port and protocol}
+{Note: Port will be in network byte order}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.getservbyport(port,proto);
@@ -36871,6 +37435,8 @@ end;
 {==============================================================================}
 
 function getservbyname(const name, proto: PCHAR): PServEnt; stdcall;
+{Retrieve service information corresponding to a service name and protocol}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.getservbyname(name,proto);
@@ -36879,6 +37445,8 @@ end;
 {==============================================================================}
 
 function getprotobynumber(proto: int32_t): PProtoEnt; stdcall;
+{Retrieve protocol information corresponding to a protocol number}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.getprotobynumber(proto);
@@ -36887,6 +37455,8 @@ end;
 {==============================================================================}
 
 function getprotobyname(const name: PCHAR): PProtoEnt; stdcall;
+{Retrieve the protocol information corresponding to a protocol name}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.getprotobyname(name);
@@ -36894,15 +37464,25 @@ end;
 
 {==============================================================================}
 
-function getaddrinfo(pnodename, pservicename: PCHAR; phints: PAddrInfo; var ppresult: PAddrInfo): int32_t; stdcall;
+function getaddrinfo(pnodename, pservicename: PCHAR; phints: PAddrInfo; ppresult: PPAddrInfo): int32_t; stdcall;
+{RFC 3493 protocol-independent translation from a host name to an address}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
- Result:=Winsock2.getaddrinfo(pnodename,pservicename,phints,ppresult);
+ Result:=WSAEINVAL;
+
+ {Check Result}
+ NetworkSetLastError(WSAEINVAL);
+ if ppresult = nil then Exit;
+
+ Result:=Winsock2.getaddrinfo(pnodename,pservicename,phints,ppresult^);
 end;
 
 {==============================================================================}
 
 procedure freeaddrinfo(ai: PAddrInfo); stdcall;
+{Free address information that GetAddrInfo dynamically allocates in TAddrInfo structures}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Winsock2.freeaddrinfo(ai);
@@ -36911,6 +37491,8 @@ end;
 {==============================================================================}
 
 function getnameinfo(sa: PSockAddr; salen: int; host: PCHAR; hostlen: uint32_t; serv: PCHAR; servlen: uint32_t; flags: int): int; stdcall;
+{RFC 3493 protocol-independent name resolution from an address to a host name and a port number to a service name}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.getnameinfo(sa,salen,host,hostlen,serv,servlen,flags);
@@ -36918,15 +37500,34 @@ end;
 
 {==============================================================================}
 
-function WSAStartup(wversionrequired: uint16_t; var wsdata: TWSAData): int32_t; stdcall;
+function gai_strerror(ecode: int): PCHAR; stdcall;
+{Return an error message for an error code returned by getaddrinfo or getnameinfo}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
- Result:=Winsock2.WSAStartup(wversionrequired,wsdata);
+ Result:=Winsock2.gai_strerror(ecode);
+end;
+
+{==============================================================================}
+
+function WSAStartup(wversionrequired: uint16_t; wsdata: PWSADATA): int32_t; stdcall;
+{Initiate use of Winsock 2 by an application}
+{See the Windows Sockets 2 documentation for additional information}
+begin
+ {}
+ Result:=WSAEFAULT;
+
+ {Check Data}
+ if wsdata = nil then Exit;
+
+ Result:=Winsock2.WSAStartup(wversionrequired,wsdata^);
 end;
 
 {==============================================================================}
 
 function WSACleanup: int32_t; stdcall;
+{Terminate use of Winsock 2 by an application}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSACleanup;
@@ -36935,6 +37536,8 @@ end;
 {==============================================================================}
 
 procedure WSASetLastError(ierror: int32_t); stdcall;
+{Set the error code that can be retrieved through the WSAGetLastError function}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Winsock2.WSASetLastError(ierror);
@@ -36943,6 +37546,8 @@ end;
 {==============================================================================}
 
 function WSAGetLastError: int32_t; stdcall;
+{Return the error status for the last Windows Sockets operation that failed}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSAGetLastError;
@@ -37046,15 +37651,25 @@ end;
 
 {==============================================================================}
 
-function __WSAFDIsSet(s: TSOCKET; var fdset: TFDSet): BOOL; stdcall;
+function __WSAFDIsSet(s: TSOCKET; fdset: PFDSet): BOOL; stdcall;
+{Return a value indicating whether a socket is included in a set of socket descriptors}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
- Result:=Winsock2.__WSAFDIsSet(s,fdset);
+ Result:=False;
+
+ {Check FDSet}
+ if fdset = nil then Exit;
+
+ Result:=Winsock2.__WSAFDIsSet(s,fdset^);
 end;
 
 {==============================================================================}
 
-function inet_pton(family: int32_t; pszaddrstring: PCHAR; paddrbuf: PVOID): int32_t; stdcall;
+function inet_pton(family: int32_t; const pszaddrstring: PCHAR; paddrbuf: PVOID): int32_t; stdcall;
+{Convert an IPv4 or IPv6 Internet network address in its standard text presentation form into its numeric binary form}
+{Note: Address will be returned in network byte order where applicable}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.inet_pton(family,pszaddrstring,paddrbuf);
@@ -37062,7 +37677,10 @@ end;
 
 {==============================================================================}
 
-function InetPtonA(family: int32_t; pszaddrstring: PCHAR; paddrbuf: PVOID): int32_t; stdcall;
+function InetPtonA(family: int32_t; const pszaddrstring: PCHAR; paddrbuf: PVOID): int32_t; stdcall;
+{Convert an IPv4 or IPv6 Internet network address in its standard text presentation form into its numeric binary form}
+{Note: Address will be returned in network byte order where applicable}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.InetPtonA(family,pszaddrstring,paddrbuf);
@@ -37070,7 +37688,10 @@ end;
 
 {==============================================================================}
 
-function InetPtonW(family: int32_t; pszaddrstring: PWCHAR; paddrbuf: PVOID): int32_t; stdcall;
+function InetPtonW(family: int32_t; const pszaddrstring: PWCHAR; paddrbuf: PVOID): int32_t; stdcall;
+{Convert an IPv4 or IPv6 Internet network address in its standard text presentation form into its numeric binary form}
+{Note: Address will be returned in network byte order where applicable}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.InetPtonW(family,pszaddrstring,paddrbuf);
@@ -37079,6 +37700,9 @@ end;
 {==============================================================================}
 
 function inet_ntop(family: int32_t; paddr: PVOID; pstringbuf: PCHAR; stringbufsize: int32_t): PCHAR; stdcall;
+{Convert an IPv4 or IPv6 Internet network address into a string in Internet standard format}
+{Note: Address will be in network byte order where applicable}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.inet_ntop(family,paddr,pstringbuf,stringbufsize);
@@ -37087,6 +37711,9 @@ end;
 {==============================================================================}
 
 function InetNtopA(family: int32_t; paddr: PVOID; pstringbuf: PCHAR; stringbufsize: int32_t): PCHAR; stdcall;
+{Convert an IPv4 or IPv6 Internet network address into a string in Internet standard format}
+{Note: Address will be in network byte order where applicable}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.InetNtopA(family,paddr,pstringbuf,stringbufsize);
@@ -37095,6 +37722,9 @@ end;
 {==============================================================================}
 
 function InetNtopW(family: int32_t; paddr: PVOID; pstringbuf: PWCHAR; stringbufsize: int32_t): PWCHAR; stdcall;
+{Convert an IPv4 or IPv6 Internet network address into a string in Internet standard format}
+{Note: Address will be in network byte order where applicable}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.InetNtopW(family,paddr,pstringbuf,stringbufsize);
@@ -37102,7 +37732,9 @@ end;
 
 {==============================================================================}
 
-function WSAAccept(s: TSOCKET; addr: TSockAddr; addrlen: Pint32_t; lpfncondition: LPCONDITIONPROC; dwcallbackdata: uint32_t): TSOCKET; stdcall;
+function WSAAccept(s: TSOCKET; addr: PSockAddr; addrlen: Pint32_t; lpfncondition: LPCONDITIONPROC; dwcallbackdata: uintptr_t): TSOCKET; stdcall;
+{Conditionally accept a connection based on the return value of a condition function and allows the transfer of connection data}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSAAccept(s,addr,addrlen,lpfncondition,dwcallbackdata);
@@ -37111,6 +37743,8 @@ end;
 {==============================================================================}
 
 function WSACloseEvent(hevent: WSAEVENT): BOOL; stdcall;
+{Close the handle to an event object and free resources associated with the event object}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSACloseEvent(hevent);
@@ -37119,6 +37753,8 @@ end;
 {==============================================================================}
 
 function WSAConnect(s: TSOCKET; name: PSockAddr; namelen: int32_t; lpcallerdata, lpcalleedata: LPWSABUF; lpsqos, lpgqos: LPQOS): int32_t; stdcall;
+{Establish a connection to another socket application and exchange connect data}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSAConnect(s,name,namelen,lpcallerdata,lpcalleedata,lpsqos,lpgqos);
@@ -37126,7 +37762,7 @@ end;
 
 {==============================================================================}
 
-function WSAConnectByList(s: TSOCKET; socketaddresslist: PSOCKET_ADDRESS_LIST; var localaddresslength: uint32_t; localaddress: PSockAddr; var remoteaddresslength: uint32_t; remoteaddress: PSockAddr; timeout: PTimeVal; reserved: LPWSAOVERLAPPED): BOOL; stdcall;
+function WSAConnectByList(s: TSOCKET; socketaddresslist: PSOCKET_ADDRESS_LIST; localaddresslength: Puint32_t; localaddress: PSockAddr; remoteaddresslength: Puint32_t; remoteaddress: PSockAddr; timeout: PTimeVal; reserved: LPWSAOVERLAPPED): BOOL; stdcall;
 begin
  {}
  Result:=Winsock2.WSAConnectByList(s,socketaddresslist,localaddresslength,localaddress,remoteaddresslength,remoteaddress,timeout,reserved);
@@ -37134,7 +37770,7 @@ end;
 
 {==============================================================================}
 
-function WSAConnectByNameA(s: TSOCKET; nodename: PCHAR; servicename: PCHAR; var localaddresslength: uint32_t; localaddress: PSockAddr; var remoteaddresslength: uint32_t; remoteaddress: PSockAddr; timeout: PTimeVal; reserved: LPWSAOVERLAPPED): BOOL; stdcall;
+function WSAConnectByNameA(s: TSOCKET; nodename: PCHAR; servicename: PCHAR; localaddresslength: Puint32_t; localaddress: PSockAddr; remoteaddresslength: Puint32_t; remoteaddress: PSockAddr; timeout: PTimeVal; reserved: LPWSAOVERLAPPED): BOOL; stdcall;
 begin
  {}
  Result:=Winsock2.WSAConnectByNameA(s,nodename,servicename,localaddresslength,localaddress,remoteaddresslength,remoteaddress,timeout,reserved);
@@ -37142,7 +37778,7 @@ end;
 
 {==============================================================================}
 
-function WSAConnectByNameW(s: TSOCKET; nodename: PWCHAR; servicename: PWCHAR; var localaddresslength: uint32_t; localaddress: PSockAddr; var remoteaddresslength: uint32_t; remoteaddress: PSockAddr; timeout: PTimeVal; reserved: LPWSAOVERLAPPED): BOOL; stdcall;
+function WSAConnectByNameW(s: TSOCKET; nodename: PWCHAR; servicename: PWCHAR; localaddresslength: Puint32_t; localaddress: PSockAddr; remoteaddresslength: Puint32_t; remoteaddress: PSockAddr; timeout: PTimeVal; reserved: LPWSAOVERLAPPED): BOOL; stdcall;
 begin
  {}
  Result:=Winsock2.WSAConnectByNameW(s,nodename,servicename,localaddresslength,localaddress,remoteaddresslength,remoteaddress,timeout,reserved);
@@ -37151,6 +37787,8 @@ end;
 {==============================================================================}
 
 function WSACreateEvent: WSAEVENT; stdcall;
+{Create a manual reset event object with an initial state of unsignaled}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSACreateEvent;
@@ -37175,6 +37813,8 @@ end;
 {==============================================================================}
 
 function WSAEnumNetworkEvents(s: TSOCKET; heventobject: WSAEVENT; lpnetworkevents: LPWSANETWORKEVENTS): int32_t; stdcall;
+{Discover occurrences of network events for the indicated socket, clear internal network event records, and reset event objects}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSAEnumNetworkEvents(s,heventobject,lpnetworkevents);
@@ -37182,7 +37822,7 @@ end;
 
 {==============================================================================}
 
-function WSAEnumProtocolsA(lpiprotocols: Pint32_t; lpprotocolbuffer: LPWSAProtocol_InfoA; var lpdwbufferlength: uint32_t): int32_t; stdcall;
+function WSAEnumProtocolsA(lpiprotocols: Pint32_t; lpprotocolbuffer: LPWSAProtocol_InfoA; lpdwbufferlength: Puint32_t): int32_t; stdcall;
 begin
  {}
  Result:=Winsock2.WSAEnumProtocolsA(lpiprotocols,lpprotocolbuffer,lpdwbufferlength);
@@ -37190,7 +37830,7 @@ end;
 
 {==============================================================================}
 
-function WSAEnumProtocolsW(lpiprotocols: Pint32_t; lpprotocolbuffer: LPWSAProtocol_InfoW; var lpdwbufferlength: uint32_t): int32_t; stdcall;
+function WSAEnumProtocolsW(lpiprotocols: Pint32_t; lpprotocolbuffer: LPWSAProtocol_InfoW; lpdwbufferlength: Puint32_t): int32_t; stdcall;
 begin
  {}
  Result:=Winsock2.WSAEnumProtocolsW(lpiprotocols,lpprotocolbuffer,lpdwbufferlength);
@@ -37199,6 +37839,8 @@ end;
 {==============================================================================}
 
 function WSAEventSelect(s: TSOCKET; heventobject: WSAEVENT; lnetworkevents: int32_t): int32_t; stdcall;
+{Specify an event object to be associated with the requested set of FD_XXX network events}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSAEventSelect(s,heventobject,lnetworkevents);
@@ -37206,7 +37848,9 @@ end;
 
 {==============================================================================}
 
-function WSAGetOverlappedResult(s: TSOCKET; lpoverlapped: LPWSAOVERLAPPED; lpcbtransfer: LPDWORD; fwait: BOOL; var lpdwflags: uint32_t): BOOL; stdcall;
+function WSAGetOverlappedResult(s: TSOCKET; lpoverlapped: LPWSAOVERLAPPED; lpcbtransfer: LPDWORD; fwait: BOOL; lpdwflags: Puint32_t): BOOL; stdcall;
+{Retrieve the results of an overlapped operation on the specified socket}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSAGetOverlappedResult(s,lpoverlapped,lpcbtransfer,fwait,lpdwflags);
@@ -37222,7 +37866,9 @@ end;
 
 {==============================================================================}
 
-function WSAHtonl(s: TSOCKET; hostlong: u_long; var lpnetlong: uint32_t): int32_t; stdcall;
+function WSAHtonl(s: TSOCKET; hostlong: u_long; lpnetlong: Puint32_t): int32_t; stdcall;
+{Convert a u_long from host byte order to network byte order}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSAHtonl(s,hostlong,lpnetlong);
@@ -37230,7 +37876,9 @@ end;
 
 {==============================================================================}
 
-function WSAHtons(s: TSOCKET; hostshort: u_short; var lpnetshort: uint16_t): int32_t; stdcall;
+function WSAHtons(s: TSOCKET; hostshort: u_short; lpnetshort: Puint16_t): int32_t; stdcall;
+{Convert a u_short from host byte order to network byte order}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSAHtons(s,hostshort,lpnetshort);
@@ -37239,6 +37887,8 @@ end;
 {==============================================================================}
 
 function WSAIoctl(s: TSOCKET; dwiocontrolcode: uint32_t; lpvinbuffer: PVOID; cbinbuffer: uint32_t; lpvoutbuffer: PVOID; cboutbuffer: uint32_t; lpcbbytesreturned: LPDWORD; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall;
+{Control the mode of a socket}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSAIoctl(s,dwiocontrolcode,lpvinbuffer,cbinbuffer,lpvoutbuffer,cboutbuffer,lpcbbytesreturned,lpoverlapped,lpcompletionroutine);
@@ -37254,7 +37904,9 @@ end;
 
 {==============================================================================}
 
-function WSANtohl(s: TSOCKET; netlong: u_long; var lphostlong: uint32_t): int32_t; stdcall;
+function WSANtohl(s: TSOCKET; netlong: u_long; lphostlong: Puint32_t): int32_t; stdcall;
+{Convert a u_long from network byte order to host byte order}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSANtohl(s,netlong,lphostlong);
@@ -37262,7 +37914,9 @@ end;
 
 {==============================================================================}
 
-function WSANtohs(s: TSOCKET; netshort: u_short; var lphostshort: uint16_t): int32_t; stdcall;
+function WSANtohs(s: TSOCKET; netshort: u_short; lphostshort: Puint16_t): int32_t; stdcall;
+{Convert a u_short from network byte order to host byte order}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSANtohs(s,netshort,lphostshort);
@@ -37271,6 +37925,8 @@ end;
 {==============================================================================}
 
 function WSAPoll(fdarray: LPWSAPOLLFD; fds: ULONG; timeout: int32_t): int32_t; stdcall;
+{Determine status of one or more sockets}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSAPoll(fdarray,fds,timeout);
@@ -37278,7 +37934,7 @@ end;
 
 {==============================================================================}
 
-function WSAProviderConfigChange(var lpnotificationhandle: THANDLE; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall;
+function WSAProviderConfigChange(lpnotificationhandle: PHANDLE; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall;
 begin
  {}
  Result:=Winsock2.WSAProviderConfigChange(lpnotificationhandle,lpoverlapped,lpcompletionroutine);
@@ -37286,7 +37942,9 @@ end;
 
 {==============================================================================}
 
-function WSARecv(s: TSOCKET; lpbuffers: LPWSABUF; dwbuffercount: uint32_t; var lpnumberofbytesrecvd: uint32_t; var lpflags: uint32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall;
+function WSARecv(s: TSOCKET; lpbuffers: LPWSABUF; dwbuffercount: uint32_t; lpnumberofbytesrecvd: Puint32_t; lpflags: Puint32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall;
+{Receive data from a connected socket or a bound connectionless socket}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSARecv(s,lpbuffers,dwbuffercount,lpnumberofbytesrecvd,lpflags,lpoverlapped,lpcompletionroutine);
@@ -37302,7 +37960,9 @@ end;
 
 {==============================================================================}
 
-function WSARecvFrom(s: TSOCKET; lpbuffers: LPWSABUF; dwbuffercount: uint32_t; var lpnumberofbytesrecvd: uint32_t; var lpflags: uint32_t; lpfrom: PSockAddr; lpfromlen: Pint32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall;
+function WSARecvFrom(s: TSOCKET; lpbuffers: LPWSABUF; dwbuffercount: uint32_t; lpnumberofbytesrecvd: Puint32_t; lpflags: Puint32_t; lpfrom: PSockAddr; lpfromlen: Pint32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall;
+{Receive a datagram and store the source address}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSARecvFrom(s,lpbuffers,dwbuffercount,lpnumberofbytesrecvd,lpflags,lpfrom,lpfromlen,lpoverlapped,lpcompletionroutine);
@@ -37310,7 +37970,9 @@ end;
 
 {==============================================================================}
 
-function WSARecvMsg(s: TSOCKET; lpmsg: LPWSAMSG; lpdwnumberofbytesrecvd: uint32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall;
+function WSARecvMsg(s: TSOCKET; lpmsg: LPWSAMSG; lpdwnumberofbytesrecvd: Puint32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall;
+{Receive data and optional control information from connected and unconnected sockets}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSARecvMsg(s,lpmsg,lpdwnumberofbytesrecvd,lpoverlapped,lpcompletionroutine);
@@ -37319,6 +37981,8 @@ end;
 {==============================================================================}
 
 function WSAResetEvent(hevent: WSAEVENT): BOOL; stdcall;
+{Reset the state of the specified event object to unsignaled}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSAResetEvent(hevent);
@@ -37326,7 +37990,9 @@ end;
 
 {==============================================================================}
 
-function WSASend(s: TSOCKET; lpbuffers: LPWSABUF; dwbuffercount: uint32_t; var lpnumberofbytessent: uint32_t; dwflags: uint32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall;
+function WSASend(s: TSOCKET; lpbuffers: LPWSABUF; dwbuffercount: uint32_t; lpnumberofbytessent: Puint32_t; dwflags: uint32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall;
+{Send data on a connected socket}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSASend(s,lpbuffers,dwbuffercount,lpnumberofbytessent,dwflags,lpoverlapped,lpcompletionroutine);
@@ -37342,7 +38008,9 @@ end;
 
 {==============================================================================}
 
-function WSASendTo(s: TSOCKET; lpbuffers: LPWSABUF; dwbuffercount: uint32_t; var lpnumberofbytessent: uint32_t; dwflags: uint32_t; lpto: PSockAddr; itolen: int32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall;
+function WSASendTo(s: TSOCKET; lpbuffers: LPWSABUF; dwbuffercount: uint32_t; lpnumberofbytessent: Puint32_t; dwflags: uint32_t; lpto: PSockAddr; itolen: int32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall;
+{Send data to a specific destination, using overlapped I/O where applicable}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSASendTo(s,lpbuffers,dwbuffercount,lpnumberofbytessent,dwflags,lpto,itolen,lpoverlapped,lpcompletionroutine);
@@ -37350,7 +38018,9 @@ end;
 
 {==============================================================================}
 
-function WSASendMsg(s: TSOCKET; lpmsg: LPWSAMSG; dwflags: uint32_t; lpnumberofbytessent: uint32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall;
+function WSASendMsg(s: TSOCKET; lpmsg: LPWSAMSG; dwflags: uint32_t; lpnumberofbytessent: Puint32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall;
+{Send data and optional control information from connected and unconnected sockets}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSASendMsg(s,lpmsg,dwflags,lpnumberofbytessent,lpoverlapped,lpcompletionroutine);
@@ -37359,6 +38029,8 @@ end;
 {==============================================================================}
 
 function WSASetEvent(hevent: WSAEVENT): BOOL; stdcall;
+{Set the state of the specified event object to signaled}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSASetEvent(hevent);
@@ -37367,6 +38039,8 @@ end;
 {==============================================================================}
 
 function WSASocketA(af, itype, protocol: int32_t; lpprotocolinfo: LPWSAProtocol_InfoA; g: GROUP; dwflags: uint32_t): TSOCKET; stdcall;
+{Create a socket that is bound to a specific transport-service provider}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSASocketA(af,itype,protocol,lpprotocolinfo,g,dwflags);
@@ -37375,6 +38049,8 @@ end;
 {==============================================================================}
 
 function WSASocketW(af, itype, protocol: int32_t; lpprotocolinfo: LPWSAProtocol_InfoW; g: GROUP; dwflags: uint32_t): TSOCKET; stdcall;
+{Create a socket that is bound to a specific transport-service provider}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSASocketW(af,itype,protocol,lpprotocolinfo,g,dwflags);
@@ -37383,6 +38059,8 @@ end;
 {==============================================================================}
 
 function WSAWaitForMultipleEvents(cevents: uint32_t; lphevents: PWSAEVENT; fwaitall: BOOL; dwtimeout: uint32_t; falertable: BOOL): uint32_t; stdcall;
+{Wait for one or all of the specified event objects to be in the signaled state or the time-out interval to expire}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSAWaitForMultipleEvents(cevents,lphevents,fwaitall,dwtimeout,falertable);
@@ -37390,7 +38068,9 @@ end;
 
 {==============================================================================}
 
-function WSAAddressToStringA(var lpsaaddress: TSockAddr; const dwaddresslength: uint32_t; const lpprotocolinfo: LPWSAProtocol_InfoA; const lpszaddressstring: PCHAR; var lpdwaddressstringlength: uint32_t): int32_t; stdcall;
+function WSAAddressToStringA(lpsaaddress: PSockAddr; dwaddresslength: uint32_t; lpprotocolinfo: LPWSAProtocol_InfoA; lpszaddressstring: PCHAR; lpdwaddressstringlength: Puint32_t): int32_t; stdcall;
+{Convert all components of a sockaddr structure into a human-readable string representation of the address.}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSAAddressToStringA(lpsaaddress,dwaddresslength,lpprotocolinfo,lpszaddressstring,lpdwaddressstringlength);
@@ -37398,7 +38078,9 @@ end;
 
 {==============================================================================}
 
-function WSAAddressToStringW(var lpsaaddress: TSockAddr; const dwaddresslength: uint32_t; const lpprotocolinfo: LPWSAProtocol_InfoW; const lpszaddressstring: PWCHAR; var lpdwaddressstringlength: uint32_t): int32_t; stdcall;
+function WSAAddressToStringW(lpsaaddress: PSockAddr; dwaddresslength: uint32_t; lpprotocolinfo: LPWSAProtocol_InfoW; lpszaddressstring: PWCHAR; lpdwaddressstringlength: Puint32_t): int32_t; stdcall;
+{Convert all components of a sockaddr structure into a human-readable string representation of the address.}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSAAddressToStringW(lpsaaddress,dwaddresslength,lpprotocolinfo,lpszaddressstring,lpdwaddressstringlength);
@@ -37406,7 +38088,9 @@ end;
 
 {==============================================================================}
 
-function WSAStringToAddressA(const addressstring: PCHAR; const addressfamily: int32_t; const lpprotocolinfo: LPWSAProtocol_InfoA; var lpaddress: TSockAddr; var lpaddresslength: int32_t): int32_t; stdcall;
+function WSAStringToAddressA(const addressstring: PCHAR; addressfamily: int32_t; lpprotocolinfo: LPWSAProtocol_InfoA; lpaddress: PSockAddr; lpaddresslength: Pint32_t): int32_t; stdcall;
+{Convert a network address in its standard text presentation form into its numeric binary form in a sockaddr structure}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSAStringToAddressA(addressstring,addressfamily,lpprotocolinfo,lpaddress,lpaddresslength);
@@ -37414,7 +38098,9 @@ end;
 
 {==============================================================================}
 
-function WSAStringToAddressW(const addressstring: PWCHAR; const addressfamily: int32_t; const lpprotocolinfo: LPWSAProtocol_InfoA; var lpaddress: TSockAddr; var lpaddresslength: int32_t): int32_t; stdcall;
+function WSAStringToAddressW(const addressstring: PWCHAR; addressfamily: int32_t; lpprotocolinfo: LPWSAProtocol_InfoA; lpaddress: PSockAddr; lpaddresslength: Pint32_t): int32_t; stdcall;
+{Convert a network address in its standard text presentation form into its numeric binary form in a sockaddr structure}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=Winsock2.WSAStringToAddressW(addressstring,addressfamily,lpprotocolinfo,lpaddress,lpaddresslength);
@@ -37422,7 +38108,7 @@ end;
 
 {==============================================================================}
 
-function WSALookupServiceBeginA(const lpqsrestrictions: LPWSAQuerySetA; const dwcontrolflags: uint32_t; lphlookup: PHANDLE): int32_t; stdcall;
+function WSALookupServiceBeginA(lpqsrestrictions: LPWSAQuerySetA; dwcontrolflags: uint32_t; lphlookup: PHANDLE): int32_t; stdcall;
 begin
  {}
  Result:=Winsock2.WSALookupServiceBeginA(lpqsrestrictions,dwcontrolflags,lphlookup);
@@ -37430,7 +38116,7 @@ end;
 
 {==============================================================================}
 
-function WSALookupServiceBeginW(const lpqsrestrictions: LPWSAQuerySetW; const dwcontrolflags: uint32_t; lphlookup: PHANDLE): int32_t; stdcall;
+function WSALookupServiceBeginW(lpqsrestrictions: LPWSAQuerySetW; dwcontrolflags: uint32_t; lphlookup: PHANDLE): int32_t; stdcall;
 begin
  {}
  Result:=Winsock2.WSALookupServiceBeginW(lpqsrestrictions,dwcontrolflags,lphlookup);
@@ -37438,7 +38124,7 @@ end;
 
 {==============================================================================}
 
-function WSALookupServiceNextA(const hlookup: THANDLE; const dwcontrolflags: uint32_t; var lpdwbufferlength: uint32_t; lpqsresults: LPWSAQuerySetA): int32_t; stdcall;
+function WSALookupServiceNextA(hlookup: THANDLE; dwcontrolflags: uint32_t; lpdwbufferlength: Puint32_t; lpqsresults: LPWSAQuerySetA): int32_t; stdcall;
 begin
  {}
  Result:=Winsock2.WSALookupServiceNextA(hlookup,dwcontrolflags,lpdwbufferlength,lpqsresults);
@@ -37446,7 +38132,7 @@ end;
 
 {==============================================================================}
 
-function WSALookupServiceNextW(const hlookup: THANDLE; const dwcontrolflags: uint32_t; var lpdwbufferlength: uint32_t; lpqsresults: LPWSAQuerySetW): int32_t; stdcall;
+function WSALookupServiceNextW(hlookup: THANDLE; dwcontrolflags: uint32_t; lpdwbufferlength: Puint32_t; lpqsresults: LPWSAQuerySetW): int32_t; stdcall;
 begin
  {}
  Result:=Winsock2.WSALookupServiceNextW(hlookup,dwcontrolflags,lpdwbufferlength,lpqsresults);
@@ -37454,7 +38140,7 @@ end;
 
 {==============================================================================}
 
-function WSALookupServiceEnd(const hlookup: THANDLE): int32_t; stdcall;
+function WSALookupServiceEnd(hlookup: THANDLE): int32_t; stdcall;
 begin
  {}
  Result:=Winsock2.WSALookupServiceEnd(hlookup);
@@ -37462,7 +38148,7 @@ end;
 
 {==============================================================================}
 
-function WSAInstallServiceClassA(const lpserviceclassinfo: LPWSAServiceClassInfoA): int32_t; stdcall;
+function WSAInstallServiceClassA(lpserviceclassinfo: LPWSAServiceClassInfoA): int32_t; stdcall;
 begin
  {}
  Result:=Winsock2.WSAInstallServiceClassA(lpserviceclassinfo);
@@ -37470,7 +38156,7 @@ end;
 
 {==============================================================================}
 
-function WSAInstallServiceClassW(const lpserviceclassinfo: LPWSAServiceClassInfoW): int32_t; stdcall;
+function WSAInstallServiceClassW(lpserviceclassinfo: LPWSAServiceClassInfoW): int32_t; stdcall;
 begin
  {}
  Result:=Winsock2.WSAInstallServiceClassW(lpserviceclassinfo);
@@ -37478,7 +38164,7 @@ end;
 
 {==============================================================================}
 
-function WSARemoveServiceClass(const lpserviceclassid: PGUID): int32_t; stdcall;
+function WSARemoveServiceClass(lpserviceclassid: PGUID): int32_t; stdcall;
 begin
  {}
  Result:=Winsock2.WSARemoveServiceClass(lpserviceclassid);
@@ -37486,7 +38172,7 @@ end;
 
 {==============================================================================}
 
-function WSAGetServiceClassInfoA(const lpproviderid: PGUID; const lpserviceclassid: PGUID; var lpdwbufsize: uint32_t; lpserviceclassinfo: LPWSAServiceClassInfoA): int32_t; stdcall;
+function WSAGetServiceClassInfoA(lpproviderid: PGUID; lpserviceclassid: PGUID; lpdwbufsize: Puint32_t; lpserviceclassinfo: LPWSAServiceClassInfoA): int32_t; stdcall;
 begin
  {}
  Result:=Winsock2.WSAGetServiceClassInfoA(lpproviderid,lpserviceclassid,lpdwbufsize,lpserviceclassinfo);
@@ -37494,7 +38180,7 @@ end;
 
 {==============================================================================}
 
-function WSAGetServiceClassInfoW(const lpproviderid: PGUID; const lpserviceclassid: PGUID; var lpdwbufsize: uint32_t; lpserviceclassinfo: LPWSAServiceClassInfoW): int32_t; stdcall;
+function WSAGetServiceClassInfoW(lpproviderid: PGUID; lpserviceclassid: PGUID; lpdwbufsize: Puint32_t; lpserviceclassinfo: LPWSAServiceClassInfoW): int32_t; stdcall;
 begin
  {}
  Result:=Winsock2.WSAGetServiceClassInfoW(lpproviderid,lpserviceclassid,lpdwbufsize,lpserviceclassinfo);
@@ -37502,7 +38188,7 @@ end;
 
 {==============================================================================}
 
-function WSAEnumNameSpaceProvidersA(var lpdwbufferlength: uint32_t; const lpnspbuffer: LPWSANameSpace_InfoA): int32_t; stdcall;
+function WSAEnumNameSpaceProvidersA(lpdwbufferlength: Puint32_t; lpnspbuffer: LPWSANameSpace_InfoA): int32_t; stdcall;
 begin
  {}
  Result:=Winsock2.WSAEnumNameSpaceProvidersA(lpdwbufferlength,lpnspbuffer);
@@ -37510,7 +38196,7 @@ end;
 
 {==============================================================================}
 
-function WSAEnumNameSpaceProvidersW(var lpdwbufferlength: uint32_t; const lpnspbuffer: LPWSANameSpace_InfoW): int32_t; stdcall;
+function WSAEnumNameSpaceProvidersW(lpdwbufferlength: Puint32_t; lpnspbuffer: LPWSANameSpace_InfoW): int32_t; stdcall;
 begin
  {}
  Result:=Winsock2.WSAEnumNameSpaceProvidersW(lpdwbufferlength,lpnspbuffer);
@@ -37518,7 +38204,7 @@ end;
 
 {==============================================================================}
 
-function WSAGetServiceClassNameByClassIdA(const lpserviceclassid: PGUID; lpszserviceclassname: PCHAR; var lpdwbufferlength: uint32_t): int32_t; stdcall;
+function WSAGetServiceClassNameByClassIdA(lpserviceclassid: PGUID; lpszserviceclassname: PCHAR; lpdwbufferlength: Puint32_t): int32_t; stdcall;
 begin
  {}
  Result:=Winsock2.WSAGetServiceClassNameByClassIdA(lpserviceclassid,lpszserviceclassname,lpdwbufferlength);
@@ -37526,7 +38212,7 @@ end;
 
 {==============================================================================}
 
-function WSAGetServiceClassNameByClassIdW(const lpserviceclassid: PGUID; lpszserviceclassname: PWCHAR; var lpdwbufferlength: uint32_t): int32_t; stdcall;
+function WSAGetServiceClassNameByClassIdW(lpserviceclassid: PGUID; lpszserviceclassname: PWCHAR; lpdwbufferlength: Puint32_t): int32_t; stdcall;
 begin
  {}
  Result:=Winsock2.WSAGetServiceClassNameByClassIdW(lpserviceclassid,lpszserviceclassname,lpdwbufferlength);
@@ -37534,7 +38220,7 @@ end;
 
 {==============================================================================}
 
-function WSASetServiceA(const lpqsreginfo: LPWSAQuerySetA; const essoperation: TWSAeSetServiceOp; const dwcontrolflags: uint32_t): int32_t; stdcall;
+function WSASetServiceA(lpqsreginfo: LPWSAQuerySetA; essoperation: TWSAESetServiceOp; dwcontrolflags: uint32_t): int32_t; stdcall;
 begin
  {}
  Result:=Winsock2.WSASetServiceA(lpqsreginfo,essoperation,dwcontrolflags);
@@ -37542,7 +38228,7 @@ end;
 
 {==============================================================================}
 
-function WSASetServiceW(const lpqsreginfo: LPWSAQuerySetW; const essoperation: TWSAeSetServiceOp; const dwcontrolflags: uint32_t): int32_t; stdcall;
+function WSASetServiceW(lpqsreginfo: LPWSAQuerySetW; essoperation: TWSAESetServiceOp; dwcontrolflags: uint32_t): int32_t; stdcall;
 begin
  {}
  Result:=Winsock2.WSASetServiceW(lpqsreginfo,essoperation,dwcontrolflags);
@@ -37598,47 +38284,78 @@ end;
 
 {==============================================================================}
 
-procedure FD_CLR(socket: TSOCKET; var fdset: TFDSet); stdcall;
+procedure FD_CLR(socket: TSOCKET; fdset: PFDSet); stdcall;
+{Remove a socket from an fd_set}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
- Winsock2.FD_CLR(socket,fdset);
+ {Check FDSet}
+ if fdset = nil then Exit;
+
+ Winsock2.FD_CLR(socket,fdset^);
 end;
 
 {==============================================================================}
 
-function FD_ISSET(socket: TSOCKET; var fdset: TFDSet): BOOL; stdcall;
+function FD_ISSET(socket: TSOCKET; fdset: PFDSet): BOOL; stdcall;
+{Check if a socket is a member of an fd_set}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
- Result:=Winsock2.FD_ISSET(socket,fdset);
+ Result:=False;
+
+ {Check FDSet}
+ if fdset = nil then Exit;
+
+ Result:=Winsock2.FD_ISSET(socket,fdset^);
 end;
 
 {==============================================================================}
 
-procedure FD_SET(socket: TSOCKET; var fdset: TFDSet); stdcall;
+procedure FD_SET(socket: TSOCKET; fdset: PFDSet); stdcall;
+{Add a socket to an fd_set}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
- Winsock2.FD_SET(socket,fdset);
+ {Check FDSet}
+ if fdset = nil then Exit;
+
+ Winsock2.FD_SET(socket,fdset^);
 end;
 
 {==============================================================================}
 
-procedure FD_ZERO(var fdset: TFDSet); stdcall;
+procedure FD_ZERO(fdset: PFDSet); stdcall;
+{Initialize an fd_set to null}
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
- Winsock2.FD_ZERO(fdset);
+ {Check FDSet}
+ if fdset = nil then Exit;
+
+ Winsock2.FD_ZERO(fdset^);
 end;
 
 {==============================================================================}
 {Winsock2 Undocumented Functions}
-function WsControl(proto: uint32_t; action: uint32_t; prequestinfo: PVOID; var pcbrequestinfolen: uint32_t; presponseinfo: PVOID; var pcbresponseinfolen: uint32_t): int; stdcall;
+function WsControl(proto: uint32_t; action: uint32_t; prequestinfo: PVOID; pcbrequestinfolen: Puint32_t; presponseinfo: PVOID; pcbresponseinfolen: Puint32_t): int; stdcall;
 begin
  {}
- Result:=Winsock2.WsControl(proto,action,prequestinfo,pcbrequestinfolen,presponseinfo,pcbresponseinfolen);
+ Result:=SOCKET_ERROR;
+
+ {Check Parameters}
+ NetworkSetLastError(WSAEINVAL);
+ if pcbrequestinfolen = nil then Exit;
+ if pcbresponseinfolen = nil then Exit;
+
+ Result:=Winsock2.WsControl(proto,action,prequestinfo,pcbrequestinfolen^,presponseinfo,pcbresponseinfolen^);
 end;
 
 {==============================================================================}
 
 function getnetbyaddr(addr: PVOID; len, struct: int): PNetEnt; stdcall;
+{Retrieve the network information corresponding to a network address}
+{Note: Address will be in network byte order where applicable}
 begin
  {}
  Result:=Winsock2.getnetbyaddr(addr,len,struct);
@@ -37647,6 +38364,7 @@ end;
 {==============================================================================}
 
 function getnetbyname(const name: PCHAR): PNetEnt; stdcall;
+{Retrieve network address corresponding to a network name}
 begin
  {}
  Result:=Winsock2.getnetbyname(name);
@@ -37654,10 +38372,17 @@ end;
 
 {==============================================================================}
 {Winsock2 Enhanced Functions}
-function WsControlEx(proto: uint32_t; action: uint32_t; prequestinfo: PVOID; var pcbrequestinfolen: uint32_t; presponseinfo: PVOID; var pcbresponseinfolen: uint32_t): int; stdcall;
+function WsControlEx(proto: uint32_t; action: uint32_t; prequestinfo: PVOID; pcbrequestinfolen: Puint32_t; presponseinfo: PVOID; pcbresponseinfolen: Puint32_t): int; stdcall;
 begin
  {}
- Result:=Winsock2.WsControlEx(proto,action,prequestinfo,pcbrequestinfolen,presponseinfo,pcbresponseinfolen);
+ Result:=SOCKET_ERROR;
+
+ {Check Parameters}
+ NetworkSetLastError(WSAEINVAL);
+ if pcbrequestinfolen = nil then Exit;
+ if pcbresponseinfolen = nil then Exit;
+
+ Result:=Winsock2.WsControlEx(proto,action,prequestinfo,pcbrequestinfolen^,presponseinfo,pcbresponseinfolen^);
 end;
 
 {==============================================================================}
@@ -37699,6 +38424,8 @@ end;
 {Iphlpapi Functions}
 {$IFDEF API_EXPORT_IPHLPAPI}
 function GetNumberOfInterfaces(var pdwnumif: uint32_t): uint32_t; stdcall;
+{Retrieve the number of interfaces on the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetNumberOfInterfaces(pdwnumif);
@@ -37707,6 +38434,8 @@ end;
 {==============================================================================}
 
 function GetIfEntry(pifrow: PMIB_IFROW): uint32_t; stdcall;
+{Retrieve information for the specified interface on the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetIfEntry(pifrow);
@@ -37715,6 +38444,8 @@ end;
 {==============================================================================}
 
 function GetIfTable(piftable: PMIB_IFTABLE; var pdwsize: uint32_t; border: BOOL): uint32_t; stdcall;
+{Retrieve the MIB-II interface table}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetIfTable(piftable,pdwsize,border);
@@ -37723,6 +38454,8 @@ end;
 {==============================================================================}
 
 function GetIpAddrTable(pipaddrtable: PMIB_IPADDRTABLE; var pdwsize: uint32_t; border: BOOL): uint32_t; stdcall;
+{Retrieve the interface to IPv4 address mapping table}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetIpAddrTable(pipaddrtable,pdwsize,border);
@@ -37731,6 +38464,8 @@ end;
 {==============================================================================}
 
 function GetIpNetTable(pipnettable: PMIB_IPNETTABLE; var pdwsize: uint32_t; border: BOOL): uint32_t; stdcall;
+{Retrieve the IPv4 to physical address mapping table}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetIpNetTable(pipnettable,pdwsize,border);
@@ -37739,6 +38474,8 @@ end;
 {==============================================================================}
 
 function GetIpForwardTable(pipforwardtable: PMIB_IPFORWARDTABLE; var pdwsize: uint32_t; border: BOOL): uint32_t; stdcall;
+{Retrieve the IPv4 routing table}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetIpForwardTable(pipforwardtable,pdwsize,border);
@@ -37747,6 +38484,8 @@ end;
 {==============================================================================}
 
 function GetTcpTable(ptcptable: PMIB_TCPTABLE; var pdwsize: uint32_t; border: BOOL): uint32_t; stdcall;
+{Retrieve the IPv4 TCP connection table}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetTcpTable(ptcptable,pdwsize,border);
@@ -37755,6 +38494,8 @@ end;
 {==============================================================================}
 
 function GetUdpTable(pudptable: PMIB_UDPTABLE; var pdwsize: uint32_t; border: BOOL): uint32_t; stdcall;
+{Retrieve the IPv4 User Datagram Protocol (UDP) listener table}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetUdpTable(pudptable,pdwsize,border);
@@ -37763,6 +38504,8 @@ end;
 {==============================================================================}
 
 function GetIpStatistics(var pstats: MIB_IPSTATS): uint32_t; stdcall;
+{Retrieve the IP statistics for the current computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetIpStatistics(pstats);
@@ -37771,6 +38514,8 @@ end;
 {==============================================================================}
 
 function GetIcmpStatistics(var pstats: MIB_ICMP): uint32_t; stdcall;
+{Retrieve the Internet Control Message Protocol (ICMP) for IPv4 statistics for the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetIcmpStatistics(pstats);
@@ -37779,6 +38524,8 @@ end;
 {==============================================================================}
 
 function GetTcpStatistics(var pstats: MIB_TCPSTATS): uint32_t; stdcall;
+{Retrieve the TCP statistics for the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetTcpStatistics(pstats);
@@ -37787,6 +38534,8 @@ end;
 {==============================================================================}
 
 function GetUdpStatistics(var pstats: MIB_UDPSTATS): uint32_t; stdcall;
+{Retrieve the User Datagram Protocol (UDP) statistics for the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetUdpStatistics(pstats);
@@ -37795,6 +38544,8 @@ end;
 {==============================================================================}
 
 function SetIfEntry(const pifrow: MIB_IFROW): uint32_t; stdcall;
+{Set the administrative status of an interface}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.SetIfEntry(pifrow);
@@ -37803,6 +38554,8 @@ end;
 {==============================================================================}
 
 function CreateIpForwardEntry(const proute: MIB_IPFORWARDROW): uint32_t; stdcall;
+{Create a route in the local computer's IPv4 routing table}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.CreateIpForwardEntry(proute);
@@ -37811,6 +38564,8 @@ end;
 {==============================================================================}
 
 function SetIpForwardEntry(const proute: MIB_IPFORWARDROW): uint32_t; stdcall;
+{Modify an existing route in the local computer's IPv4 routing table}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.SetIpForwardEntry(proute);
@@ -37819,6 +38574,8 @@ end;
 {==============================================================================}
 
 function DeleteIpForwardEntry(const proute: MIB_IPFORWARDROW): uint32_t; stdcall;
+{Delete an existing route in the local computer's IPv4 routing table}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.DeleteIpForwardEntry(proute);
@@ -37827,6 +38584,8 @@ end;
 {==============================================================================}
 
 function SetIpStatistics(const pipstats: MIB_IPSTATS): uint32_t; stdcall;
+{Toggle IP forwarding on or off and set the default time-to-live (TTL) value for the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.SetIpStatistics(pipstats);
@@ -37835,6 +38594,8 @@ end;
 {==============================================================================}
 
 function SetIpTTL(nttl: UINT): uint32_t; stdcall;
+{Set the default time-to-live (TTL) value for the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.SetIpTTL(nttl);
@@ -37843,6 +38604,8 @@ end;
 {==============================================================================}
 
 function CreateIpNetEntry(const parpentry: MIB_IPNETROW): uint32_t; stdcall;
+{Create an Address Resolution Protocol (ARP) entry in the ARP table on the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.CreateIpNetEntry(parpentry);
@@ -37851,6 +38614,8 @@ end;
 {==============================================================================}
 
 function SetIpNetEntry(const parpentry: MIB_IPNETROW): uint32_t; stdcall;
+{Modify an existing ARP entry in the ARP table on the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.SetIpNetEntry(parpentry);
@@ -37859,6 +38624,8 @@ end;
 {==============================================================================}
 
 function DeleteIpNetEntry(const parpentry: MIB_IPNETROW): uint32_t; stdcall;
+{Delete an ARP entry from the ARP table on the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.DeleteIpNetEntry(parpentry);
@@ -37867,6 +38634,8 @@ end;
 {==============================================================================}
 
 function FlushIpNetTable(dwifindex: uint32_t): uint32_t; stdcall;
+{Delete all ARP entries for the specified interface from the ARP table on the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.FlushIpNetTable(dwifindex);
@@ -37875,6 +38644,8 @@ end;
 {==============================================================================}
 
 function CreateProxyArpEntry(dwaddress, dwmask, dwifindex: uint32_t): uint32_t; stdcall;
+{Create a Proxy Address Resolution Protocol (PARP) entry on the local computer for the specified IPv4 address}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.CreateProxyArpEntry(dwaddress,dwmask,dwifindex);
@@ -37883,6 +38654,8 @@ end;
 {==============================================================================}
 
 function DeleteProxyArpEntry(dwaddress, dwmask, dwifindex: uint32_t): uint32_t; stdcall;
+{Delete the PARP entry on the local computer specified by the dwAddress and dwIfIndex parameters}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.DeleteProxyArpEntry(dwaddress,dwmask,dwifindex);
@@ -37891,6 +38664,8 @@ end;
 {==============================================================================}
 
 function SetTcpEntry(const ptcprow: MIB_TCPROW): uint32_t; stdcall;
+{Set the state of a TCP connection}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.SetTcpEntry(ptcprow);
@@ -37899,6 +38674,8 @@ end;
 {==============================================================================}
 
 function GetInterfaceInfo(piftable: PIP_INTERFACE_INFO; var dwoutbuflen: uint32_t): uint32_t; stdcall;
+{Obtain the list of the network interface adapters with IPv4 enabled on the local system}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetInterfaceInfo(piftable,dwoutbuflen);
@@ -37907,6 +38684,8 @@ end;
 {==============================================================================}
 
 function GetUniDirectionalAdapterInfo(pipifinfo: PIP_UNIDIRECTIONAL_ADAPTER_ADDRESS; var dwoutbuflen: uint32_t): uint32_t; stdcall;
+{Retrieve information about the unidirectional adapters installed on the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetUniDirectionalAdapterInfo(pipifinfo,dwoutbuflen);
@@ -37915,6 +38694,8 @@ end;
 {==============================================================================}
 
 function GetBestInterface(dwdestaddr: IPAddr; var pdwbestifindex: uint32_t): uint32_t; stdcall;
+{Retrieve the index of the interface that has the best route to the specified IPv4 address}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetBestInterface(dwdestaddr,pdwbestifindex);
@@ -37923,6 +38704,8 @@ end;
 {==============================================================================}
 
 function GetBestRoute(dwdestaddr, dwsourceaddr: uint32_t; pbestroute: PMIB_IPFORWARDROW): uint32_t; stdcall;
+{Retrieve the best route to the specified destination IP address}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetBestRoute(dwdestaddr,dwsourceaddr,pbestroute);
@@ -37931,6 +38714,8 @@ end;
 {==============================================================================}
 
 function NotifyAddrChange(var handle: THANDLE; overlapped: POVERLAPPED): uint32_t; stdcall;
+{Cause a notification to be sent to the caller whenever a change occurs in the table that maps IPv4 addresses to interfaces}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.NotifyAddrChange(handle,overlapped);
@@ -37939,6 +38724,8 @@ end;
 {==============================================================================}
 
 function NotifyRouteChange(var handle: THANDLE; overlapped: POVERLAPPED): uint32_t; stdcall;
+{Cause a notification to be sent to the caller whenever a change occurs in the IPv4 routing table}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.NotifyRouteChange(handle,overlapped);
@@ -37947,6 +38734,8 @@ end;
 {==============================================================================}
 
 function GetAdapterIndex(adaptername: LPWSTR; var ifindex: uint32_t): uint32_t; stdcall;
+{Obtain the index of an adapter, given its name}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetAdapterIndex(adaptername,ifindex);
@@ -37955,6 +38744,8 @@ end;
 {==============================================================================}
 
 function AddIPAddress(address: IPAddr; ipmask: IPMask; ifindex: uint32_t; var ntecontext, nteinstance: uint32_t): uint32_t; stdcall;
+{Add the specified IPv4 address to the specified adapter}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.AddIPAddress(address,ipmask,ifindex,ntecontext,nteinstance);
@@ -37963,6 +38754,8 @@ end;
 {==============================================================================}
 
 function DeleteIPAddress(ntecontext: uint32_t): uint32_t; stdcall;
+{Delete an IP address previously added using AddIPAddress}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.DeleteIPAddress(ntecontext);
@@ -37971,6 +38764,8 @@ end;
 {==============================================================================}
 
 function GetNetworkParams(pfixedinfo: PFIXED_INFO; var poutbuflen: uint32_t): uint32_t; stdcall;
+{Retrieve network parameters for the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetNetworkParams(pfixedinfo,poutbuflen);
@@ -37979,6 +38774,8 @@ end;
 {==============================================================================}
 
 function GetAdaptersInfo(padapterinfo: PIP_ADAPTER_INFO; var poutbuflen: uint32_t): uint32_t; stdcall;
+{Retrieve adapter information for the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetAdaptersInfo(padapterinfo,poutbuflen);
@@ -37987,6 +38784,8 @@ end;
 {==============================================================================}
 
 function GetPerAdapterInfo(ifindex: uint32_t; pperadapterinfo: PIP_PER_ADAPTER_INFO; var poutbuflen: uint32_t): uint32_t; stdcall;
+{Retrieve information about the adapter corresponding to the specified interface}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetPerAdapterInfo(ifindex,pperadapterinfo,poutbuflen);
@@ -37995,6 +38794,8 @@ end;
 {==============================================================================}
 
 function IpReleaseAddress(const adapterinfo: IP_ADAPTER_INDEX_MAP): uint32_t; stdcall;
+{Release an IPv4 address previously obtained through the Dynamic Host Configuration Protocol (DHCP)}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.IpReleaseAddress(adapterinfo);
@@ -38003,6 +38804,8 @@ end;
 {==============================================================================}
 
 function IpRenewAddress(const adapterinfo: IP_ADAPTER_INDEX_MAP): uint32_t; stdcall;
+{Renew a lease on an IPv4 address previously obtained through Dynamic Host Configuration Protocol (DHCP)}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.IpRenewAddress(adapterinfo);
@@ -38011,6 +38814,8 @@ end;
 {==============================================================================}
 
 function SendARP(const destip, srcip: IPAddr; pmacaddr: PDWORD; var phyaddrlen: uint32_t): uint32_t; stdcall;
+{Sends an Address Resolution Protocol (ARP) request to obtain the physical address that corresponds to the specified destination IPv4 address}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.SendARP(destip,srcip,pmacaddr,phyaddrlen);
@@ -38019,6 +38824,8 @@ end;
 {==============================================================================}
 
 function GetRTTAndHopCount(destipaddress: IPAddr; var hopcount: uint32_t; maxhops: uint32_t; var rtt: uint32_t): BOOL; stdcall;
+{Determine the round-trip time (RTT) and hop count to the specified destination}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetRTTAndHopCount(destipaddress,hopcount,maxhops,rtt);
@@ -38027,6 +38834,8 @@ end;
 {==============================================================================}
 
 function GetFriendlyIfIndex(ifindex: uint32_t): uint32_t; stdcall;
+{Take an interface index and return a backward-compatible interface index}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetFriendlyIfIndex(ifindex);
@@ -38035,6 +38844,8 @@ end;
 {==============================================================================}
 
 function EnableRouter(var phandle: THANDLE; poverlapped: POVERLAPPED): uint32_t; stdcall;
+{Turn on IPv4 forwarding on the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.EnableRouter(phandle,poverlapped);
@@ -38043,6 +38854,8 @@ end;
 {==============================================================================}
 
 function UnenableRouter(poverlapped: POVERLAPPED; lpdwenablecount: LPDWORD): uint32_t; stdcall;
+{Turn off IPv4 forwarding on the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.UnenableRouter(poverlapped,lpdwenablecount);

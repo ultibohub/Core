@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -32,7 +32,7 @@ Global Sockets
 ==============
 
  Notes: Includes all global socket definitions, base classes for GetXbyY
-        interfaces and DNS handling classes. 
+        interfaces and DNS handling classes.
 
         This unit is used by every network layer
 
@@ -45,11 +45,23 @@ Global Sockets
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit GlobalSock; 
+{$IFNDEF FPC_DOTTEDUNITS}
+unit GlobalSock;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //Clean this up to be more in line with other units //See headers of Winsock/Winsock2 for format
 
@@ -94,7 +106,7 @@ const
  SIOCATMARK = Cardinal( IOC_OUT or  {at oob mark?}
    ((4 and IOCPARM_MASK) shl 16) or
    (115 shl 8) or 7);
- 
+
 const
 { Protocols }
  IPPROTO_IP       =   0;           { dummy for IP }
@@ -108,7 +120,7 @@ const
  IPPROTO_HMP      =  20;           { hmp }
  IPPROTO_IDP      =  22;           { xns idp }
  IPPROTO_RDP      =  27;           { rdp }
- IPPROTO_IPV6	  =  41;           { IP6 header }
+ IPPROTO_IPV6      =  41;           { IP6 header }
  IPPROTO_ROUTING  =  43;           { IP6 routing header }
  IPPROTO_FRAGMENT =  44;           { IP6 fragmentation header }
  IPPROTO_ICMPV6   =  58;           { ICMP6 }
@@ -165,7 +177,7 @@ const
  IMPLINK_IP         =  155;
  IMPLINK_LOWEXPER   =  156;
  IMPLINK_HIGHEXPER  =  158;
- 
+
 const
  TF_DISCONNECT           = $01;
  TF_REUSE_SOCKET         = $02;
@@ -313,7 +325,7 @@ const
  _SS_ALIGNSIZE = SizeOf(Int64);     { Alignment size. }
  _SS_PAD1SIZE = _SS_ALIGNSIZE - SizeOf(SHORT);
  _SS_PAD2SIZE = _SS_MAXSIZE - (SizeOf(SHORT) + _SS_PAD1SIZE + _SS_ALIGNSIZE);
- 
+
 const
 { Protocol families, same as address families for now. }
  PF_UNSPEC       = AF_UNSPEC;
@@ -364,6 +376,7 @@ const
  MSG_OOB         = $1;             {process out-of-band data }
  MSG_PEEK        = $2;             {peek at incoming message }
  MSG_DONTROUTE   = $4;             {send without using routing tables }
+ MSG_WAITALL     = $8;             { do not complete until packet is completely filled }
 
  MSG_INTERRUPT   = $10;            {send/recv in the interrupt context}
  MSG_MAXIOVLEN   = 16;
@@ -380,7 +393,7 @@ const
  FD_ACCEPT       = $08;
  FD_CONNECT      = $10;
  FD_CLOSE        = $20;
- 
+
 const
 { All Windows Sockets error constants are biased by WSABASEERR from the "normal"}
  WSABASEERR              = 10000;
@@ -453,7 +466,7 @@ const
  WSA_E_NO_MORE           = (WSABASEERR+110);
  WSA_E_CANCELLED         = (WSABASEERR+111);
  WSAEREFUSED             = (WSABASEERR+112);
- 
+
 { Error return codes from gethostbyname() and gethostbyaddr()
   (when using the resolver). Note that these errors are
   retrieved via WSAGetLastError() and must therefore follow
@@ -503,7 +516,7 @@ const
  WSA_WAIT_IO_COMPLETION = WAIT_IO_COMPLETION;
  WSA_WAIT_TIMEOUT = WAIT_TIMEOUT;
  WSA_INFINITE = INFINITE;
- 
+
 { Windows Sockets errors redefined as regular Berkeley error constants.
   These are commented out in Windows NT to avoid conflicts with errno.h.
   Use the WSA constants instead. }
@@ -550,15 +563,23 @@ const
  EVERNOTSUPPORTED   =  WSAVERNOTSUPPORTED;
  ENOTINITIALISED    =  WSANOTINITIALISED;
 
-const 
+const
  WSADESCRIPTION_LEN     =   256;
  WSASYS_STATUS_LEN      =   128;
- 
+
 const
  SD_RECEIVE = $00;
  SD_SEND = $01;
  SD_BOTH = $02;
- 
+
+const
+{ WinSock 2 extension -- manifest constants for WSASocket() }
+ WSA_FLAG_OVERLAPPED = $01;
+ WSA_FLAG_MULTIPOINT_C_ROOT = $02;
+ WSA_FLAG_MULTIPOINT_C_LEAF = $04;
+ WSA_FLAG_MULTIPOINT_D_ROOT = $08;
+ WSA_FLAG_MULTIPOINT_D_LEAF = $10;
+
 {==============================================================================}
 const
  {Global Socket constants for undocumented Winsock functions}
@@ -590,7 +611,7 @@ const
  WSA_IF_OPER_STATUS_CONNECTING      = 3;
  WSA_IF_OPER_STATUS_CONNECTED       = 4;
  WSA_IF_OPER_STATUS_OPERATIONAL     = 5;
- 
+
 const
  WSA_IF_TYPE_OTHER              = 1;   {Some other type of network interface}
  WSA_IF_TYPE_ETHERNET_CSMACD    = 6;   {An Ethernet network interface}
@@ -607,11 +628,11 @@ const
  WSA_IF_TYPE_WWANPP             = 243; {A mobile broadband interface for GSM-based devices}
  WSA_IF_TYPE_WWANPP2            = 244; {A mobile broadband interface for CDMA-based devices}
 
-const 
+const
  WSA_IF_ADMIN_STATUS_UP         = 1;
  WSA_IF_ADMIN_STATUS_DOWN       = 2;
  WSA_IF_ADMIN_STATUS_TESTING    = 3;
- 
+
 const
  WSA_TCP_STATE_CLOSED     = 1;
  WSA_TCP_STATE_LISTEN     = 2;
@@ -625,7 +646,7 @@ const
  WSA_TCP_STATE_LAST_ACK   = 10;
  WSA_TCP_STATE_TIME_WAIT  = 11;
  WSA_TCP_STATE_DELETE_TCB = 12;
- 
+
 const
  WSA_IP_FORWARDING     = 1;
  WSA_IP_NOT_FORWARDING = 2;
@@ -636,7 +657,7 @@ const
  WSA_IPROUTE_TYPE_DIRECT   = 3;
  WSA_IPROUTE_TYPE_INDIRECT = 4;
  WSA_IPROUTE_METRIC_UNUSED = DWORD(-1);
- 
+
 const
  WSA_IPPROTO_OTHER   = 1;
  WSA_IPPROTO_LOCAL   = 2;
@@ -655,13 +676,13 @@ const
  WSA_IPPROTO_NT_AUTOSTATIC     = 10002;
  WSA_IPPROTO_NT_STATIC         = 10006;
  WSA_IPPROTO_NT_STATIC_NON_DOD = 10007;
- 
-const 
+
+const
  WSA_IPNET_TYPE_OTHER   = 1;
  WSA_IPNET_TYPE_INVALID = 2;
  WSA_IPNET_TYPE_DYNAMIC = 3;
  WSA_IPNET_TYPE_STATIC  = 4;
- 
+
  {WsControlEx Functions}
  WSA_GETNUMBEROFINTERFACES  = 1;
  WSA_GETIFENTRY             = 2;
@@ -714,7 +735,7 @@ const
  WSA_GETFRIENDLYIFINDEX     = 42;
  WSA_ENABLEROUTER           = 43;
  WSA_UNENABLEROUTER         = 44;
- 
+
 {==============================================================================}
 const
  {Global Socket constants for enhanced Winsock functions}
@@ -722,7 +743,7 @@ const
  MAX_NAME_ALIASES = 5;
  MAX_NAME_SERVERS = 5;
  MAX_HOST_ALIASES = 16;
- 
+
 const
  {Error codes from getaddrinfo()}
  EAI_AGAIN    = WSATRY_AGAIN;
@@ -778,10 +799,10 @@ const
  INET6_ADDRSTR_ANY = '::';
 
  INET_ADDRSTR_BROADCAST = '255.255.255.255';
- 
+
  INET_ADDRSTRLEN  = 16; {Max size of numeric form of IPv4 address}
  INET6_ADDRSTRLEN = 46; {Max size of numeric form of IPv6 address}
- 
+
 {==============================================================================}
 type
  {Global Socket types}
@@ -797,7 +818,7 @@ type
  pu_short = ^u_short;
  pu_int = ^u_int;
  pu_long = ^u_long;
- 
+
  TSocket = GlobalTypes.TSocket;
 
 type
@@ -805,7 +826,7 @@ type
  PWSAEVENT = ^WSAEVENT;
  LPWSAEVENT = PWSAEVENT;
  PMBChar = PChar;
- 
+
 type
  PFDSet = ^TFDSet;
  fdset = record
@@ -813,7 +834,7 @@ type
   fd_array: array[0..FD_SETSIZE-1] of TSocket;
  end;
  TFDSet = fdset;
- 
+
  PTimeVal = ^TTimeVal;
  timeval = record
   tv_sec: LongInt;
@@ -942,15 +963,17 @@ type
  { Structure used by kernel to store most addresses. }
  PSOCKADDR = ^TSockAddr;
  TSockAddr = sockaddr_in;
+ PPSOCKADDR = ^PSOCKADDR;
 
  {IPv6 version of above}
  PSOCKADDR6 = ^TSockAddr6;
  TSockAddr6 = sockaddr_in6;
+ PPSOCKADDR6 = ^PSOCKADDR6;
 
  {IPX version of above}
  {PSOCKADDRIPX = ^TSockAddrIpx;}
  {TSockAddrIpx = sockaddr_ipx;}
- 
+
  { Structure used by kernel to pass protocol information in raw sockets. }
  PSockProto = ^TSockProto;
  sockproto = record
@@ -978,7 +1001,7 @@ type
   l_linger: u_short;
  end;
  TLinger = linger;
- 
+
 type
  PWSAData = ^TWSAData;
  WSAData = record {Also WSDATA}
@@ -1001,11 +1024,11 @@ type
  end;
  TTransmitFileBuffers = _TRANSMIT_FILE_BUFFERS;
  TRANSMIT_FILE_BUFFERS = _TRANSMIT_FILE_BUFFERS;
- 
+
 {==============================================================================}
 type
  {Global Socket types for undocumented Winsock functions}
- 
+
  {Argument structure for IP_ADD_MEMBERSHIP and IP_DROP_MEMBERSHIP}
  PMulticastRequest = ^TMulticastRequest;
  ip_mreq = record
@@ -1152,7 +1175,7 @@ type
  end;
  TWSATcpTable = WSA_TCPTABLE;
  PWSATcpTable = PWSA_TCPTABLE;
- 
+
  PWSA_IPSTATS = ^WSA_IPSTATS;
  WSA_IPSTATS = record
   dwForwarding: DWORD;
@@ -1237,7 +1260,7 @@ type
  end;
  TWSAIpForwardTable = WSA_IPFORWARDTABLE;
  PWSAIpForwardTable = PWSA_IPFORWARDTABLE;
- 
+
  PWSA_IPNETROW = ^WSA_IPNETROW;
  WSA_IPNETROW = record
    dwIndex: DWORD;
@@ -1256,7 +1279,7 @@ type
  end;
  TWSAIpNetTable = WSA_IPNETTABLE;
  PWSAIpNetTable = PWSA_IPNETTABLE;
- 
+
  PWSA_IP_ADAPTER_INDEX_MAP = ^WSA_IP_ADAPTER_INDEX_MAP;
  WSA_IP_ADAPTER_INDEX_MAP = record
   Index: ULONG;
@@ -1336,7 +1359,7 @@ type
  {Global Socket types for enhanced Winsock functions}
  PNetToAddr = ^TNetToAddr;
  TNetToAddr = array[0..MAX_NAME_SIZE - 1] of Char;
- 
+
  PWSABinding = ^TWSABinding;  {A network Binding (Address)} //To Do //Remove ?
  WSABinding = record   //To Do
   Version: Word;
@@ -1451,7 +1474,7 @@ type
   FirstInterface: PWSAExtendedInterface;
  end;
  TWSAExtendedConfig = WSAExtendedConfig;
- 
+
 type
  {Structure used in getaddrinfo() call}
  PAddrInfo = ^TAddrInfo;
@@ -1465,11 +1488,12 @@ type
   ai_addr:PSockAddr;      {Binary address}
   ai_next:PAddrInfo;      {Next structure in linked list}
  end;
- 
+ PPAddrInfo = ^PAddrInfo;
+
 {==============================================================================}
 {var}
  {Global Socket variables}
- 
+
 const
  INADDR_ANY       = $00000000;
  INADDR_LOOPBACK  = $7F000001;
@@ -1487,16 +1511,16 @@ const
  IN_CLASSC_NET = $ffffff00;
  IN_CLASSC_NSHIFT = 8;
  IN_CLASSC_HOST = $000000ff;
- 
+
  IN6ADDR_ANY:TIn6Addr = (u6_addr16: (0, 0, 0, 0, 0, 0, 0, 0));
  IN6ADDR_LOOPBACK:TIn6Addr = (u6_addr8: (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1));
  IN6ADDR_NONE:TIn6Addr = (u6_addr16: ($ffff, $ffff, $ffff, $ffff, $ffff, $ffff, $ffff, $ffff));
 
 const
- {Variables for getaddrinfo()} 
+ {Variables for getaddrinfo()}
  IN6ADDR_ANY_INIT:TIn6Addr = (u6_addr16: (0, 0, 0, 0, 0, 0, 0, 0));
  IN6ADDR_LOOPBACK_INIT:TIn6Addr = (u6_addr8: (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1));
- 
+
 {==============================================================================}
 {Global Socket functions}
 procedure FD_CLR(Socket: TSocket; var FDSet: TFDSet);
@@ -1536,11 +1560,11 @@ begin
        FDSet.fd_array[I]:=FDSet.fd_array[I + 1];
        Inc(I);
       end;
-      
+
      Dec(FDSet.fd_count);
      Break;
     end;
-    
+
    Inc(I);
   end;
 end;
@@ -1562,7 +1586,7 @@ begin
      Exit;
     end;
   end;
-  
+
  Result:=False;
 end;
 
@@ -1624,7 +1648,7 @@ function ProtocolToString(Protocol:Word):String;
 begin
  {}
  Result:='';
- 
+
  case Protocol of
   IPPROTO_IP:Result:='IPPROTO_IP';
   IPPROTO_ICMP:Result:='IPPROTO_ICMP';
