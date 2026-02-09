@@ -2613,17 +2613,6 @@ begin
 end;
 
 {==============================================================================}
-
-function TDHCPConfig.SetBroadcast(ABroadcastFlag:Boolean):Boolean;
-{Enable or Disable the Broadcast flag option for the DHCP config}
-begin
- {}
- FBroadcastFlag:=ABroadcastFlag;
-
- Result:=True;
-end;
-
-{==============================================================================}
 {==============================================================================}
 {TBOOTPConfig}
 constructor TBOOTPConfig.Create(AManager:TProtocolManager);
