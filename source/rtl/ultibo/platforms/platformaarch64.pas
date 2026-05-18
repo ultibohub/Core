@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for AARCH64 (ARM64).
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2026 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -959,7 +959,7 @@ end;
 
 function AARCH64GetIRQ:Boolean; assembler; nostackframe;
 {Get Interrupts (IRQ) state}
-{Return: True is enabled, False if disabled (Returned in R0)}
+{Return: True if enabled, False if disabled (Returned in R0)}
 asm
  //To Do
 end;
@@ -1003,7 +1003,7 @@ end;
 
 function AARCH64GetFIQ:Boolean; assembler; nostackframe;
 {Get Fast Interrupts (FIQ) state}
-{Return: True is enabled, False if disabled (Returned in R0)}
+{Return: True if enabled, False if disabled (Returned in R0)}
 asm
  //To Do
 end;
@@ -1082,7 +1082,7 @@ end;
 
 function AARCH64GetAbort:Boolean; assembler; nostackframe;
 {Get Abort state}
-{Return: True is enabled, False if disabled (Returned in R0)}
+{Return: True if enabled, False if disabled (Returned in R0)}
 asm
  //To Do
 end;

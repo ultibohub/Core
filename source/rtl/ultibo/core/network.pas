@@ -1,7 +1,7 @@
 {
 Ultibo Network interface unit.
 
-Copyright (C) 2025 - SoftOz Pty Ltd.
+Copyright (C) 2026 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -5774,7 +5774,7 @@ end;
 {==============================================================================}
 
 function NetworkStartCompleted:Boolean;
-{Returns True if the network sub system has been started}
+{Return: True if the network sub system has been started}
 begin
  {}
  Result:=NetworkStarted;

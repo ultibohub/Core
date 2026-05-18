@@ -1,7 +1,7 @@
 {
 Ultibo NTFS interface unit.
 
-Copyright (C) 2025 - SoftOz Pty Ltd.
+Copyright (C) 2026 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -9722,7 +9722,7 @@ end;
 
 function TNTFSFileSystem.CheckLog:Boolean;
 {Check if the $LogFile shows the volume is clean}
-{Returns True if volume is clean}
+{Return: True if volume is clean}
 var
  Origin:TNTFSDiskRecord;
  Attribute:TNTFSDiskAttribute;
@@ -10016,7 +10016,7 @@ end;
 
 function TNTFSFileSystem.CheckClean:Boolean;
 {Check the volume flags to see if the volume is clean}
-{Returns True if volume is clean}
+{Return: True if volume is clean}
 begin
  {}
  Result:=False;

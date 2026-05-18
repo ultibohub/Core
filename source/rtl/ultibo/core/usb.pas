@@ -1,7 +1,7 @@
 {
 Ultibo USB interface unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2026 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -9510,7 +9510,7 @@ end;
 {==============================================================================}
 
 function USBIsHub(Device:PUSBDevice):Boolean;
-{Returns True if Device is a Hub or False if not}
+{Return: True if Device is a Hub or False if not}
 begin
  {}
  Result:=False;
@@ -9525,7 +9525,7 @@ end;
 {==============================================================================}
 
 function USBIsRootHub(Device:PUSBDevice):Boolean;
-{Returns True if Device is a Root Hub or False if not}
+{Return: True if Device is a Root Hub or False if not}
 begin
  {}
  Result:=False;
@@ -9540,7 +9540,7 @@ end;
 {==============================================================================}
 
 function USBIsControlRequest(Request:PUSBRequest):Boolean;
-{Returns True if Request is a control request or False if not}
+{Return: True if Request is a control request or False if not}
 begin
  {}
  Result:=False;
@@ -9555,7 +9555,7 @@ end;
 {==============================================================================}
 
 function USBIsBulkRequest(Request:PUSBRequest):Boolean;
-{Returns True if Request is a bulk request or False if not}
+{Return: True if Request is a bulk request or False if not}
 begin
  {}
  Result:=False;
@@ -9570,7 +9570,7 @@ end;
 {==============================================================================}
 
 function USBIsInterruptRequest(Request:PUSBRequest):Boolean;
-{Returns True if Request is an interrupt request or False if not}
+{Return: True if Request is an interrupt request or False if not}
 begin
  {}
  Result:=False;
@@ -9585,7 +9585,7 @@ end;
 {==============================================================================}
 
 function USBIsIsochronousRequest(Request:PUSBRequest):Boolean;
-{Returns True if Request is an isochronous request or False if not}
+{Return: True if Request is an isochronous request or False if not}
 begin
  {}
  Result:=False;
@@ -9600,7 +9600,7 @@ end;
 {==============================================================================}
 
 function USBIsInEndpoint(Endpoint:PUSBEndpointDescriptor):Boolean;
-{Returns True is Endpoint is an IN endpoint or False if not}
+{Return: True if Endpoint is an IN endpoint or False if not}
 begin
  {}
  Result:=False;
@@ -9615,7 +9615,7 @@ end;
 {==============================================================================}
 
 function USBIsOutEndpoint(Endpoint:PUSBEndpointDescriptor):Boolean;
-{Returns True is Endpoint is an OUT endpoint or False if not}
+{Return: True if Endpoint is an OUT endpoint or False if not}
 begin
  {}
  Result:=False;
@@ -9630,7 +9630,7 @@ end;
 {==============================================================================}
 
 function USBIsBulkEndpoint(Endpoint:PUSBEndpointDescriptor):Boolean;
-{Returns True is Endpoint is a BULK endpoint or False if not}
+{Return: True if Endpoint is a BULK endpoint or False if not}
 begin
  {}
  Result:=False;
@@ -9645,7 +9645,7 @@ end;
 {==============================================================================}
 
 function USBIsInterruptEndpoint(Endpoint:PUSBEndpointDescriptor):Boolean;
-{Returns True is Endpoint is a INTERRUPT endpoint or False if not}
+{Return: True if Endpoint is a INTERRUPT endpoint or False if not}
 begin
  {}
  Result:=False;
@@ -9660,7 +9660,7 @@ end;
 {==============================================================================}
 
 function USBIsIsochronousEndpoint(Endpoint:PUSBEndpointDescriptor):Boolean;
-{Returns True is Endpoint is a ISOCHRONOUS endpoint or False if not}
+{Return: True if Endpoint is a ISOCHRONOUS endpoint or False if not}
 begin
  {}
  Result:=False;
@@ -10576,7 +10576,7 @@ end;
 {==============================================================================}
 
 function USBHubIsMultiTT(Hub:PUSBHub):Boolean;
-{Returns True if Hub has multiple Transaction Translators or False if not}
+{Return: True if Hub has multiple Transaction Translators or False if not}
 var
  Device:PUSBDevice;
 begin
@@ -10598,7 +10598,7 @@ end;
 {==============================================================================}
 
 function USBHubIsCompound(Hub:PUSBHub):Boolean;
-{Returns True if Hub is part of a Compound Device or False if not}
+{Return: True if Hub is part of a Compound Device or False if not}
 begin
  {}
  Result:=False;
@@ -10613,7 +10613,7 @@ end;
 {==============================================================================}
 
 function USBHubHasPortIndicator(Hub:PUSBHub):Boolean;
-{Returns True if Hub supports Port Indicators or False if not}
+{Return: True if Hub supports Port Indicators or False if not}
 begin
  {}
  Result:=False;
@@ -10628,7 +10628,7 @@ end;
 {==============================================================================}
 
 function USBHubHasPortPowerSwitching(Hub:PUSBHub):Boolean;
-{Returns True if Hub supports per port Power Switching or False if not}
+{Return: True if Hub supports per port Power Switching or False if not}
 begin
  {}
  Result:=False;
@@ -10643,7 +10643,7 @@ end;
 {==============================================================================}
 
 function USBHubHasPortCurrentProtection(Hub:PUSBHub):Boolean;
-{Returns True if Hub supports per port Over Current Power Protection or False if not}
+{Return: True if Hub supports per port Over Current Power Protection or False if not}
 begin
  {}
  Result:=False;

@@ -52,12 +52,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '12 May 2026';
+ ULTIBO_RELEASE_DATE             = '19 May 2026';
  ULTIBO_RELEASE_NAME             = 'Beetroot';
- ULTIBO_RELEASE_VERSION          = '2.6.175';
+ ULTIBO_RELEASE_VERSION          = '2.6.177';
  ULTIBO_RELEASE_VERSION_MAJOR    = 2;
  ULTIBO_RELEASE_VERSION_MINOR    = 6;
- ULTIBO_RELEASE_VERSION_REVISION = 175;
+ ULTIBO_RELEASE_VERSION_REVISION = 177;
 
  FPC_COMPILER_VERSION = {$I %FPCVERSION%}; {The version of FPC used to compile the RTL}
 
@@ -1000,11 +1000,11 @@ const
  MILLISECONDS_PER_SECOND = 1000;
  MICROSECONDS_PER_SECOND = 1000000;
  NANOSECONDS_PER_SECOND  = 1000000000;
- MILLISECONDS_PER_DAY    = 86400000; {60*60*24*1000;}
- SECONDS_PER_DAY         = 86400;    {60*60*24;}
+ MILLISECONDS_PER_DAY    = 86400000; {60*60*24*1000}
+ SECONDS_PER_DAY         = 86400;    {60*60*24}
 
 const
- {Ultibo time constants (100 nanosecond ticks since 1/1/1601)}
+ {Ultibo time constants (100 nanosecond ticks since 1 January 1601)}
  {Note: Nanoseconds is 10^9 so 100 nanosecond ticks is 10^7}
  TIME_TICKS_PER_MICROSECOND = 10;           {10^7 / 10^6}
  TIME_TICKS_PER_MILLISECOND = 10000;        {10^7 / 10^3}
@@ -1013,24 +1013,24 @@ const
  TIME_TICKS_PER_HOUR        = 36000000000;  {60 * 60 * 10^7}
  TIME_TICKS_PER_DAY         = 864000000000; {24 * 60 * 60 * 10^7}
 
- TIME_TICKS_TO_1899 = 94353120000000000;    {Offset between 1/1/1601 (Ultibo) and 30/12/1899 (FreePascal)}
- TIME_TICKS_TO_1970 = 116444736000000000;   {Offset between 1/1/1601 (Ultibo) and 1/1/1970 (Unix/Linux)}
- TIME_TICKS_TO_1980 = 119600064000000000;   {Offset between 1/1/1601 (Ultibo) and 1/1/1980 (DOS)}
- TIME_TICKS_TO_2001 = 126227808000000000;   {Offset between 1/1/1601 (Ultibo) and 1/1/2001 (Clock is assumed not set if time is less than this)}
+ TIME_TICKS_TO_1899 = 94353120000000000;    {Offset between 1 January 1601 (Ultibo) and 30 December 1899 (FreePascal)}
+ TIME_TICKS_TO_1970 = 116444736000000000;   {Offset between 1 January 1601 (Ultibo) and 1 January 1970 (Unix/Linux)}
+ TIME_TICKS_TO_1980 = 119600064000000000;   {Offset between 1 January 1601 (Ultibo) and 1 January 1980 (DOS)}
+ TIME_TICKS_TO_2001 = 126227808000000000;   {Offset between 1 January 1601 (Ultibo) and 1 January 2001 (Clock is assumed not set if time is less than this)}
 
  TIME_TICKS_PER_10MILLISECONDS = 100000;    {10^7 / 10^2}
 
 const
- {Unix/Linux time constants (Seconds since 1/1/1970)}
+ {Unix/Linux time constants (Seconds since 1 January 1970)}
  UNIX_TIME_MILLISECONDS_PER_DAY   =  86400000; {60*60*24*1000;}
  UNIX_TIME_SECONDS_PER_DAY        =  86400;    {60*60*24;}
  UNIX_TIME_DAYS_TO_1970           =  25569.0;  {Offset between 1899 (FreePascal) and 1970 (Unix/Linux)}
 
 const
- {FreePascal time constants (TDateTime starts at 30/12/1899)}
+ {FreePascal time constants (TDateTime starts at 30 December 1899)}
  PASCAL_TIME_MILLISECONDS_PER_DAY   =  86400000; {60*60*24*1000;}
  PASCAL_TIME_SECONDS_PER_DAY        =  86400;    {60*60*24;}
- PASCAL_TIME_DOS_TIME_START         =  2162688;  {DOS date time value for start of DOS time (1/1/1980)}
+ PASCAL_TIME_DOS_TIME_START         =  2162688;  {DOS date time value for start of DOS time (1 January 1980)}
 
  PASCAL_DAY_OFFSET = 1.0;                        {TDateTime value 1 day}
  PASCAL_MINUTE_OFFSET = 0.000694444444444444;    {TDateTime value of 1 minute}

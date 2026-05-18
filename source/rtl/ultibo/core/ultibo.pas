@@ -1,7 +1,7 @@
 {
 Ultibo interface unit.
 
-Copyright (C) 2025 - SoftOz Pty Ltd.
+Copyright (C) 2026 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -2795,7 +2795,7 @@ end;
 function FileTimeToSystemTime(const lpFileTime:FILETIME;var lpSystemTime:SYSTEMTIME):BOOL;
 {Convert a FileTime value to a SystemTime value}
 {Note: lpFileTime is assumed to be UTC / lpSystemTime is returned as UTC}
-{Note: If lpFileTime is less than 30/12/1899 then SystemTime will be zero}
+{Note: If lpFileTime is less than 30 December 1899 then SystemTime will be zero}
 var
  DateTime:TDateTime;
 begin
@@ -2878,7 +2878,7 @@ end;
 function FileTimeToDosDateTime(const lpFileTime:FILETIME;var lpFatDate,lpFatTime:WORD):BOOL;
 {Convert a FileTime value to a DOS date and time value}
 {Note: FileTime is assumed to be Local / DOS date and time is returned as Local}
-{Note: If FileTime is less than 1/1/1980 then DOS date and time will be 1/1/1980}
+{Note: If FileTime is less than 1 January 1980 then DOS date and time will be 1 January 1980}
 var
  FileDate:LongInt;
  DateTime:TDateTime;
@@ -2910,7 +2910,7 @@ end;
 function DosDateTimeToFileTime(wFatDate,wFatTime:WORD;var lpFileTime:FILETIME):BOOL;
 {Convert a DOS date and time value to a FileTime value}
 {Note: DOS date and time is assumed to be Local / FileTime is returned as Local}
-{Note: If DOS date and time is less than 1/1/1980 then FileTime will be 1/1/1980}
+{Note: If DOS date and time is less than 1 January 1980 then FileTime will be 1 January 1980}
 var
  FileDate:LongInt;
  DateTime:TDateTime;
@@ -3213,7 +3213,7 @@ end;
 function FileTimeToDateTime(const AFileTime:TFileTime):TDateTime;
 {Convert a FileTime value to a DateTime value}
 {Note: FileTime is assumed to be UTC / DateTime is returned as Local}
-{Note: If FileTime is less than 30/12/1899 then Result will be zero}
+{Note: If FileTime is less than 30 December 1899 then Result will be zero}
 var
  LocalFileTime:TFileTime;
 begin
@@ -3250,7 +3250,7 @@ end;
 function LocalFileTimeToDateTime(const AFileTime:TFileTime):TDateTime;
 {Convert a FileTime value to a DateTime value}
 {Note: FileTime is assumed to be Local / DateTime is returned as Local}
-{Note: If FileTime is less than 30/12/1899 then Result will be zero}
+{Note: If FileTime is less than 30 December 1899 then Result will be zero}
 begin
  {}
  Result:=0;
@@ -3278,7 +3278,7 @@ end;
 function SystemFileTimeToDateTime(const AFileTime:TFileTime):TDateTime;
 {Convert a FileTime value to a DateTime value}
 {Note: FileTime is assumed to be UTC / DateTime is returned as UTC}
-{Note: If FileTime is less than 30/12/1899 then Result will be zero}
+{Note: If FileTime is less than 30 December 1899 then Result will be zero}
 {Note: Same as LocalFileTimeToDateTime but renamed for clarity}
 begin
  {}
@@ -3308,7 +3308,7 @@ end;
 function FileTimeToUnixTime(const AFileTime:TFileTime):TUnixTime;
 {Convert a FileTime value to a Unix/Linux time value}
 {Note: FileTime is assumed to be Local / UnixTime is returned as Local}
-{Note: If FileTime is less than 1/1/1970 then Result will be zero}
+{Note: If FileTime is less than 1 January 1970 then Result will be zero}
 begin
  {}
  Result:=0;
@@ -3344,7 +3344,7 @@ end;
 function DateTimeToUnixTime(ADateTime:TDateTime):TUnixTime;
 {Convert a DateTime value to a Unix/Linux time value}
 {Note: DateTime is assumed to be Local / UnixTime is returned as Local}
-{Note: If DateTime is less than 1/1/1970 then Result will be zero}
+{Note: If DateTime is less than 1 January 1970 then Result will be zero}
 begin
  {}
  Result:=0;
@@ -3359,7 +3359,7 @@ end;
 function FileTimeToFileDate(const AFileTime:TFileTime):Integer;
 {Convert a FileTime value to a DOS date value}
 {Note: FileTime is assumed to be UTC / FileDate is returned as Local}
-{Note: If FileTime is less than 1/1/1980 then Result will be zero}
+{Note: If FileTime is less than 1 January 1980 then Result will be zero}
 var
  DateTime:TDateTime;
 begin
@@ -3381,7 +3381,7 @@ end;
 function FileDateToFileTime(AFileDate:Integer):TFileTime;
 {Convert a DOS date value to a FileTime value}
 {Note: FileDate is assumed to be Local / FileTime is returned as UTC}
-{Note: If FileDate is less than 1/1/1980 then Result will be zero}
+{Note: If FileDate is less than 1 January 1980 then Result will be zero}
 var
  DateTime:TDateTime;
 begin
@@ -5399,7 +5399,7 @@ end;
 {==============================================================================}
 {Command Line Functions (RTL)}
 function SysParamCount:LongInt;
-{Note:This should be in System however the implementation there will need to be modified}
+{Note: This should be in System however the implementation there will need to be modified}
 begin
  {}
  Result:=argc;
@@ -5408,7 +5408,7 @@ end;
 {==============================================================================}
 
 function SysParamStr(Index:LongInt):String;
-{Note:This should be in System however the implementation there will need to be modified}
+{Note: This should be in System however the implementation there will need to be modified}
 begin
  {ParamStr(0) is normally the executable filename,there is no such thing in embedded}
  if Index = 0 then

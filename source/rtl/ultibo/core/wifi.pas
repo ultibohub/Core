@@ -1,7 +1,7 @@
 {
 Ultibo WiFi (IEEE 802.11 / WPA) interface unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2026 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -4528,7 +4528,7 @@ end;
 {==============================================================================}
 
 function WiFiStartCompleted:Boolean;
-{Returns True if the WiFi sub system has been started}
+{Return: True if the WiFi sub system has been started}
 begin
  {}
  Result:=WiFiStarted;

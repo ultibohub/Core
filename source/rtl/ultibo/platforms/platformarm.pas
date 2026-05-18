@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for ARM.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2026 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -992,7 +992,7 @@ end;
 
 function ARMGetIRQ:Boolean; assembler; nostackframe;
 {Get Interrupts (IRQ) state}
-{Return: True is enabled, False if disabled (Returned in R0)}
+{Return: True if enabled, False if disabled (Returned in R0)}
 asm
  //Get Current program status register
  mrs r1, cpsr
@@ -1075,7 +1075,7 @@ end;
 
 function ARMGetFIQ:Boolean; assembler; nostackframe;
 {Get Fast Interrupts (FIQ) state}
-{Return: True is enabled, False if disabled (Returned in R0)}
+{Return: True if enabled, False if disabled (Returned in R0)}
 asm
  //Get Current program status register
  mrs r1, cpsr
@@ -1239,7 +1239,7 @@ end;
 
 function ARMGetAbort:Boolean; assembler; nostackframe;
 {Get Abort state}
-{Return: True is enabled, False if disabled (Returned in R0)}
+{Return: True if enabled, False if disabled (Returned in R0)}
 asm
  //Get Current program status register
  mrs r1, cpsr

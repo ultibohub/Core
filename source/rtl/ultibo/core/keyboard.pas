@@ -1,7 +1,7 @@
 {
 Ultibo Keyboard interface unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2026 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -2264,7 +2264,7 @@ end;
 
 function KeyboardRemapKeyCode(ScanCode,KeyCode:Word;var CharCode:Byte;Modifiers:LongWord):Boolean;
 {Remap the SCAN_CODE_* and KEY_CODE_* values to DOS compatible scan codes}
-{Returns True is the key was remapped, False if it was not}
+{Return: True if the key was remapped, False if it was not}
 
 {See: http://www.freepascal.org/docs-html/rtl/keyboard/kbdscancode.html}
 {See also: \source\packages\rtl-console\src\inc\keyscan.inc}
@@ -2756,7 +2756,7 @@ end;
 
 function KeyboardRemapScanCode(ScanCode,KeyCode:Word;var CharCode:Byte;Modifiers:LongWord):Boolean;
 {Remap the SCAN_CODE_* and KEY_CODE_* values to DOS compatible scan codes}
-{Returns True is the key was remapped, False if it was not}
+{Return: True if the key was remapped, False if it was not}
 
 {See: http://www.freepascal.org/docs-html/rtl/keyboard/kbdscancode.html}
 {See also: \source\packages\rtl-console\src\inc\keyscan.inc}

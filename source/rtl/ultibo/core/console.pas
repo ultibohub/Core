@@ -1,7 +1,7 @@
 {
 Ultibo Console interface unit.
 
-Copyright (C) 2025 - SoftOz Pty Ltd.
+Copyright (C) 2026 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -9719,7 +9719,7 @@ end;
 {CRT Console Functions}
 procedure ConsoleAssignCrt(var F:Text);
 {Compatible with RTL Crt unit function AssignCrt}
-{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/assigncrt.html}
+{See: https://www.freepascal.org/docs-html/rtl/crt/assigncrt.html}
 begin
  {}
  TextIOOpen(F,ConsoleWriteChar,ConsoleReadChar,fmOutput,nil);
@@ -9729,7 +9729,7 @@ end;
 
 procedure ConsoleClrEol;
 {Compatible with RTL Crt unit function ClrEol}
-{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/clreol.html}
+{See: http://www.freepascal.org/docs-html/rtl/crt/clreol.html}
 var
  Handle:TWindowHandle;
 begin
@@ -9746,7 +9746,7 @@ end;
 
 procedure ConsoleClrScr;
 {Compatible with RTL Crt unit function ClrScr}
-{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/clrscr.html}
+{See: http://www.freepascal.org/docs-html/rtl/crt/clrscr.html}
 var
  Handle:TWindowHandle;
 begin
@@ -9763,7 +9763,7 @@ end;
 
 procedure ConsoleDelay(MS:Word);
 {Compatible with RTL Crt unit function Delay}
-{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/delay.html}
+{See: http://www.freepascal.org/docs-html/rtl/crt/delay.html}
 begin
  {}
  ThreadSleep(MS);
@@ -9773,7 +9773,7 @@ end;
 
 procedure ConsoleDelLine;
 {Compatible with RTL Crt unit function DelLine}
-{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/delline.html}
+{See: http://www.freepascal.org/docs-html/rtl/crt/delline.html}
 var
  Handle:TWindowHandle;
 begin
@@ -9790,7 +9790,7 @@ end;
 
 procedure ConsoleGotoXY(X,Y:Integer);
 {Compatible with RTL Crt unit function GotoXY}
-{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/gotoxy.html}
+{See: http://www.freepascal.org/docs-html/rtl/crt/gotoxy.html}
 
 {Note: For CRT Console functions, X and Y are based on character rows and columns not screen pixels}
 var
@@ -9809,7 +9809,9 @@ end;
 
 procedure ConsoleHighVideo;
 {Compatible with RTL Crt unit function HighVideo}
-{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/highvideo.html}
+{See: http://www.freepascal.org/docs-html/rtl/crt/highvideo.html}
+
+{Note: No function under Ultibo}
 begin
  {}
  {No function under Ultibo}
@@ -9819,7 +9821,7 @@ end;
 
 procedure ConsoleInsLine;
 {Compatible with RTL Crt unit function InsLine}
-{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/insline.html}
+{See: http://www.freepascal.org/docs-html/rtl/crt/insline.html}
 var
  Handle:TWindowHandle;
 begin
@@ -9836,7 +9838,7 @@ end;
 
 function ConsoleKeypressed:Boolean;
 {Compatible with RTL Crt unit function KeyPressed}
-{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/keypressed.html}
+{See: http://www.freepascal.org/docs-html/rtl/crt/keypressed.html}
 var
  Ch:Char;
 begin
@@ -9848,7 +9850,9 @@ end;
 
 procedure ConsoleLowVideo;
 {Compatible with RTL Crt unit function LowVideo}
-{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/lowvideo.html}
+{See: http://www.freepascal.org/docs-html/rtl/crt/lowvideo.html}
+
+{Note: No function under Ultibo}
 begin
  {}
  {No function under Ultibo}
@@ -9858,7 +9862,9 @@ end;
 
 procedure ConsoleNormVideo;
 {Compatible with RTL Crt unit function NormVideo}
-{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/normvideo.html}
+{See: http://www.freepascal.org/docs-html/rtl/crt/normvideo.html}
+
+{Note: No function under Ultibo}
 begin
  {}
  {No function under Ultibo}
@@ -9868,7 +9874,9 @@ end;
 
 procedure ConsoleNoSound;
 {Compatible with RTL Crt unit function NoSound}
-{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/nosound.html}
+{See: http://www.freepascal.org/docs-html/rtl/crt/nosound.html}
+
+{Note: No function under Ultibo}
 begin
  {}
  {No function under Ultibo}
@@ -9878,7 +9886,7 @@ end;
 
 function ConsoleReadKey:Char;
 {Compatible with RTL Crt unit function ReadKey}
-{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/readkey.html}
+{See: http://www.freepascal.org/docs-html/rtl/crt/readkey.html}
 {Note: For extended key scan codes see: http://www.freepascal.org/docs-html/rtl/keyboard/kbdscancode.html}
 begin
  {}
@@ -9889,7 +9897,9 @@ end;
 
 procedure ConsoleSound(Hz:Word);
 {Compatible with RTL Crt unit function Sound}
-{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/sound.html}
+{See: http://www.freepascal.org/docs-html/rtl/crt/sound.html}
+
+{Note: No function under Ultibo}
 begin
  {}
  {No function under Ultibo}
@@ -9899,7 +9909,7 @@ end;
 
 procedure ConsoleTextBackground(Color:LongWord);
 {Compatible with RTL Crt unit function TextBackground}
-{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/textbackground.html}
+{See: http://www.freepascal.org/docs-html/rtl/crt/textbackground.html}
 var
  Handle:TWindowHandle;
 begin
@@ -9916,7 +9926,7 @@ end;
 
 procedure ConsoleTextColor(Color:LongWord);
 {Compatible with RTL Crt unit function TextColor}
-{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/textcolor.html}
+{See: http://www.freepascal.org/docs-html/rtl/crt/textcolor.html}
 var
  Handle:TWindowHandle;
 begin
@@ -9933,7 +9943,9 @@ end;
 
 procedure ConsoleTextMode(Mode:Integer);
 {Compatible with RTL Crt unit function TextMode}
-{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/textmode.html}
+{See: http://www.freepascal.org/docs-html/rtl/crt/textmode.html}
+
+{Note: No function under Ultibo}
 begin
  {}
  {No function under Ultibo}
@@ -9943,7 +9955,7 @@ end;
 
 function ConsoleWhereX:Integer;
 {Compatible with RTL Crt unit function WhereX}
-{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/wherex.html}
+{See: http://www.freepascal.org/docs-html/rtl/crt/wherex.html}
 
 {Note: For CRT Console functions, X is based on character columns not screen pixels}
 var
@@ -9964,7 +9976,7 @@ end;
 
 function ConsoleWhereY:Integer;
 {Compatible with RTL Crt unit function WhereY}
-{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/wherey.html}
+{See: http://www.freepascal.org/docs-html/rtl/crt/wherey.html}
 
 {Note: For CRT Console functions, Y is based on character row not screen pixels}
 var
@@ -9985,7 +9997,7 @@ end;
 
 procedure ConsoleWindow(X1,Y1,X2,Y2:Integer);
 {Compatible with RTL Crt unit function Window}
-{See: http://www.freepascal.org/docs-html-3.0.0/rtl/crt/window.html}
+{See: http://www.freepascal.org/docs-html/rtl/crt/window.html}
 
 {Note: For CRT Console functions, X1, Y1, X2 and Y2 are based on character rows and columns not screen pixels}
 var

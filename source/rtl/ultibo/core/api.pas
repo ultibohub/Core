@@ -1,7 +1,7 @@
 {
 Ultibo Library API interface unit.
 
-Copyright (C) 2025 - SoftOz Pty Ltd.
+Copyright (C) 2026 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -7465,7 +7465,7 @@ end;
 {==============================================================================}
 
 function system_get_uptime: int64_t; stdcall;
-{Get the current system up time in 100 nanosecond ticks since 1/1/1601}
+{Get the current system up time in 100 nanosecond ticks since 1 January 1601}
 {Return: The current system up time}
 {Note: This is the same time format as Windows FILE_TIME and is intended to allow
  compatibility with file system functions etc.}
@@ -8448,7 +8448,7 @@ end;
 {==============================================================================}
 
 function clock_get_base: int64_t; stdcall;
-{Get the current clock base in 100 nanosecond ticks since 1/1/1601}
+{Get the current clock base in 100 nanosecond ticks since 1 January 1601}
 {Return: The current clock base or zero if not set}
 {Note: Clock base is the value added to the system clock to obtain the current time
        which is calculated at the last setting of the clock}
@@ -8464,7 +8464,7 @@ end;
 {==============================================================================}
 
 function clock_get_time: int64_t; stdcall;
-{Get the current system time in 100 nanosecond ticks since 1/1/1601}
+{Get the current system time in 100 nanosecond ticks since 1 January 1601}
 {Return: The current system time}
 {Note: This is the same time format as Windows FILE_TIME and is intended to allow
        compatibility with file system functions etc.}
@@ -8478,7 +8478,7 @@ end;
 {==============================================================================}
 
 function clock_set_time(const time: int64_t; rtc: BOOL): int64_t; stdcall;
-{Set the current system time in 100 nanosecond ticks since 1/1/1601}
+{Set the current system time in 100 nanosecond ticks since 1 January 1601}
 {Time: The time to be set}
 {RTC: Set the default RTC (real time clock) if available}
 {Return: The system time after setting}
@@ -11388,7 +11388,7 @@ end;
 
 function get_irq: BOOL; stdcall;
 {Get Interrupts (IRQ) state}
-{Return: True is enabled, False if disabled}
+{Return: True if enabled, False if disabled}
 begin
  {}
  if Assigned(GetIRQHandler) then
@@ -11464,7 +11464,7 @@ end;
 
 function get_fiq: BOOL; stdcall;
 {Get Fast Interrupts (FIQ) state}
-{Return: True is enabled, False if disabled}
+{Return: True if enabled, False if disabled}
 begin
  {}
  if Assigned(GetFIQHandler) then
@@ -11599,7 +11599,7 @@ end;
 
 function get_abort: BOOL; stdcall;
 {Get Abort state}
-{Return: True is enabled, False if disabled}
+{Return: True if enabled, False if disabled}
 begin
  {}
  if Assigned(GetAbortHandler) then
@@ -12990,7 +12990,7 @@ end;
 {Utility Functions}
 function first_bit_set(value: uint32_t): uint32_t; stdcall;
 {Find the first set bit in a nonzero 32 bit value}
-{Returns 31 for MSB and 0 for LSB (0xFFFFFFFF / -1 if no bits are set)}
+{Return: 31 for MSB and 0 for LSB (0xFFFFFFFF / -1 if no bits are set)}
 begin
  {}
  if Assigned(FirstBitSetHandler) then
@@ -13007,7 +13007,7 @@ end;
 
 function last_bit_set(value: uint32_t): uint32_t; stdcall;
 {Find the last set bit in a nonzero 32 bit value}
-{Returns 31 for MSB and 0 for LSB (0xFFFFFFFF / -1 if no bits are set)}
+{Return: 31 for MSB and 0 for LSB (0xFFFFFFFF / -1 if no bits are set)}
 {Note: Similar in operation to the ffs() builtin, equivalent to ffs() - 1}
 begin
  {}
@@ -13025,7 +13025,7 @@ end;
 
 function count_leading_zeros(value: uint32_t): uint32_t; stdcall;
 {Count the number of leading 0 bits in a nonzero 32 bit value}
-{Returns 32 if no bits are set}
+{Return: 32 if no bits are set}
 begin
  {}
  if Assigned(CountLeadingZerosHandler) then
@@ -13042,7 +13042,7 @@ end;
 
 function count_trailing_zeros(value: uint32_t): uint32_t; stdcall;
 {Count the number of trailing 0 bits in a nonzero 32 bit value}
-{Returns 32 if no bits are set}
+{Return: 32 if no bits are set}
 begin
  {}
  if Assigned(CountTrailingZerosHandler) then
@@ -24230,7 +24230,7 @@ end;
 {==============================================================================}
 
 function usb_is_hub(device: PUSB_DEVICE): BOOL; stdcall;
-{Returns True if Device is a Hub or False if not}
+{Return: True if Device is a Hub or False if not}
 begin
  {}
  Result:=USBIsHub(device);
@@ -24239,7 +24239,7 @@ end;
 {==============================================================================}
 
 function usb_is_root_hub(device: PUSB_DEVICE): BOOL; stdcall;
-{Returns True if Device is a Root Hub or False if not}
+{Return: True if Device is a Root Hub or False if not}
 begin
  {}
  Result:=USBIsRootHub(device);
@@ -24248,7 +24248,7 @@ end;
 {==============================================================================}
 
 function usb_is_control_request(request: PUSB_REQUEST): BOOL; stdcall;
-{Returns True if Request is a control request or False if not}
+{Return: True if Request is a control request or False if not}
 begin
  {}
  Result:=USBIsControlRequest(request);
@@ -24257,7 +24257,7 @@ end;
 {==============================================================================}
 
 function usb_is_bulk_request(request: PUSB_REQUEST): BOOL; stdcall;
-{Returns True if Request is a bulk request or False if not}
+{Return: True if Request is a bulk request or False if not}
 begin
  {}
  Result:=USBIsBulkRequest(request);
@@ -24266,7 +24266,7 @@ end;
 {==============================================================================}
 
 function usb_is_interrupt_request(request: PUSB_REQUEST): BOOL; stdcall;
-{Returns True if Request is an interrupt request or False if not}
+{Return: True if Request is an interrupt request or False if not}
 begin
  {}
  Result:=USBIsInterruptRequest(request);
@@ -24275,7 +24275,7 @@ end;
 {==============================================================================}
 
 function usb_is_isochronous_request(request: PUSB_REQUEST): BOOL; stdcall;
-{Returns True if Request is an isochronous request or False if not}
+{Return: True if Request is an isochronous request or False if not}
 begin
  {}
  Result:=USBIsIsochronousRequest(request);
@@ -24284,7 +24284,7 @@ end;
 {==============================================================================}
 
 function usb_is_in_endpoint(endpoint: PUSB_ENDPOINT_DESCRIPTOR): BOOL; stdcall;
-{Returns True is Endpoint is an IN endpoint or False if not}
+{Return: True if Endpoint is an IN endpoint or False if not}
 begin
  {}
  Result:=USBIsInEndpoint(endpoint);
@@ -24293,7 +24293,7 @@ end;
 {==============================================================================}
 
 function usb_is_out_endpoint(endpoint: PUSB_ENDPOINT_DESCRIPTOR): BOOL; stdcall;
-{Returns True is Endpoint is an OUT endpoint or False if not}
+{Return: True if Endpoint is an OUT endpoint or False if not}
 begin
  {}
  Result:=USBIsOutEndpoint(endpoint);
@@ -24302,7 +24302,7 @@ end;
 {==============================================================================}
 
 function usb_is_bulk_endpoint(endpoint: PUSB_ENDPOINT_DESCRIPTOR): BOOL; stdcall;
-{Returns True is Endpoint is a BULK endpoint or False if not}
+{Return: True if Endpoint is a BULK endpoint or False if not}
 begin
  {}
  Result:=USBIsBulkEndpoint(endpoint);
@@ -24311,7 +24311,7 @@ end;
 {==============================================================================}
 
 function usb_is_interrupt_endpoint(endpoint: PUSB_ENDPOINT_DESCRIPTOR): BOOL; stdcall;
-{Returns True is Endpoint is a INTERRUPT endpoint or False if not}
+{Return: True if Endpoint is a INTERRUPT endpoint or False if not}
 begin
  {}
  Result:=USBIsInterruptEndpoint(endpoint);
@@ -24320,7 +24320,7 @@ end;
 {==============================================================================}
 
 function usb_is_isochronous_endpoint(endpoint: PUSB_ENDPOINT_DESCRIPTOR): BOOL; stdcall;
-{Returns True is Endpoint is a ISOCHRONOUS endpoint or False if not}
+{Return: True if Endpoint is a ISOCHRONOUS endpoint or False if not}
 begin
  {}
  Result:=USBIsIsochronousEndpoint(endpoint);
@@ -24504,7 +24504,7 @@ end;
 {==============================================================================}
 
 function usb_hub_is_multi_tt(hub: PUSB_HUB): BOOL; stdcall;
-{Returns True if Hub has multiple Transaction Translators or False if not}
+{Return: True if Hub has multiple Transaction Translators or False if not}
 begin
  {}
  Result:=USBHubIsMultiTT(hub);
@@ -24513,7 +24513,7 @@ end;
 {==============================================================================}
 
 function usb_hub_is_compound(hub: PUSB_HUB): BOOL; stdcall;
-{Returns True if Hub is part of a Compound Device or False if not}
+{Return: True if Hub is part of a Compound Device or False if not}
 begin
  {}
  Result:=USBHubIsCompound(hub);
@@ -24522,7 +24522,7 @@ end;
 {==============================================================================}
 
 function usb_hub_has_port_indicator(hub: PUSB_HUB): BOOL; stdcall;
-{Returns True if Hub supports Port Indicators or False if not}
+{Return: True if Hub supports Port Indicators or False if not}
 begin
  {}
  Result:=USBHubHasPortIndicator(hub);
@@ -24531,7 +24531,7 @@ end;
 {==============================================================================}
 
 function usb_hub_has_port_power_switching(hub: PUSB_HUB): BOOL; stdcall;
-{Returns True if Hub supports per port Power Switching or False if not}
+{Return: True if Hub supports per port Power Switching or False if not}
 begin
  {}
  Result:=USBHubHasPortPowerSwitching(hub);
@@ -24540,7 +24540,7 @@ end;
 {==============================================================================}
 
 function usb_hub_has_port_current_protection(hub: PUSB_HUB): BOOL; stdcall;
-{Returns True if Hub supports per port Over Current Power Protection or False if not}
+{Return: True if Hub supports per port Over Current Power Protection or False if not}
 begin
  {}
  Result:=USBHubHasPortCurrentProtection(hub);
@@ -24659,7 +24659,7 @@ end;
 {==============================================================================}
 
 function mmc_device_set_bus_width(mmc: PMMC_DEVICE; width: uint32_t): uint32_t; stdcall;
-{Reference: Section 3.4 of SD Host Controller Simplified Specification V3.0 partA2_300.pdf}
+{See: Section 3.4 of SD Host Controller Simplified Specification V3.0 partA2_300.pdf}
 begin
  {}
  Result:=MMCDeviceSetBusWidth(mmc,width);
@@ -24888,7 +24888,7 @@ end;
 {==============================================================================}
 
 function mmc_device_initialize(mmc: PMMC_DEVICE): uint32_t; stdcall;
-{Reference: Section 3.6 of SD Host Controller Simplified Specification V3.0 partA2_300.pdf}
+{See: Section 3.6 of SD Host Controller Simplified Specification V3.0 partA2_300.pdf}
 begin
  {}
  Result:=MMCDeviceInitialize(mmc);
@@ -25627,7 +25627,7 @@ end;
 function sdhci_host_reset(sdhci: PSDHCI_HOST; mask: uint8_t): uint32_t; stdcall;
 {Default software reset function for SDHCI host controllers}
 {Note: Not intended to be called directly by applications, may be used by SDHCI drivers}
-{Reference: Section 3.3 of SD Host Controller Simplified Specification V3.0 partA2_300.pdf}
+{See: Section 3.3 of SD Host Controller Simplified Specification V3.0 partA2_300.pdf}
 begin
  {}
  Result:=SDHCIHostReset(sdhci,mask);
@@ -25651,7 +25651,7 @@ function sdhci_host_set_power(sdhci: PSDHCI_HOST; power: uint16_t): uint32_t; st
 {       Caller can use FirstBitSet(SDHCI.Voltages) to obtain the value of Power}
 {       If there are no values set then Power will be -1 ($FFFF) to indicate nothing or unknown}
 {Note: Not intended to be called directly by applications, may be used by SDHCI drivers}
-{Reference: Section 3.3 of SD Host Controller Simplified Specification V3.0 partA2_300.pdf}
+{See: Section 3.3 of SD Host Controller Simplified Specification V3.0 partA2_300.pdf}
 begin
  {}
  Result:=SDHCIHostSetPower(sdhci,power);
@@ -25662,7 +25662,7 @@ end;
 function sdhci_host_set_clock(sdhci: PSDHCI_HOST; clock: uint32_t): uint32_t; stdcall;
 {Default set clock function for SDHCI host controllers}
 {Note: Not intended to be called directly by applications, may be used by SDHCI drivers}
-{Reference: Section 3.2 of SD Host Controller Simplified Specification V3.0 partA2_300.pdf}
+{See: Section 3.2 of SD Host Controller Simplified Specification V3.0 partA2_300.pdf}
 begin
  {}
  Result:=SDHCIHostSetClock(sdhci,clock);
@@ -32869,7 +32869,7 @@ end;
 
 function keyboard_remap_key_code(scancode, keycode: uint16_t; var charcode: uint8_t; modifiers: uint32_t): BOOL; stdcall;
 {Remap the SCAN_CODE_* and KEY_CODE_* values to DOS compatible scan codes}
-{Returns True is the key was remapped, False if it was not}
+{Return: True if the key was remapped, False if it was not}
 {See: http://www.freepascal.org/docs-html/rtl/keyboard/kbdscancode.html}
 {See also: \source\packages\rtl-console\src\inc\keyscan.inc}
 {Note: See below for a version that uses SCAN_CODE_* values instead of translated KEY_CODE_* values}
@@ -32882,7 +32882,7 @@ end;
 
 function keyboard_remap_scan_code(scancode, keycode: uint16_t; var charcode: uint8_t; modifiers: uint32_t): BOOL; stdcall;
 {Remap the SCAN_CODE_* and KEY_CODE_* values to DOS compatible scan codes}
-{Returns True is the key was remapped, False if it was not}
+{Return: True if the key was remapped, False if it was not}
 {See: http://www.freepascal.org/docs-html/rtl/keyboard/kbdscancode.html}
 {See also: \source\packages\rtl-console\src\inc\keyscan.inc}
 {Note: Same as above except using SCAN_CODE_* values instead of translated KEY_CODE_* values}
@@ -34237,7 +34237,7 @@ end;
 {==============================================================================}
 
 function network_start_completed: BOOL; stdcall;
-{Returns True if the network sub system has been started}
+{Return: True if the network sub system has been started}
 begin
  {}
  Result:=NetworkStartCompleted;
@@ -35784,7 +35784,7 @@ end;
 {==============================================================================}
 
 function file_sys_start_completed: BOOL; stdcall;
-{Returns True if the filesystem has been started}
+{Return: True if the filesystem has been started}
 begin
  {}
  Result:=FileSystem.FileSysStartCompleted;
@@ -39239,7 +39239,7 @@ end;
 function FileTimeToSystemTime(const lpfiletime: FILETIME; var lpsystemtime: SYSTEMTIME): BOOL; stdcall;
 {Convert a FileTime value to a SystemTime value}
 {Note: lpFileTime is assumed to be UTC / lpSystemTime is returned as UTC}
-{Note: If lpFileTime is less than 30/12/1899 then SystemTime will be zero}
+{Note: If lpFileTime is less than 30 December 1899 then SystemTime will be zero}
 begin
  {}
  Result:=Ultibo.FileTimeToSystemTime(lpfiletime,lpsystemtime);
@@ -39278,7 +39278,7 @@ end;
 function FileTimeToDosDateTime(const lpfiletime: FILETIME; var lpfatdate, lpfattime: uint16_t): BOOL; stdcall;
 {Convert a FileTime value to a DOS date and time value}
 {Note: FileTime is assumed to be Local / DOS date and time is returned as Local}
-{Note: If FileTime is less than 1/1/1980 then DOS date and time will be 1/1/1980}
+{Note: If FileTime is less than 1 January 1980 then DOS date and time will be 1 January 1980}
 begin
  {}
  Result:=Ultibo.FileTimeToDosDateTime(lpfiletime,lpfatdate,lpfattime);
@@ -39289,7 +39289,7 @@ end;
 function DosDateTimeToFileTime(wfatdate, wfattime: uint16_t; var lpfiletime: FILETIME): BOOL; stdcall;
 {Convert a DOS date and time value to a FileTime value}
 {Note: DOS date and time is assumed to be Local / FileTime is returned as Local}
-{Note: If DOS date and time is less than 1/1/1980 then FileTime will be 1/1/1980}
+{Note: If DOS date and time is less than 1 January 1980 then FileTime will be 1 January 1980}
 begin
  {}
  Result:=Ultibo.DosDateTimeToFileTime(wfatdate,wfattime,lpfiletime);
@@ -39457,7 +39457,7 @@ end;
 function FileTimeToDateTime(const filetime: FILETIME): double_t; stdcall;
 {Convert a FileTime value to a DateTime value}
 {Note: FileTime is assumed to be UTC / DateTime is returned as Local}
-{Note: If FileTime is less than 30/12/1899 then Result will be zero}
+{Note: If FileTime is less than 30 December 1899 then Result will be zero}
 begin
  {}
  Result:=Ultibo.FileTimeToDateTime(filetime);
@@ -39478,7 +39478,7 @@ end;
 function LocalFileTimeToDateTime(const filetime: FILETIME): double_t; stdcall;
 {Convert a FileTime value to a DateTime value}
 {Note: FileTime is assumed to be Local / DateTime is returned as Local}
-{Note: If FileTime is less than 30/12/1899 then Result will be zero}
+{Note: If FileTime is less than 30 December 1899 then Result will be zero}
 begin
  {}
  Result:=Ultibo.LocalFileTimeToDateTime(filetime);
@@ -39499,7 +39499,7 @@ end;
 function SystemFileTimeToDateTime(const filetime: FILETIME): double_t; stdcall;
 {Convert a FileTime value to a DateTime value}
 {Note: FileTime is assumed to be UTC / DateTime is returned as UTC}
-{Note: If FileTime is less than 30/12/1899 then Result will be zero}
+{Note: If FileTime is less than 30 December 1899 then Result will be zero}
 {Note: Same as LocalFileTimeToDateTime but renamed for clarity}
 begin
  {}
@@ -39522,7 +39522,7 @@ end;
 function FileTimeToUnixTime(const filetime: FILETIME): time_t; stdcall;
 {Convert a FileTime value to a Unix/Linux time value}
 {Note: FileTime is assumed to be Local / UnixTime is returned as Local}
-{Note: If FileTime is less than 1/1/1970 then Result will be zero}
+{Note: If FileTime is less than 1 January 1970 then Result will be zero}
 begin
  {}
  Result:=Ultibo.FileTimeToUnixTime(filetime);
@@ -39553,7 +39553,7 @@ end;
 function DateTimeToUnixTime(datetime: double_t): time_t; stdcall;
 {Convert a DateTime value to a Unix/Linux time value}
 {Note: DateTime is assumed to be Local / UnixTime is returned as Local}
-{Note: If DateTime is less than 1/1/1970 then Result will be zero}
+{Note: If DateTime is less than 1 January 1970 then Result will be zero}
 begin
  {}
  Result:=Ultibo.DateTimeToUnixTime(datetime);
@@ -39564,7 +39564,7 @@ end;
 function FileTimeToFileDate(const filetime: FILETIME): int; stdcall;
 {Convert a FileTime value to a DOS date value}
 {Note: FileTime is assumed to be UTC / FileDate is returned as Local}
-{Note: If FileTime is less than 1/1/1980 then Result will be zero}
+{Note: If FileTime is less than 1 January 1980 then Result will be zero}
 begin
  {}
  Result:=Ultibo.FileTimeToFileDate(filetime);
@@ -39575,7 +39575,7 @@ end;
 function FileDateToFileTime(filedate: int): FILETIME; stdcall;
 {Convert a DOS date value to a FileTime value}
 {Note: FileDate is assumed to be Local / FileTime is returned as UTC}
-{Note: If FileDate is less than 1/1/1980 then Result will be zero}
+{Note: If FileDate is less than 1 January 1980 then Result will be zero}
 begin
  {}
  Result:=Ultibo.FileDateToFileTime(filedate);

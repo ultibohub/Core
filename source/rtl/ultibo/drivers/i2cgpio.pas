@@ -1,7 +1,7 @@
 {
 GPIO based software I2C driver.
 
-Copyright (C) 2025 - SoftOz Pty Ltd.
+Copyright (C) 2026 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -59,17 +59,10 @@ I2C GPIO
  Pi (I2C0 or BSC1) which is on GPIO pins 2 and 3 you simply initialize an instance
  of the I2CGPIO device by calling the I2CGPIOCreate function like this:
 
-{$IFDEF FPC_DOTTEDUNITS}
-uses
-  Core.I2C,
-  Core.GPIO,
-  Drivers.I2CGPIO;
-{$ELSE FPC_DOTTEDUNITS}
-uses
+ uses
   I2C,
   GPIO,
   I2CGPIO;
-{$ENDIF FPC_DOTTEDUNITS}
 
  var
   I2CDevice:PI2CDevice;

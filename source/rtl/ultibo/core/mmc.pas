@@ -1,7 +1,7 @@
 {
 Ultibo MMC/SD/SDIO interface unit.
 
-Copyright (C) 2025 - SoftOz Pty Ltd.
+Copyright (C) 2026 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -4873,7 +4873,7 @@ end;
 {==============================================================================}
 
 function MMCDeviceSetBusWidth(MMC:PMMCDevice;Width:LongWord):LongWord;
-{Reference: Section 3.4 of SD Host Controller Simplified Specification V3.0 partA2_300.pdf}
+{See: Section 3.4 of SD Host Controller Simplified Specification V3.0 partA2_300.pdf}
 begin
  {}
  Result:=MMC_STATUS_INVALID_PARAMETER;
@@ -6739,7 +6739,7 @@ end;
 {==============================================================================}
 
 function MMCDeviceInitialize(MMC:PMMCDevice):LongWord;
-{Reference: Section 3.6 of SD Host Controller Simplified Specification V3.0 partA2_300.pdf}
+{See: Section 3.6 of SD Host Controller Simplified Specification V3.0 partA2_300.pdf}
 var
  SDHCI:PSDHCIHost;
 begin
@@ -12299,7 +12299,7 @@ function SDHCIHostReset(SDHCI:PSDHCIHost;Mask:Byte):LongWord;
 {Default software reset function for SDHCI host controllers}
 
 {Note: Not intended to be called directly by applications, may be used by SDHCI drivers}
-{Reference: Section 3.3 of SD Host Controller Simplified Specification V3.0 partA2_300.pdf}
+{See: Section 3.3 of SD Host Controller Simplified Specification V3.0 partA2_300.pdf}
 var
  MMC:PMMCDevice;
  Timeout:LongWord;
@@ -12417,7 +12417,7 @@ function SDHCIHostSetPower(SDHCI:PSDHCIHost;Power:Word):LongWord;
 {       If there are no values set then Power will be -1 ($FFFF) to indicate nothing or unknown}
 
 {Note: Not intended to be called directly by applications, may be used by SDHCI drivers}
-{Reference: Section 3.3 of SD Host Controller Simplified Specification V3.0 partA2_300.pdf}
+{See: Section 3.3 of SD Host Controller Simplified Specification V3.0 partA2_300.pdf}
 var
  Value:Byte;
 begin
@@ -12500,7 +12500,7 @@ function SDHCIHostSetClock(SDHCI:PSDHCIHost;Clock:LongWord):LongWord;
 {Default set clock function for SDHCI host controllers}
 
 {Note: Not intended to be called directly by applications, may be used by SDHCI drivers}
-{Reference: Section 3.2 of SD Host Controller Simplified Specification V3.0 partA2_300.pdf}
+{See: Section 3.2 of SD Host Controller Simplified Specification V3.0 partA2_300.pdf}
 var
  Value:Word;
  Timeout:LongWord;

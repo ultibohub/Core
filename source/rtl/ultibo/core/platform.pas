@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit.
 
-Copyright (C) 2025 - SoftOz Pty Ltd.
+Copyright (C) 2026 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -5460,7 +5460,7 @@ end;
 {==============================================================================}
 
 function SystemGetUptime:Int64; inline;
-{Get the current system up time in 100 nanosecond ticks since 1/1/1601}
+{Get the current system up time in 100 nanosecond ticks since 1 January 1601}
 {Return: The current system up time}
 {Note: This is the same time format as Windows FILE_TIME and is intended to allow
  compatibility with file system functions etc.}
@@ -6584,7 +6584,7 @@ end;
 {==============================================================================}
 
 function ClockGetBase:Int64;
-{Get the current clock base in 100 nanosecond ticks since 1/1/1601}
+{Get the current clock base in 100 nanosecond ticks since 1 January 1601}
 {Return: The current clock base or zero if not set}
 {Note: Clock base is the value added to the system clock to obtain the current time
        which is calculated at the last setting of the clock}
@@ -6600,7 +6600,7 @@ end;
 {==============================================================================}
 
 function ClockGetTime:Int64;
-{Get the current system time in 100 nanosecond ticks since 1/1/1601}
+{Get the current system time in 100 nanosecond ticks since 1 January 1601}
 {Return: The current system time}
 {Note: This is the same time format as Windows FILE_TIME and is intended to allow
        compatibility with file system functions etc.}
@@ -6651,7 +6651,7 @@ end;
 {==============================================================================}
 
 function ClockSetTime(const Time:Int64;RTC:Boolean):Int64;
-{Set the current system time in 100 nanosecond ticks since 1/1/1601}
+{Set the current system time in 100 nanosecond ticks since 1 January 1601}
 {Time: The time to be set}
 {RTC: Set the default RTC (real time clock) if available}
 {Return: The system time after setting}
@@ -10213,7 +10213,7 @@ end;
 
 function GetIRQ:Boolean; inline;
 {Get Interrupts (IRQ) state}
-{Return: True is enabled, False if disabled}
+{Return: True if enabled, False if disabled}
 begin
  {}
  if Assigned(GetIRQHandler) then
@@ -10289,7 +10289,7 @@ end;
 
 function GetFIQ:Boolean; inline;
 {Get Fast Interrupts (FIQ) state}
-{Return: True is enabled, False if disabled}
+{Return: True if enabled, False if disabled}
 begin
  {}
  if Assigned(GetFIQHandler) then
@@ -10424,7 +10424,7 @@ end;
 
 function GetAbort:Boolean; inline;
 {Get Abort state}
-{Return: True is enabled, False if disabled}
+{Return: True if enabled, False if disabled}
 begin
  {}
  if Assigned(GetAbortHandler) then
@@ -12270,7 +12270,7 @@ end;
 {Utility Functions}
 function FirstBitSet(Value:LongWord):LongWord; inline;
 {Find the first set bit in a nonzero 32 bit value}
-{Returns 31 for MSB and 0 for LSB (0xFFFFFFFF / -1 if no bits are set)}
+{Return: 31 for MSB and 0 for LSB (0xFFFFFFFF / -1 if no bits are set)}
 {Note: Similar in operation to the fls() macro, equivalent to fls() - 1}
 begin
  {}
@@ -12281,7 +12281,7 @@ end;
 
 function LastBitSet(Value:LongWord):LongWord; inline;
 {Find the last set bit in a nonzero 32 bit value}
-{Returns 31 for MSB and 0 for LSB (0xFFFFFFFF / -1 if no bits are set)}
+{Return: 31 for MSB and 0 for LSB (0xFFFFFFFF / -1 if no bits are set)}
 {Note: Similar in operation to the ffs() builtin, equivalent to ffs() - 1}
 begin
  {}
@@ -12292,7 +12292,7 @@ end;
 
 function CountLeadingZeros(Value:LongWord):LongWord; inline;
 {Count the number of leading 0 bits in a nonzero 32 bit value}
-{Returns 32 if no bits are set}
+{Return: 32 if no bits are set}
 begin
  {}
  Result:=GlobalConfig.CountLeadingZeros(Value);
@@ -12302,7 +12302,7 @@ end;
 
 function CountTrailingZeros(Value:LongWord):LongWord; inline;
 {Count the number of trailing 0 bits in a nonzero 32 bit value}
-{Returns 32 if no bits are set}
+{Return: 32 if no bits are set}
 begin
  {}
  Result:=GlobalConfig.CountTrailingZeros(Value);

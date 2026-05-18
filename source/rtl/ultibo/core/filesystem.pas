@@ -1,7 +1,7 @@
 {
 Ultibo FileSystem interface unit.
 
-Copyright (C) 2025 - SoftOz Pty Ltd.
+Copyright (C) 2026 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -10097,7 +10097,7 @@ end;
 function TFileSysDriver.UpdateEnumHandles(ADevice:TDiskDevice;APartition:TDiskPartition;ADrive:TDiskDrive;AVolume:TDiskVolume;AImage:TDiskImage;ACatalog:TDiskCatalog):Boolean;
 {Update enum handles with matching device, partition, drive, volume, image or catalog}
 {Called by Delete to update open handles}
-{Returns True if successfully updated or no match found}
+{Return: True if successfully updated or no match found}
 var
  EnumHandle:TEnumHandle;
 begin
@@ -10477,7 +10477,7 @@ end;
 function TFileSysDriver.CheckFileHandles(AEntry:TDiskEntry):Boolean;
 {Check file handles for any with matching entry}
 {Called by Delete, Rename etc to check for open handles}
-{Returns True if no matching handle is found}
+{Return: True if no matching handle is found}
 var
  FileHandle:TFileHandle;
 begin
@@ -10776,7 +10776,7 @@ end;
 function TFileSysDriver.UpdateFindHandles(AEntry:TDiskEntry):Boolean;
 {Update find handles with matching entry}
 {Called by Delete, Rename (Move) etc to update open handles}
-{Returns True if successfully updated or no match found}
+{Return: True if successfully updated or no match found}
 var
  FindHandle:TFindHandle;
 begin
@@ -33209,7 +33209,7 @@ end;
 function TFileSystem.SplitName(const AName:String;var AFile,AStream:String):Boolean;
 {Split a Name into the component parts (File and Stream)}
 {Name must not contain drive or path components}
-{Returns False if name does not contain a stream component}
+{Return: False if name does not contain a stream component}
 var
  PosIdx:Integer;
 begin
@@ -52519,7 +52519,7 @@ end;
 {==============================================================================}
 
 function FileSysStartCompleted:Boolean;
-{Returns True if the filesystem has been started}
+{Return: True if the filesystem has been started}
 begin
  {}
  Result:=FileSysStartupError = ERROR_SUCCESS;

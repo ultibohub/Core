@@ -1,7 +1,7 @@
 {
 Ultibo Global Configuration Defaults.
 
-Copyright (C) 2025 - SoftOz Pty Ltd.
+Copyright (C) 2026 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -2009,7 +2009,7 @@ end;
 
 function ffs(Value:LongWord):LongWord; inline;
 {Implementation of the ffs() (Find First Set) builtin}
-{Returns 32 for MSB and 1 for LSB (0 if no bits are set)}
+{Return: 32 for MSB and 1 for LSB (0 if no bits are set)}
 begin
  {}
  Result:=LastBitSet(Value) + 1;
@@ -2019,7 +2019,7 @@ end;
 
 function fls(Value:LongWord):LongWord; inline;
 {Implementation of the fls() (Find Last Set) macro}
-{Returns 32 for MSB and 1 for LSB (0 if no bits are set)}
+{Return: 32 for MSB and 1 for LSB (0 if no bits are set)}
 begin
  {}
  Result:=FirstBitSet(Value) + 1;
@@ -2029,7 +2029,7 @@ end;
 
 function ffs64(Value:UInt64):UInt64; inline;
 {Implementation of the ffsll() (Find First Set) builtin}
-{Returns 64 for MSB and 1 for LSB (0 if no bits are set)}
+{Return: 64 for MSB and 1 for LSB (0 if no bits are set)}
 begin
  {}
  Result:=LastBitSet64(Value) + 1;
@@ -2039,7 +2039,7 @@ end;
 
 function fls64(Value:UInt64):UInt64; inline;
 {Implementation of the fls64() (Find Last Set) macro}
-{Returns 64 for MSB and 1 for LSB (0 if no bits are set)}
+{Return: 64 for MSB and 1 for LSB (0 if no bits are set)}
 begin
  {}
  Result:=FirstBitSet64(Value) + 1;
@@ -2121,7 +2121,7 @@ end;
 
 function FIELD_MAX(Mask:LongWord):LongWord; inline;
 {Implementation of the FIELD_MAX() macro}
-{Returns the maximum value that can be held in the field specified by Mask}
+{Return: The maximum value that can be held in the field specified by Mask}
 begin
  {}
  if Mask = 0 then
@@ -2138,7 +2138,7 @@ end;
 
 function FIELD_FIT(Mask,Value:LongWord):Boolean; inline;
 {Implementation of the FIELD_FIT() macro}
-{Returns True if Value can fit inside Mask, False if Value is too big}
+{Return: True if Value can fit inside Mask, False if Value is too big}
 begin
  {}
  if Mask = 0 then
@@ -2597,7 +2597,7 @@ end;
 
 function FirstBitSet(Value:LongWord):LongWord; inline;
 {Find the first set bit in a nonzero 32 bit value}
-{Returns 31 for MSB and 0 for LSB (0xFFFFFFFF / -1 if no bits are set)}
+{Return: 31 for MSB and 0 for LSB (0xFFFFFFFF / -1 if no bits are set)}
 {Note: Similar in operation to the fls() macro, equivalent to fls() - 1}
 begin
  {}
@@ -2615,7 +2615,7 @@ end;
 
 function FirstBitSet64(Value:UInt64):LongWord; inline;
 {Find the first set bit in a nonzero 64 bit value}
-{Returns 63 for MSB and 0 for LSB (0xFFFFFFFF / -1 if no bits are set)}
+{Return: 63 for MSB and 0 for LSB (0xFFFFFFFF / -1 if no bits are set)}
 {Note: Similar in operation to the fls64() macro, equivalent to fls64() - 1}
 begin
  {}
@@ -2634,7 +2634,7 @@ end;
 
 function LastBitSet(Value:LongWord):LongWord; inline;
 {Find the last set bit in a nonzero 32 bit value}
-{Returns 31 for MSB and 0 for LSB (0xFFFFFFFF / -1 if no bits are set)}
+{Return: 31 for MSB and 0 for LSB (0xFFFFFFFF / -1 if no bits are set)}
 {Note: Similar in operation to the ffs() builtin, equivalent to ffs() - 1}
 begin
  {}
@@ -2652,7 +2652,7 @@ end;
 
 function LastBitSet64(Value:UInt64):LongWord; inline;
 {Find the last set bit in a nonzero 64 bit value}
-{Returns 63 for MSB and 0 for LSB (0xFFFFFFFF / -1 if no bits are set)}
+{Return: 63 for MSB and 0 for LSB (0xFFFFFFFF / -1 if no bits are set)}
 {Note: Similar in operation to the ffs() builtin, equivalent to ffs() - 1}
 begin
  {}
@@ -2670,7 +2670,7 @@ end;
 
 function CountLeadingZeros(Value:LongWord):LongWord; inline;
 {Count the number of leading 0 bits in a nonzero 32 bit value}
-{Returns 32 if no bits are set}
+{Return: 32 if no bits are set}
 begin
  {}
  if Assigned(CountLeadingZerosHandler) then
@@ -2687,7 +2687,7 @@ end;
 
 function CountLeadingZeros64(Value:UInt64):LongWord; inline;
 {Count the number of leading 0 bits in a nonzero 64 bit value}
-{Returns 64 if no bits are set}
+{Return: 64 if no bits are set}
 begin
  {}
  Result:=CountLeadingZeros(Int64Rec(Value).Hi);
@@ -2701,7 +2701,7 @@ end;
 
 function CountTrailingZeros(Value:LongWord):LongWord; inline;
 {Count the number of trailing 0 bits in a nonzero 32 bit value}
-{Returns 32 if no bits are set}
+{Return: 32 if no bits are set}
 begin
  {}
  if Assigned(CountTrailingZerosHandler) then
@@ -2718,7 +2718,7 @@ end;
 
 function CountTrailingZeros64(Value:UInt64):LongWord; inline;
 {Count the number of trailing 0 bits in a nonzero 64 bit value}
-{Returns 64 if no bits are set}
+{Return: 64 if no bits are set}
 begin
  {}
  Result:=CountTrailingZeros(Int64Rec(Value).Lo);

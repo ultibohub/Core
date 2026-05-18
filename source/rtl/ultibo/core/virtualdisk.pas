@@ -1,7 +1,7 @@
 {
 Ultibo Virtual Disk interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2026 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -223,7 +223,7 @@ const
  vpcMaxDiskExtents = 64;          {Maximum number of 4GB split files in a disk image}
  vpcExtentMaxSize  = 4294967296;  {Maximum size of s split file (4GB)}
 
- vpcUnixTimeOffset = 946684800;   {Offset from 1/1/1970 to 1/1/2000}
+ vpcUnixTimeOffset = 946684800;   {Offset from 1 January 1970 to 1/1/2000}
 
  vpcFooterVersion = $00010000;
  vpcDynamicVersion = $00010000;

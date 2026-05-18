@@ -1,7 +1,7 @@
 {
 Ultibo TCP (Transmission Control Protocol) unit.
 
-Copyright (C) 2025 - SoftOz Pty Ltd.
+Copyright (C) 2026 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -5394,7 +5394,7 @@ begin
    SIOCATMARK:begin
      if not SocketOptions.UrgentInline then Exit;
      //To Do //only applies if SO_OOBINLINE
-     //Return True is no OOB data waiting to be read
+     //Return True if no OOB data waiting to be read
      //otherwise returns False and because it is OOBINLINE
      //the next Recv will read OOB data
      //RecvData.GetUrgent

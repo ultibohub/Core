@@ -1,7 +1,7 @@
 {
 Ultibo Keymap interface unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2026 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -102,9 +102,7 @@ Keymaps
  system, for a Raspberry Pi use the cmdline.txt file on the SD card).
 
  The global configuration variable KEYMAP_DEFAULT can be set in code by including the GlobalConfig
-{$IFNDEF FPC_DOTTEDUNITS}
  unit in a program and setting the variable during startup.
-{$ENDIF FPC_DOTTEDUNITS}
 
  At any time after startup the default keymap can be changed by call the KeymapSetDefault function.
 

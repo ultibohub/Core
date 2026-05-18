@@ -1,7 +1,7 @@
 {
 Ultibo Services interface unit.
 
-Copyright (C) 2025 - SoftOz Pty Ltd.
+Copyright (C) 2026 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -156,8 +156,8 @@ const
 
  NTP_PACKET_SIZE = 48; {SizeOf(TNTPPacket)}
 
- NTP_TIMESTAMP_START     =  94354848000000000; {Offset between 1/1/1601 (Ultibo) and 1/1/1900 00:00:00 (NTP Timestamp)}
- NTP_TIMESTAMP_EXT_START = 137304520960000000; {Offset between 1/1/1601 (Ultibo) and 7/2/2036 06:28:16 (NTP Extended Timestamp)(MSB of timestamp seconds = 0)}
+ NTP_TIMESTAMP_START     =  94354848000000000; {Offset between 1 January 1601 (Ultibo) and 1 January 1900 00:00:00 (NTP Timestamp)}
+ NTP_TIMESTAMP_EXT_START = 137304520960000000; {Offset between 1 January 1601 (Ultibo) and 7 February 2036 06:28:16 (NTP Extended Timestamp)(MSB of timestamp seconds = 0)}
 
  {NTP Leap Indicator}
  NTP_LEAP_NONE    = 0;
