@@ -54,6 +54,6 @@ An installer download for Windows and a Linux installer script are available fro
 
 The installer includes the Ultibo core source, examples and runtime and a full featured FreePascal development environment, for C/C++ development the [Ultibo API](https://github.com/ultibohub/API) provides the necessary headers plus examples for getting started.
 
-Detailed documentation can be found in the [Ultibo wiki](https://ultibo.org/wiki)
+Detailed documentation can be found in the [Ultibo wiki](https://github.com/ultibohub/Core/wiki)
 
 Questions and other discussion should be posted in the [Ultibo forum](https://ultibo.org/forum/index.php)
