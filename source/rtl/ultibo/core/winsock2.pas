@@ -986,7 +986,7 @@ type
  WSABUF = record
   len: U_LONG;    { the length of the buffer }
   buf: PChar;     { the pointer to the buffer }
- end {WSABUF};
+ end; {WSABUF}
  PWSABUF = ^WSABUF;
  LPWSABUF = PWSABUF;
 
@@ -1008,7 +1008,7 @@ type
   SendingFlowspec: TFlowSpec;     { the flow spec for data sending }
   ReceivingFlowspec: TFlowSpec;   { the flow spec for data receiving }
   ProviderSpecific: WSABUF; { additional provider specific stuff }
- end {TQualityOfService};
+ end; {TQualityOfService}
  PQOS = ^TQualityOfService;
  LPQOS = PQOS;
 
@@ -1020,7 +1020,7 @@ type
  TWSANetworkEvents = record
   lNetworkEvents: LongInt;
   iErrorCode: Array[0..FD_MAX_EVENTS-1] of Longint;
- end {TWSANetworkEvents};
+ end; {TWSANetworkEvents}
  PWSANetworkEvents = ^TWSANetworkEvents;
  LPWSANetworkEvents = PWSANetworkEvents;
 
@@ -1030,7 +1030,7 @@ type
                          // length = 1 means base protocol,
                          // length > 1 means protocol chain
   ChainEntries: Array[0..MAX_PROTOCOL_CHAIN-1] of LongInt; { a list of dwCatalogEntryIds }
- end {TWSAPROTOCOLCHAIN};
+ end; {TWSAPROTOCOLCHAIN}
 
 type
  TWSAProtocol_InfoA = record
@@ -1054,7 +1054,7 @@ type
   dwMessageSize: LongInt;
   dwProviderReserved: LongInt;
   szProtocol: Array[0..WSAPROTOCOL_LEN+1-1] of Char;
- end {TWSAProtocol_InfoA};
+ end; {TWSAProtocol_InfoA}
  PWSAProtocol_InfoA = ^TWSAProtocol_InfoA;
  LPWSAProtocol_InfoA = PWSAProtocol_InfoA;
 
@@ -1079,7 +1079,7 @@ type
   dwMessageSize: LongInt;
   dwProviderReserved: LongInt;
   szProtocol: Array[0..(WSAPROTOCOL_LEN+1-1)] of WideChar;
- end {TWSAProtocol_InfoW};
+ end; {TWSAProtocol_InfoW}
  PWSAProtocol_InfoW = ^TWSAProtocol_InfoW;
  LPWSAProtocol_InfoW = PWSAProtocol_InfoW;
 
@@ -1091,7 +1091,7 @@ type
  SOCKET_ADDRESS = record
   lpSockaddr : PSockAddr;
   iSockaddrLength : Longint;
- end {SOCKET_ADDRESS};
+ end; {SOCKET_ADDRESS}
  PSOCKET_ADDRESS = ^SOCKET_ADDRESS;
  LPSOCKET_ADDRESS = ^SOCKET_ADDRESS;
 
@@ -1099,14 +1099,14 @@ type
  CSADDR_INFO = record
   LocalAddr, RemoteAddr: SOCKET_ADDRESS;
   iSocketType, iProtocol : LongInt;
- end {CSADDR_INFO};
+ end; {CSADDR_INFO}
  PCSADDR_INFO = ^CSADDR_INFO;
 
 { Address list returned via SIO_ADDRESS_LIST_QUERY }
  SOCKET_ADDRESS_LIST = record
   iAddressCount: Longint;
   Address: array [0..0] of SOCKET_ADDRESS;
- end {SOCKET_ADDRESS_LIST};
+ end; {SOCKET_ADDRESS_LIST}
  PSOCKET_ADDRESS_LIST = ^SOCKET_ADDRESS_LIST;
  LPSOCKET_ADDRESS_LIST = ^SOCKET_ADDRESS_LIST;
 
@@ -1114,7 +1114,7 @@ type
  TAFProtocols = record
   iAddressFamily: Longint;
   iProtocol: Longint;
- end {AFPROTOCOLS};
+ end; {AFPROTOCOLS}
  PAFProtocols = ^TAFProtocols;
 
 { Client Query API Typedefs }
@@ -1125,7 +1125,7 @@ type
  TWSAVersion = record
   dwVersion: LongInt;
   ecHow: TWSAEComparator;
- end {TWSAVersion};
+ end; {TWSAVersion}
  PWSAVersion = ^TWSAVersion;
 
  TWSAQuerySetA = record
@@ -1144,7 +1144,7 @@ type
   lpcsaBuffer: PCSADDR_INFO;
   dwOutputFlags: LongInt;
   lpBlob: PBLOB;
- end {TWSAQuerySetA};
+ end; {TWSAQuerySetA}
  PWSAQuerySetA = ^TWSAQuerySetA;
  LPWSAQuerySetA = PWSAQuerySetA;
 
@@ -1164,7 +1164,7 @@ type
   lpcsaBuffer: PCSADDR_INFO;
   dwOutputFlags: LongInt;
   lpBlob: PBLOB;
- end {TWSAQuerySetW};
+ end; {TWSAQuerySetW}
  PWSAQuerySetW = ^TWSAQuerySetW;
  LPWSAQuerySetW = PWSAQuerySetW;
 
@@ -1204,7 +1204,7 @@ type
   dwValueType: LongInt;
   dwValueSize: LongInt;
   lpValue: Pointer;
- end {_WSANSClassInfoA};
+ end; {_WSANSClassInfoA}
  PWSANSClassInfoA = ^TWSANSClassInfoA;
 
  TWSANSClassInfoW = record
@@ -1213,7 +1213,7 @@ type
   dwValueType: LongInt;
   dwValueSize: LongInt;
   lpValue: Pointer;
- end {TWSANSClassInfoW};
+ end; {TWSANSClassInfoW}
  PWSANSClassInfoW = ^TWSANSClassInfoW;
 
  TWSANSClassInfo = TWSANSClassInfoA;
@@ -1225,7 +1225,7 @@ type
   lpszServiceClassName: PChar;
   dwCount: LongInt;
   lpClassInfos: PWSANSClassInfoA;
- end {TWSAServiceClassInfoA};
+ end; {TWSAServiceClassInfoA}
  PWSAServiceClassInfoA = ^TWSAServiceClassInfoA;
  LPWSAServiceClassInfoA = PWSAServiceClassInfoA;
 
@@ -1234,7 +1234,7 @@ type
   lpszServiceClassName: PWideChar;
   dwCount: LongInt;
   lpClassInfos: PWSANSClassInfoW;
- end {TWSAServiceClassInfoW};
+ end; {TWSAServiceClassInfoW}
  PWSAServiceClassInfoW = ^TWSAServiceClassInfoW;
  LPWSAServiceClassInfoW = PWSAServiceClassInfoW;
 
@@ -1248,7 +1248,7 @@ type
   fActive: BOOL;
   dwVersion: LongInt;
   lpszIdentifier: PChar;
- end {TWSANameSpace_InfoA};
+ end; {TWSANameSpace_InfoA}
  PWSANameSpace_InfoA = ^TWSANameSpace_InfoA;
  LPWSANameSpace_InfoA = PWSANameSpace_InfoA;
 
@@ -1258,7 +1258,7 @@ type
   fActive: BOOL;
   dwVersion: LongInt;
   lpszIdentifier: PWideChar;
- end {TWSANameSpace_InfoW};
+ end; {TWSANameSpace_InfoW}
  PWSANameSpace_InfoW = ^TWSANameSpace_InfoW;
  LPWSANameSpace_InfoW = PWSANameSpace_InfoW;
 

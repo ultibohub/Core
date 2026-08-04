@@ -1,7 +1,7 @@
 {
 Ultibo HTTP interface unit.
 
-Copyright (C) 2025 - SoftOz Pty Ltd.
+Copyright (C) 2026 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -899,6 +899,7 @@ type
   function GetResponseReason:String;
   function GetResponseVersion:LongWord;
   function GetResponseMimeType:String;
+  function GetResponseMimeTypeOnly:String;
   function GetResponseEncoding:LongWord;
   function GetResponseContentSize:LongWord;
  protected
@@ -920,6 +921,8 @@ type
   function WriteRequestContentString(ARequest:THTTPClientRequest;const AContent:String;ASize:LongWord):Boolean;
  public
   {Public Properties}
+  property State:LongWord read FState;
+
   property Request:THTTPClientRequest read FRequest;
   property Response:THTTPClientResponse read FResponse;
 
@@ -959,6 +962,7 @@ type
   property ResponseReason:String read GetResponseReason;
   property ResponseVersion:LongWord read GetResponseVersion;
   property ResponseMimeType:String read GetResponseMimeType;
+  property ResponseMimeTypeOnly:String read GetResponseMimeTypeOnly;
   property ResponseEncoding:LongWord read GetResponseEncoding;
   property ResponseContentSize:LongWord read GetResponseContentSize;
 
@@ -1639,6 +1643,81 @@ type
   {Public Properties}
   property Filename:String read GetFilename write SetFilename;
   property AllowCache:Boolean read FAllowCache write SetAllowCache;
+ end;
+
+ THTTPRemote = class(THTTPDocument)
+ public
+  {}
+  constructor Create;
+ private
+  {Internal Variables}
+  FLocation:String;
+  FUsername:String;
+  FPassword:String;
+  FAddBase:Boolean;
+  FCopyCookies:Boolean;
+  FReturnCookies:Boolean;
+  FCopyHeaders:Boolean;
+  FReturnHeaders:Boolean;
+
+  {Internal Methods}
+  function GetLocation:String;
+  procedure SetLocation(const ALocation:String);
+  function GetUsername:String;
+  procedure SetUsername(const AUsername:String);
+  function GetPassword:String;
+  procedure SetPassword(const APassword:String);
+  procedure SetAddBase(AAddBase:Boolean);
+  procedure SetCopyCookies(ACopyCookies:Boolean);
+  procedure SetReturnCookies(AReturnCookies:Boolean);
+  procedure SetCopyHeaders(ACopyHeaders:Boolean);
+  procedure SetReturnHeaders(AReturnHeaders:Boolean);
+ protected
+  {Protected Methods}
+  function DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; override;
+  function DoHead(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; override;
+
+  function ExcludeCookie(ACookie:THTTPCookie;ACopy,AReturn:Boolean):Boolean; virtual;
+  function ExcludeHeader(AHeader:THTTPHeader;ACopy,AReturn:Boolean):Boolean; virtual;
+ public
+  {Public Properties}
+  property Location:String read GetLocation write SetLocation;
+  property Username:String read GetUsername write SetUsername;
+  property Password:String read GetPassword write SetPassword;
+  property AddBase:Boolean read FAddBase write SetAddBase;
+  property CopyCookies:Boolean read FCopyCookies write SetCopyCookies;
+  property ReturnCookies:Boolean read FReturnCookies write SetReturnCookies;
+  property CopyHeaders:Boolean read FCopyHeaders write SetCopyHeaders;
+  property ReturnHeaders:Boolean read FReturnHeaders write SetReturnHeaders;
+ end;
+
+ THTTPRemoteStream = class(TStream)
+ public
+  {}
+  constructor Create(AClient: THTTPClient);
+  destructor Destroy; override;
+ private
+  {Internal Variables}
+  FClient:THTTPClient;
+
+  FOffset:PtrUInt;
+  FBuffer:Pointer;
+
+  FSize:Int64;
+  FPosition:Int64;
+ protected
+  {Protected Methods}
+  function GetPosition:Int64; override;
+  function GetSize:Int64; override;
+ public
+  {Public Methods}
+  function Read(var Buffer;Count:LongInt):LongInt; override;
+  function Write(const Buffer;Count:LongInt):LongInt; override;
+  function Seek(Offset:LongInt;Origin:Word):LongInt; override;
+  function Seek(const Offset:Int64;Origin:TSeekOrigin):Int64; override;
+
+  {Public Properties}
+  property Client:THTTPClient read FClient;
  end;
 
  THTTPListener = class(TWinsock2TCPListener)
@@ -3914,6 +3993,32 @@ begin
  if not AcquireLock then Exit;
 
  Result:=FResponse.GetHeader(HTTP_ENTITY_HEADER_CONTENT_TYPE);
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+function THTTPClient.GetResponseMimeTypeOnly:String;
+var
+ Index:Integer;
+begin
+ {}
+ Result:='';
+
+ if FState <= HTTP_CLIENT_STATE_REQUEST then Exit;
+
+ if not AcquireLock then Exit;
+
+ Result:=FResponse.GetHeader(HTTP_ENTITY_HEADER_CONTENT_TYPE);
+
+ {Check for Parameter}
+ Index:=Pos(';',Result);
+ if Index > 0 then
+  begin
+   {Get MimeType without Parameter}
+   Result:=Copy(Result,1,Index - 1);
+  end;
 
  ReleaseLock;
 end;
@@ -11006,6 +11111,688 @@ end;
 
 {==============================================================================}
 {==============================================================================}
+{THTTPRemote}
+constructor THTTPRemote.Create;
+begin
+ {}
+ inherited Create;
+
+ FLocation:='';
+ FUsername:='';
+ FPassword:='';
+ FAddBase:=False;
+ FCopyCookies:=True;
+ FReturnCookies:=True;
+ FCopyHeaders:=True;
+ FReturnHeaders:=True;
+end;
+
+{==============================================================================}
+
+function THTTPRemote.GetLocation:String;
+begin
+ {}
+ Result:='';
+
+ if not AcquireLock then Exit;
+
+ Result:=FLocation;
+ UniqueString(Result);
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure THTTPRemote.SetLocation(const ALocation:String);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FLocation:=ALocation;
+ UniqueString(FLocation);
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+function THTTPRemote.GetUsername:String;
+begin
+ {}
+ Result:='';
+
+ if not AcquireLock then Exit;
+
+ Result:=FUsername;
+ UniqueString(Result);
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure THTTPRemote.SetUsername(const AUsername:String);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FUsername:=AUsername;
+ UniqueString(FUsername);
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+function THTTPRemote.GetPassword:String;
+begin
+ {}
+ Result:='';
+
+ if not AcquireLock then Exit;
+
+ Result:=FPassword;
+ UniqueString(Result);
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure THTTPRemote.SetPassword(const APassword:String);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FPassword:=APassword;
+ UniqueString(FPassword);
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure THTTPRemote.SetAddBase(AAddBase:Boolean);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FAddBase:=AAddBase;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure THTTPRemote.SetCopyCookies(ACopyCookies:Boolean);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FCopyCookies:=ACopyCookies;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure THTTPRemote.SetReturnCookies(AReturnCookies:Boolean);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FReturnCookies:=AReturnCookies;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure THTTPRemote.SetCopyHeaders(ACopyHeaders:Boolean);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FCopyHeaders:=ACopyHeaders;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure THTTPRemote.SetReturnHeaders(AReturnHeaders:Boolean);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FReturnHeaders:=AReturnHeaders;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+function THTTPRemote.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
+{Base GET Method for an HTTP Remote}
+var
+ Base:String;
+ Port:String;
+ Path:String;
+ Source:String;
+ Tag:String;
+ Offset:PtrUInt;
+ Found:Boolean;
+ Client:THTTPClient;
+ Cookie:THTTPCookie;
+ Header:THTTPHeader;
+ Content:TMemoryStream;
+ Data:THTTPRemoteStream;
+begin
+ {}
+ Result:=False;
+
+ {Set Defaults}
+ Data:=nil;
+
+ {$IFDEF HTTP_DEBUG}
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Remote: DoGet');
+ {$ENDIF}
+
+ {Check Host}
+ if AHost = nil then Exit;
+
+ {Check Request}
+ if ARequest = nil then Exit;
+
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ {Check Method}
+ if Assigned(FOnGet) then
+  begin
+   {Get Method}
+   Result:=FOnGet(AHost,Self,ARequest,AResponse);
+  end
+ else
+  begin
+   {Get Base}
+   if AddBase then
+    begin
+     {Check Port}
+     if Length(ARequest.Port) > 0 then Port:=HTTP_PORT_SEPARATOR + ARequest.Port else Port:='';
+
+     Base:='<base href="' + ARequest.Protocol + HTTP_PROTOCOL_SEPARATOR + ARequest.Host + Port + AddTrailingChar(ARequest.BasePath,HTTP_PATH_SEPARATOR) + '">';
+    end
+   else
+    begin
+     Base:='';
+    end;
+
+   {Get Path}
+   Path:=Copy(ARequest.Path,Length(ARequest.BasePath) + 1,Length(ARequest.Path));
+
+   {$IFDEF HTTP_DEBUG}
+   if HTTP_LOG_ENABLED then HTTPLogDebug('Remote: Base: ' + Base);
+   if HTTP_LOG_ENABLED then HTTPLogDebug('Remote: Path: ' + Path);
+   {$ENDIF}
+
+   {Get Source}
+   Source:=StripTrailingChar(Location,HTTP_PATH_SEPARATOR) + AddLeadingChar(Path,HTTP_PATH_SEPARATOR);
+
+   {Add Query}
+   if Length(ARequest.Query) > 0 then Source:=Source + HTTP_QUERY_SEPARATOR + ARequest.Query;
+
+   {$IFDEF HTTP_DEBUG}
+   if HTTP_LOG_ENABLED then HTTPLogDebug('Remote: Source: ' + Source);
+   {$ENDIF}
+
+   {Create Client}
+   Client:=THTTPClient.Create;
+   try
+    {Add URL and Method}
+    Client.RequestURL:=Source;
+    Client.RequestMethod:=ARequest.Method;
+    Client.RequestVersion:=ARequest.Version;
+
+    {Add Username and Password}
+    Client.Username:=Username;
+    Client.Password:=Password;
+
+    {Copy Cookies}
+    if CopyCookies then
+     begin
+      Cookie:=ARequest.Cookies.GetCookie(nil);
+      while Cookie <> nil do
+       begin
+        {$IFDEF HTTP_DEBUG}
+        if HTTP_LOG_ENABLED then HTTPLogDebug('Remote: Request Cookie: ' + Cookie.Name);
+        {$ENDIF}
+
+        if not ExcludeCookie(Cookie,True,False) then
+         begin
+          Client.SetRequestCookie(Cookie.Name,Cookie.Value);
+         end;
+
+        Cookie:=ARequest.Cookies.GetCookie(Cookie);
+       end;
+     end;
+
+    {Copy Headers}
+    if CopyHeaders then
+     begin
+      Header:=ARequest.Headers.GetHeader(nil);
+      while Header <> nil do
+       begin
+        {$IFDEF HTTP_DEBUG}
+        if HTTP_LOG_ENABLED then HTTPLogDebug('Remote: Request Header: ' + Header.Name);
+        {$ENDIF}
+
+        if not ExcludeHeader(Header,True,False) then
+         begin
+          Client.SetRequestHeader(Header.Name,Header.GetValue(0));
+         end;
+
+        Header:=ARequest.Headers.GetHeader(Header);
+       end;
+     end;
+
+    {Send Request}
+    if Client.SendRequest then
+     begin
+      {Success}
+      AResponse.Version:=Client.ResponseVersion;
+      AResponse.Status:=Client.ResponseStatus;
+      AResponse.Reason:=Client.ResponseReason;
+
+      {$IFDEF HTTP_DEBUG}
+      if HTTP_LOG_ENABLED then HTTPLogDebug('Remote: Request Status: ' + IntToStr(AResponse.Status) + ' Reason: ' + AResponse.Reason);
+      if HTTP_LOG_ENABLED then HTTPLogDebug('Remote: Mime Type: ' + Client.ResponseMimeTypeOnly);
+      {$ENDIF}
+
+      {Return Cookies}
+      if ReturnCookies then
+       begin
+        Cookie:=Client.Response.Cookies.GetCookie(nil);
+        while Cookie <> nil do
+         begin
+          {$IFDEF HTTP_DEBUG}
+          if HTTP_LOG_ENABLED then HTTPLogDebug('Remote: Response Cookie: ' + Cookie.Name);
+          {$ENDIF}
+
+          if not ExcludeCookie(Cookie,False,True) then
+           begin
+            AResponse.SetCookie(Cookie.Name,Cookie.Value,Cookie.Attributes);
+           end;
+
+          Cookie:=Client.Response.Cookies.GetCookie(Cookie);
+         end;
+       end;
+
+      {Return Headers}
+      if ReturnHeaders then
+       begin
+        Header:=Client.Response.Headers.GetHeader(nil);
+        while Header <> nil do
+         begin
+          {$IFDEF HTTP_DEBUG}
+          if HTTP_LOG_ENABLED then HTTPLogDebug('Remote: Response Header: ' + Header.Name);
+          {$ENDIF}
+
+          if not ExcludeHeader(Header,False,True) then
+           begin
+            AResponse.SetHeader(Header.Name,Header.GetValue(0));
+           end;
+
+          Header:=Client.Response.Headers.GetHeader(Header);
+         end;
+       end;
+
+      {Check Mime Type}
+      if (Client.ResponseMimeTypeOnly = HTTP_CONTENT_TEXT_HTML) and (Client.ResponseContentSize <= SIZE_256K) then
+       begin
+        {Create Content Stream}
+        Content:=TMemoryStream.Create;
+        Content.Size:=Length(Base) + Client.ResponseContentSize;
+
+        {$IFDEF HTTP_DEBUG}
+        if HTTP_LOG_ENABLED then HTTPLogDebug('Remote: Content Size: ' + IntToStr(Content.Size));
+        {$ENDIF}
+
+        {Read Content Stream}
+        if Client.GetResponseContentStream(Content,0) then
+         begin
+          {Add Base URL (Must be with HEAD Tag)}
+          if AddBase then
+           begin
+            {Reset Content Stream}
+            Content.Position:=0;
+
+            {Find Head Tag}
+            Offset:=0;
+            Found:=False;
+            SetLength(Tag,6);
+            while Offset < Content.Size - Length(Base) do
+             begin
+              {Check for Tag}
+              if PChar(PtrUInt(Content.Memory) + Offset)^ = '<' then
+               begin
+                {Copy Tag}
+                System.Move(PChar(PtrUInt(Content.Memory) + Offset)^,Tag[1],6);
+
+                {Check for Head Tag}
+                if Uppercase(Tag) = '<HEAD>' then
+                 begin
+                  {$IFDEF HTTP_DEBUG}
+                  if HTTP_LOG_ENABLED then HTTPLogDebug('Remote: Found <HEAD> at Offset: ' + IntToStr(Offset) + ', inserting <BASE>');
+                  {$ENDIF}
+
+                  {Move Content}
+                  System.Move(Pointer(PtrUInt(Content.Memory) + Offset + 6)^, Pointer(PtrUInt(Content.Memory) + Offset + 6 + Length(Base))^, Content.Size - (Offset + 6) - Length(Base));
+
+                  {Write Base Tag}
+                  Content.Position:=Offset + 6;
+                  Content.WriteBuffer(Base[1],Length(Base));
+
+                  Found:=True;
+
+                  Break;
+                 end;
+               end;
+
+              Inc(Offset);
+             end;
+
+            {Check Found}
+            if not Found then Content.Size:=Content.Size - Length(Base);
+           end;
+
+          {Reset Content Stream}
+          Content.Position:=0;
+
+          {Set Content Type}
+          AResponse.SetHeader(HTTP_ENTITY_HEADER_CONTENT_TYPE,Client.ResponseMimeType);
+
+          {Check Method}
+          if ARequest.Method = HTTP_METHOD_GET then
+           begin
+            {Set Content}
+            AResponse.ContentStream:=Content;
+
+            {Stream Closed after Response Sent}
+           end
+          else if ARequest.Method = HTTP_METHOD_HEAD then
+           begin
+            {Set Content Length}
+            AResponse.SetHeader(HTTP_ENTITY_HEADER_CONTENT_LENGTH,IntToStr(Content.Size));
+
+            {Close Content Stream}
+            Content.Free;
+           end;
+
+          {Return Result}
+          Result:=True;
+         end
+        else
+         begin
+          {Internal Server Error}
+          AResponse.Version:=HTTP_VERSION;
+          AResponse.Status:=HTTP_STATUS_INTERNAL_SERVER_ERROR;
+          AResponse.Reason:=HTTP_REASON_500;
+
+          {Do Error}
+          Result:=DoError(AHost,ARequest,AResponse);
+         end;
+       end
+      else
+       begin
+        {Set Content Type}
+        AResponse.SetHeader(HTTP_ENTITY_HEADER_CONTENT_TYPE,Client.ResponseMimeType);
+
+        {Check Method}
+        if ARequest.Method = HTTP_METHOD_GET then
+         begin
+          {Create Remote Stream}
+          Data:=THTTPRemoteStream.Create(Client);
+
+          {Set Content}
+          AResponse.ContentStream:=Data;
+
+          {Stream Closed after Response Sent}
+         end
+        else if ARequest.Method = HTTP_METHOD_HEAD then
+         begin
+          {Set Content Length}
+          AResponse.SetHeader(HTTP_ENTITY_HEADER_CONTENT_LENGTH,IntToStr(Client.ResponseContentSize));
+         end;
+
+        {Return Result}
+        Result:=True;
+       end;
+     end
+    else
+     begin
+      {Failure}
+      AResponse.Version:=Client.ResponseVersion;
+      AResponse.Status:=Client.ResponseStatus;
+      AResponse.Reason:=Client.ResponseReason;
+
+      {$IFDEF HTTP_DEBUG}
+      if HTTP_LOG_ENABLED then HTTPLogDebug('Remote: Request Status: ' + IntToStr(AResponse.Status) + ' Reason: ' + AResponse.Reason);
+      {$ENDIF}
+
+      {Do Error}
+      Result:=DoError(AHost,ARequest,AResponse);
+     end;
+
+    {Close Request}
+    if Data = nil then Client.CloseRequest(True);
+   finally
+    if Data = nil then Client.Free;
+   end;
+  end;
+end;
+
+{==============================================================================}
+
+function THTTPRemote.DoHead(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
+{Base HEAD Method for an HTTP Remote}
+begin
+ {}
+ {$IFDEF HTTP_DEBUG}
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Remote: DoHead');
+ {$ENDIF}
+
+ Result:=DoGet(AHost,ARequest,AResponse);
+end;
+
+{==============================================================================}
+
+function THTTPRemote.ExcludeCookie(ACookie:THTTPCookie;ACopy,AReturn:Boolean):Boolean;
+begin
+ {}
+ Result:=True;
+
+ if ACookie = nil then Exit;
+
+ {Base method, no exclusions}
+
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function THTTPRemote.ExcludeHeader(AHeader:THTTPHeader;ACopy,AReturn:Boolean):Boolean;
+begin
+ {}
+ Result:=True;
+
+ if AHeader = nil then Exit;
+
+ {Check Copy Headers}
+ if ACopy then
+  begin
+   {Check Cookie Header}
+   if CopyCookies and (Uppercase(AHeader.Name) = Uppercase(HTTP_REQUEST_HEADER_COOKIE)) then Exit;
+  end;
+
+ {Check Return Headers}
+ if AReturn then
+  begin
+   {Check Set Cookie Header}
+   if ReturnCookies and (Uppercase(AHeader.Name) = Uppercase(HTTP_RESPONSE_HEADER_SET_COOKIE)) then Exit;
+
+   {Check Content Type Header}
+   if Uppercase(AHeader.Name) = Uppercase(HTTP_ENTITY_HEADER_CONTENT_TYPE) then Exit;
+
+   {Check Content Length Header}
+   if Uppercase(AHeader.Name) = Uppercase(HTTP_ENTITY_HEADER_CONTENT_LENGTH) then Exit;
+  end;
+
+ Result:=False;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{THTTPRemoteStream}
+constructor THTTPRemoteStream.Create(AClient: THTTPClient);
+begin
+ {}
+ inherited Create;
+
+ FClient:=AClient;
+
+ FOffset:=0;
+ FBuffer:=nil;
+
+ FSize:=0;
+ FPosition:=0;
+end;
+
+{==============================================================================}
+
+destructor THTTPRemoteStream.Destroy;
+begin
+ {}
+ if FClient <> nil then
+  begin
+   FClient.CloseRequest(True);
+   FClient.Free;
+  end;
+
+ inherited Destroy;
+end;
+
+{==============================================================================}
+
+function THTTPRemoteStream.GetPosition:Int64;
+begin
+ {}
+ Result:=FPosition;
+end;
+
+{==============================================================================}
+
+function THTTPRemoteStream.GetSize:Int64;
+begin
+ {}
+ Result:=FSize;
+
+ if Result = 0 then
+  begin
+   if FClient = nil then Exit;
+
+   FSize:=FClient.ResponseContentSize;
+
+   Result:=FSize;
+  end;
+end;
+
+{==============================================================================}
+
+function THTTPRemoteStream.Read(var Buffer;Count:LongInt):LongInt;
+{Called by THTTPListener.SendResponseContentStream to Read remote content}
+begin
+ {}
+ Result:=0;
+
+ if FClient = nil then Exit;
+
+ {Get Buffer}
+ FBuffer:=@Buffer;
+
+ {Get Stream from HTTP Client (Will call write to copy data to the buffer)}
+ if (Count < Size) and ((Position + Count) < Size) then
+  begin
+   {Partial Read}
+   if FClient.State <= HTTP_CLIENT_STATE_REQUEST then Exit;
+
+   if FClient.Response.ContentReceived then Exit;
+
+   if FClient.ReadResponseContentStream(FClient.Response,Self,Count) then
+    begin
+     {Update Position}
+     Inc(FPosition,Count);
+
+     Result:=Count;
+    end;
+  end
+ else
+  begin
+   {Full or Remaining Read}
+   if FClient.GetResponseContentStream(Self,Count) then
+    begin
+     {Update Position}
+     Inc(FPosition,Count);
+
+     Result:=Count;
+    end;
+  end;
+
+ {Clear Buffer and Offset}
+ FOffset:=0;
+ FBuffer:=nil;
+end;
+
+{==============================================================================}
+
+function THTTPRemoteStream.Write(const Buffer;Count:LongInt):LongInt;
+{Called by THTTPClient.ReadResponseContentStream to Write remote content}
+begin
+ {}
+ Result:=0;
+
+ if FClient = nil then Exit;
+
+ if FBuffer = nil then Exit;
+
+ {Copy to Buffer (Destination buffer provided by Read)}
+ System.Move(Buffer, Pointer(PtrUInt(FBuffer) + FOffset)^, Count);
+
+ {Update Offset}
+ Inc(FOffset,Count);
+
+ Result:=Count;
+end;
+
+{==============================================================================}
+
+function THTTPRemoteStream.Seek(Offset:LongInt;Origin:Word):LongInt;
+begin
+ {}
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function THTTPRemoteStream.Seek(const Offset:Int64;Origin:TSeekOrigin):Int64;
+begin
+ {}
+ Result:=0;
+end;
+
+{==============================================================================}
+{==============================================================================}
 {THTTPListener}
 constructor THTTPListener.Create;
 begin
@@ -11229,6 +12016,13 @@ begin
 
      {Parse URL}
      if not HTTPParseURI(Request.URL,Request.Protocol,Request.Host,Request.Port,Request.Path,Request.Query) then Exit;
+
+     {Check Protocol}
+     if Length(Request.Protocol) = 0 then
+      begin
+       Request.Protocol:=HTTP_PROTOCOL_STRING_HTTP;
+       {if IsSecure then Request.Protocol:=HTTP_PROTOCOL_STRING_HTTPS else Request.Protocol:=HTTP_PROTOCOL_STRING_HTTP;} {Not yet supported}
+      end;
 
      {$IFDEF HTTP_DEBUG}
      if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Protocol = ' + Request.Protocol);
